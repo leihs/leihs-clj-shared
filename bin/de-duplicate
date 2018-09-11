@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+egrep -R -l "leihs.admin.utils.core"  src/ leihs-clj-shared/src/ | xargs -o -I {} vim '+%s/leihs.admin.utils.core/leihs.core.core/gI' '+wq' {}
+egrep -R -l "leihs.admin.utils.sql"  src/ leihs-clj-shared/src/ | xargs -o -I {} vim '+%s/leihs.admin.utils.sql/leihs.core.sql/gI' '+wq' {}

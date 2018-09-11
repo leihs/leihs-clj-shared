@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+egrep -R -l "leihs.admin.utils.url"  src/ leihs-clj-shared/src/ | xargs -o -I {} vim "+%s/\vleihs.admin.utils.url(\S+)/leihs.core.url\1/gI" '+wq' {}
+
+egrep -R -l "leihs.core.query-params"  src/ leihs-clj-shared/src/ | xargs -o -I {} vim "+%s/\vleihs.core.query-params/leihs.core.url.query-params/gI" '+wq' {}
