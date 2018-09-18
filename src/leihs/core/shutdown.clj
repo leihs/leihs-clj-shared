@@ -1,8 +1,8 @@
 (ns leihs.core.shutdown
   (:refer-clojure :exclude [str keyword])
-  (:require [leihs.core.core :refer [keyword str presence]])
   (:require
-    [leihs.core.sql :as sql]
+    [leihs.core.core :refer [keyword str presence]]
+    [leihs.core.paths :refer [path]]
 
     [clojure.java.jdbc :as jdbc]
     [compojure.core :as cpj]
@@ -25,6 +25,12 @@
                       (System/exit 0))
               {:status 204
                :body "shutting down in 500 ms"})))
+
+(defn wrap [default-handler]
+  (fn [request]
+    ((cpj/routes
+       (cpj/POST (path :shutdown) [] ring-handler)
+       (cpj/ANY "*" [] default-handler)) request)))
 
 (defn init [options]
   (when (:enable-shutdown-route options)
