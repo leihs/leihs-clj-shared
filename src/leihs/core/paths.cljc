@@ -7,6 +7,11 @@
     [bidi.verbose :refer [branch param leaf]]
     [bidi.bidi :refer [path-for match-route]]))
 
+(def core-user-paths
+  (branch "/user/"
+          (param [#"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})|(me)" :user-id])
+          (leaf "" :me-user)
+          (leaf "/auth-info" :auth-info)))
 
 (def core-paths
   (branch ""
@@ -23,7 +28,8 @@
                   (branch "/external-authentication/"
                           (param :authentication-system-id)
                           (leaf "" :external-authentication)))
-          (leaf "/sign-out" :sign-out)))
+          (leaf "/sign-out" :sign-out)
+          core-user-paths))
 
 
 (def paths* (atom core-paths))
