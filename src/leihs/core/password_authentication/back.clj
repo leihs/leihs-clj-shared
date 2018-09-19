@@ -14,6 +14,7 @@
       (sql/from :users)
       (sql/merge-where [:= :users.email email])
       (sql/merge-where [:= :users.account_enabled true])
+      (sql/merge-where [:= :users.password_sign_in_enabled true])
       (sql/merge-join :authentication_systems_users
                       [:= :users.id
                        :authentication_systems_users.user_id])
