@@ -13,6 +13,7 @@
     [leihs.core.routing.front :as routing]
     [leihs.core.sign-in.front :as sign-in]
     [leihs.core.sign-out.front :as sign-out]
+    [leihs.core.user.shared :as shared]
 
     [cljs.core.async :as async]
     [cljsjs.moment]
@@ -21,7 +22,8 @@
     [reagent.core :as reagent]
     ))
 
-(def state* (reagent/atom nil))
+
+(def state* shared/state*)
 
 (defn load-user-data-from-dom [& args]
   (when-not @state*

@@ -1,4 +1,4 @@
-(ns leihs.core.session
+(ns leihs.core.auth.session
   (:refer-clojure :exclude [str keyword])
   (:require
     [leihs.core.core :refer [str keyword presence presence!]]

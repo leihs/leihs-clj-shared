@@ -10,16 +10,16 @@
     [cljs.core.async :as async]
     [cljsjs.moment]
     [clojure.pprint :refer [pprint]]
-    [goog.string :as gstring]
     [reagent.core :as reagent]
     ))
 
 
 (def timestamp* (reagent/atom (js/moment)))
 
-(async/go
-  (loop []
-    (async/<! (async/timeout 250))
-    (reset! timestamp* (js/moment))
-    (recur)))
+(defn init []
+  (go
+    (loop []
+      (async/<! (async/timeout 250))
+      (reset! timestamp* (js/moment))
+      (recur))))
 

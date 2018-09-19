@@ -6,15 +6,8 @@
 (def abort [:i.fas.fa-times-circle])
 (def add [:i.fas.fa-plus-circle])
 (def admin [:i.fas.fa-wrench])
-<<<<<<< HEAD
-(def api-token [:i.fas.fa-coins])
 (def api-token [:i.fas.fa-key])
 (def api-tokens api-token)
-(def api-tokens api-token)
-=======
-(def api-token [:i.fas.fa-key])
-(def api-tokens api-token)
->>>>>>> WIP Internalize breadcrumbs and icons
 (def delegation [:i.fas.fa-hands-helping])
 (def delegations delegation)
 (def delete [:i.fas.fa-times])

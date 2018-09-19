@@ -3,7 +3,7 @@
   (:require [leihs.core.core :refer [keyword str presence]])
   (:require
     [leihs.core.sql :as sql]
-    [leihs.core.session :as session]
+    [leihs.core.auth.session :as session]
 
     [clojure.java.jdbc :as jdbc]
     [clojure.string :as str]))
