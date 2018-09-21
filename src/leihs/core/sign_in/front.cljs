@@ -7,6 +7,8 @@
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.constants]
     [leihs.core.paths :refer [path]]
+    [leihs.core.routing.front :as routing]
+    [leihs.core.global :as global]
 
     [clojure.pprint :refer [pprint]]
     [accountant.core :as accountant]
@@ -15,7 +17,8 @@
 
 
 (defn nav-email-continue-component []
-  (let [email* (reagent/atom "")
+  (let [email* (reagent/atom (or (-> @routing/state* :query-params-raw :email presence)
+                                 ""))
         valid?* (reaction (boolean (re-matches #".+@.+" @email*)))]
     (fn []
       [:form.form-inline
@@ -34,7 +37,7 @@
          :placeholder "password"}]
        [:a.btn.btn-primary
         {:class (when-not @valid?* "disabled")
-         :href (path :sign-in {} {:email @email*})
+         :href (path :sign-in {} {:email @email* :timestamp (.format @global/timestamp*)})
          :type :submit}
         [:i.fas.fa-sign-in]
         " Continue to sign in" ]])))
