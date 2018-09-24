@@ -3,6 +3,8 @@
   (:require
     [leihs.core.core :refer [keyword str presence]]))
 
+(def authentication-system [:i.fas.fa-external-link-alt])
+(def authentication-systems authentication-system)
 (def abort [:i.fas.fa-times-circle])
 (def add [:i.fas.fa-plus-circle])
 (def admin [:i.fas.fa-wrench])
