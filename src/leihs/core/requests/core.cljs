@@ -90,6 +90,7 @@
 
 (def query-string http-client/generate-query-string)
 
+(def dismiss shared/dismiss)
 
 ;;; icon ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

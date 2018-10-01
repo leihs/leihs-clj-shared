@@ -38,6 +38,11 @@
          (filter identity)
          first)))
 
+(defn dismiss [request-id]
+  (swap! state*
+         update-in [:requests]
+         (fn [rx] (dissoc rx request-id))))
+
 (defn dismiss-button-component
   ([request]
    (dismiss-button-component request {}))
@@ -45,7 +50,5 @@
    [:button.btn
     {:class (str "btn-" (-> request status bootstrap-status)
                  " " (:class opts))
-     :on-click #(swap! state*
-                       update-in [:requests]
-                       (fn [rx] (dissoc rx (:id request))))}
+     :on-click #(dismiss (:id request))}
     [:i.fas.fa-times] " Dismiss "]))
