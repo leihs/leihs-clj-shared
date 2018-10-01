@@ -82,7 +82,7 @@
 (defn create-user-session
   [user {:as request tx :tx settings :settings}]
   "Create and returns the user_session. The map includes additionally
-  the original token to be usee as the value of the session cookie."
+  the original token to be used as the value of the session cookie."
   (when (:sessions_force_uniqueness settings)
     (jdbc/delete! tx :user_sessions ["user_id = ?" (:id user)]))
   (let [token (str (UUID/randomUUID))
