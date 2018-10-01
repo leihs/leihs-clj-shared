@@ -25,25 +25,32 @@
 (defn hidden-state-component [handlers]
   "handlers is a map of keys to functions where the keys :will-mount,
   :did-mount, :did-update correspond to the react lifcycle methods.
-  The custom :did-change will only fire when the routing state changes.
-  In contrast :did-update can fire when other reactive monitored state changes."
-  (let [old-state* (reagent/atom nil)]
+  The custom :did-change will fire routing state changes including did-mount.
+  In contrast do :did-mount, :did-change will not fire when other captured state changes."
+  (let [old-state* (reagent/atom nil)
+        eval-did-change (fn [handler args]
+                          (let [old-state @old-state*
+                                new-state @state*]
+                            (when (not= old-state new-state)
+                              (reset! old-state* new-state)
+                              (apply handler (concat 
+                                               [old-state (patchin/diff old-state new-state) new-state]
+                                               args)))))]
     (reagent/create-class
       {:component-will-mount (fn [& args] (when-let [handler (:will-mount handlers)]
                                             (apply handler args)))
        :component-will-unmount (fn [& args] (when-let [handler (:will-unmount handlers)]
                                             (apply handler args)))
-       :component-did-mount (fn [& args] (when-let [handler (:did-mount handlers)]
-                                           (apply handler args)))
+       :component-did-mount (fn [& args] 
+                              (when-let [handler (:did-mount handlers)]
+                                (apply handler args))
+                              (when-let [handler (:did-change handlers)]
+                                (eval-did-change handler args)))
        :component-did-update (fn [& args]
                                (when-let [handler (:did-update handlers)]
                                  (apply handler args))
                                (when-let [handler (:did-change handlers)]
-                                 (let [old-state @old-state*
-                                       new-state @state*]
-                                   (when (not= old-state new-state)
-                                     (reset! old-state* new-state)
-                                     (handler old-state (patchin/diff old-state new-state) new-state)))))
+                                 (eval-did-change handler args)))
        :reagent-render
        (fn [_]
          [:div.hidden-routing-state-component
