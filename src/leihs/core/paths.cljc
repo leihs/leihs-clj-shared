@@ -27,7 +27,9 @@
                   (leaf "/email-authentication" :email-authentication)
                   (branch "/external-authentication/"
                           (param :authentication-system-id)
-                          (leaf "" :external-authentication)))
+                          (leaf "" :external-authentication)
+                          (leaf "/request" :external-authentication-request)
+                          (leaf "/sign-in" :external-authentication-sign-in)))
           (leaf "/sign-out" :sign-out)
           core-user-paths))
 
