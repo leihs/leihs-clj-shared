@@ -25,5 +25,12 @@ FactoryBot.define do
       is_admin true
     end
 
+    factory :system_admin do
+      is_admin true
+      after(:create) do |user|
+        database[:system_admin_users].insert user_id: user.id
+      end
+    end
+
   end
 end

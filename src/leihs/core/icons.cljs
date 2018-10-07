@@ -23,3 +23,5 @@
 (def sign-out [:i.fas.fa-sign-out-alt])
 (def user [:i.fas.fa-user])
 (def users [:i.fas.fa-user-friends])
+(def system-admin [:i.fas.fa-user-astronaut])
+(def system-admins [:i.fas.fa-user-astronaut])

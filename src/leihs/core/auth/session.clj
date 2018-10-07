@@ -1,9 +1,10 @@
 (ns leihs.core.auth.session
   (:refer-clojure :exclude [str keyword])
   (:require
+    [leihs.core.constants :refer [USER_SESSION_COOKIE_NAME]]
     [leihs.core.core :refer [str keyword presence presence!]]
     [leihs.core.sql :as sql]
-    [leihs.core.constants :refer [USER_SESSION_COOKIE_NAME]]
+    [leihs.core.system-admin :refer [system-admin-sql-expr]]
 
     [pandect.core]
     [logbug.catcher :as catcher]
@@ -32,6 +33,8 @@
       (sql/merge-select 
         [:user_sessions.id :user_session_id]
         [:user_sessions.created_at :user_session_created_at])
+      (sql/merge-select [(sql/call :case system-admin-sql-expr true :else false)
+                         :is_system_admin])
       (sql/from :users)
       (sql/merge-join :user_sessions [:= :users.id :user_id])
       (sql/merge-join :settings [:= :settings.id 0])
@@ -55,7 +58,9 @@
            :scope_read true
            :scope_write true
            :scope_admin_read (:is_admin user)
-           :scope_admin_write (:is_admin user))))
+           :scope_admin_write (:is_admin user)
+           :scope_system_admin_read (:is_system_admin user)
+           :scope_system_admin_write (:is_system_admin user))))
 
 (defn session-token [request]
   (some-> request :cookies
