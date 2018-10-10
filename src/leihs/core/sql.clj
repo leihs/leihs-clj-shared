@@ -58,6 +58,7 @@
 (defalias do-update-set pg-helpers/do-update-set)
 (defalias do-update-set! pg-helpers/do-update-set!)
 (defalias on-conflict pg-helpers/on-conflict)
+(defalias on-conflict-constraint pg-helpers/on-conflict-constraint)
 (defalias returning pg-helpers/returning)
 (defalias upsert pg-helpers/upsert)
 

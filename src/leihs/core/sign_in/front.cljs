@@ -19,14 +19,14 @@
 (defn nav-email-continue-component []
   (let [email* (reagent/atom (or (-> @routing/state* :query-params-raw :email presence)
                                  ""))
-        valid?* (reaction (boolean (re-matches #".+@.+" @email*)))]
+        valid?* (reaction (boolean (presence @email*)))]
     (fn []
       [:form.form-inline
        [:div.form-group
         [:label.sr-only {:for :email} "email "]
         [:input#email.email.form-control.mr-sm-2
          {:type :email
-          :placeholder "email address"
+          :placeholder "email or login"
           :auto-complete :email
           :value @email*
           :on-change #(reset! email* (-> % .-target .-value))}]]
