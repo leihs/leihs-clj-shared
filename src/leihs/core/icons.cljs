@@ -21,6 +21,8 @@
 (def password [:i.fas.fa-key])
 (def sign-in [:i.fas.fa-sign-in-alt])
 (def sign-out [:i.fas.fa-sign-out-alt])
+(def user-in-admin [:i.fas.fa-user-cog])
+(def users-in-admin [:i.fas.fa-users-cog])
 (def user [:i.fas.fa-user])
 (def users [:i.fas.fa-user-friends])
 (def system-admin [:i.fas.fa-user-astronaut])
