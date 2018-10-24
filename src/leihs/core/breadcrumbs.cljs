@@ -7,15 +7,20 @@
     [leihs.core.routing.front :as routing]
     ))
 
+(defn active? [handler-key]
+  (= (-> @routing/state* :handler-key) handler-key))
+
 (defn li
   ([k n]
    (li k n {} {}))
-  ([handler-key inner route-params query-params]
-   (let [active? (= (-> @routing/state* :handler-key) handler-key)]
-     [:li.breadcrumb-item {:key handler-key :class (if active? "active" "")}
-      (if active?
+  ([handler-key-or-full-path inner route-params query-params]
+   (let [active? (active? handler-key-or-full-path)]
+     [:li.breadcrumb-item {:key handler-key-or-full-path :class (if active? "active" "")}
+      (if active? 
         [:span inner]
-        [:a {:href (path handler-key route-params query-params)} inner])])))
+        [:a {:href (if (string? handler-key-or-full-path)
+                     handler-key-or-full-path
+                     (path handler-key-or-full-path route-params query-params))} inner])])))
 
 (defn nav-component [left right]
   [:div.row.nav-component.mt-3
