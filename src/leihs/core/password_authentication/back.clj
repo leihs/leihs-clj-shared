@@ -9,10 +9,14 @@
     [clojure.string :as str]))
 
 
-(defn password-check-query [email pw]
+(defn password-check-query [unique-id pw]
   (-> (sql/select :users.* [:users.id :user_id])
       (sql/from :users)
-      (sql/merge-where [:= :users.email email])
+      (sql/merge-where  
+        [:or 
+         [:= (sql/call :lower :users.email) (sql/call :lower unique-id)]
+         [:= :users.login unique-id]
+         [:= :users.org_id unique-id]])
       (sql/merge-where [:= :users.account_enabled true])
       (sql/merge-where [:= :users.password_sign_in_enabled true])
       (sql/merge-join :authentication_systems_users
