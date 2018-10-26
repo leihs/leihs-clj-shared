@@ -1,4 +1,4 @@
-(ns leihs.core.navbar.back
+(ns leihs.core.remote-navbar.back
   (:require [clojure.java.jdbc :as jdbc]
             [clojure.tools.logging :as log]
             [hiccup.core :refer [html]]
