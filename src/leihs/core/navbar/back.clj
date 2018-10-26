@@ -1,7 +1,7 @@
 (ns leihs.core.navbar.back
   (:require [clojure.java.jdbc :as jdbc]
             [clojure.tools.logging :as log]
-            [hiccup.page :refer [html5]]
+            [hiccup.core :refer [html]]
             [leihs.core.sql :as sql]
             [leihs.core.user.permissions :refer [borrow-access? managed-inventory-pools]]
             [leihs.core.user.permissions.procure :as procure]))
@@ -9,8 +9,8 @@
 (defn handler [request]
   (let [tx (:tx request)
         auth-entity (:authenticated-entity request)]
-    {:headers {"Content-Type" "text/html"}
-     :body (html5
+    {:headers {"Content-Type" "text/plain"}
+     :body (html
              [:ul
               (if (borrow-access? tx auth-entity)
                 [:li "Borrow"])

@@ -29,5 +29,4 @@
                                                  "inventory_manager"]])
       (sql/select :inventory_pools.*)
       sql/format
-      (->> (log/spy :info))
       (->> (jdbc/query tx))))
