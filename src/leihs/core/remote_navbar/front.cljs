@@ -3,6 +3,7 @@
     [reagent.ratom :as ratom]
     [cljs.core.async.macros :refer [go]])
   (:require
+    [leihs.core.paths :refer [path]]
     [cljs-http.client :as http-client]
     [reagent.core :as reagent]))
 
@@ -12,6 +13,6 @@
   [:div {:dangerouslySetInnerHTML {:__html @navbar*}}])
 
 (defn init []
-  (go (let [response (<! (http-client/get "/navbar"))]
+  (go (let [response (<! (http-client/get "/my/navbar"))]
         (if (= (:status response) 200)
           (reset! navbar* (:body response))))))
