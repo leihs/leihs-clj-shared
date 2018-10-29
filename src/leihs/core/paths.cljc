@@ -19,8 +19,11 @@
           (leaf "/navbar" :navbar)
           (leaf "/admin/" :admin)
           (leaf "/procure" :procurement)
-          (leaf "/manage" :lending)
           (leaf "/borrow" :borrow)
+          (branch "/manage" 
+                  (leaf "/" :lending)
+                  (branch "/" (param :inventory_pool_id)
+                          (leaf "/daily" :daily)))
 
           (branch "/sign-in"
                   (leaf "" :sign-in)
