@@ -16,7 +16,6 @@
 (def core-paths
   (branch ""
           (leaf "/" :home)
-          (leaf "/navbar" :navbar)
           (leaf "/admin/" :admin)
           (leaf "/procure" :procurement)
           (leaf "/borrow" :borrow)
