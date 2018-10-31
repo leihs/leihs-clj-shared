@@ -8,9 +8,9 @@
     [bidi.bidi :refer [path-for match-route]]))
 
 (def core-user-paths
-  (branch "/user/"
+  (branch "/my/user/"
           (param [#"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})|(me)" :user-id])
-          (leaf "" :me-user)
+          (leaf "" :my-user)
           (leaf "/auth-info" :auth-info)))
 
 (def core-paths
@@ -20,7 +20,6 @@
           (leaf "/procure" :procurement)
           (leaf "/manage" :lending)
           (leaf "/borrow" :borrow)
-
           (branch "/sign-in"
                   (leaf "" :sign-in)
                   (leaf "/password-authentication" :password-authentication)

@@ -34,7 +34,7 @@
        (for [li right] li)])]])
 
 (defn admin-li [] (li :admin [:span icons/admin " Admin "]))
-(defn me-user-li [] (li :me-user [:span icons/user " User "]))
+;(defn me-user-li [] (li :me-user [:span icons/user " User "]))
 (defn borrow-li [] (li :borrow "Borrow"))
 (defn debug-li [] (li :debug "Debug"))
 (defn initial-admin-li [] (li :initial-admin "Initial-Admin"))
