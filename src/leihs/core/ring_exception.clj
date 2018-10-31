@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [str keyword])
   (:require [leihs.core.core :refer [keyword str presence]])
   (:require
-
+    [clj-logging-config.log4j :as logging-config]
     [clojure.tools.logging :as logging]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug :refer [I>]]
@@ -25,6 +25,7 @@
       (catch Throwable _e
         (let [e (get-cause _e)]
           (logging/warn (thrown/to-string e))
+          (logging/debug e)
           (cond
             (and (instance? clojure.lang.ExceptionInfo e)
                  (contains? (ex-data e) :status)
@@ -38,4 +39,7 @@
                    :headers {"Content-Type" "text/plain"}
                    :body "Unclassified error, see the server logs for details."}))))))
 
-
+;#### debug ###################################################################
+(logging-config/set-logger! :level :debug)
+;(logging-config/set-logger! :level :info)
+;(debug/debug-ns *ns*)
