@@ -18,12 +18,13 @@
           (leaf "/" :home)
           (leaf "/admin/" :admin)
           (leaf "/procure" :procurement)
-          (leaf "/borrow" :borrow)
+          (branch "/borrow"
+                  (leaf "" :borrow)
+                  (leaf "/user/documents" :user-documents))
           (branch "/manage" 
                   (leaf "/" :lending)
                   (branch "/" (param :inventory_pool_id)
                           (leaf "/daily" :daily)))
-
           (branch "/sign-in"
                   (leaf "" :sign-in)
                   (leaf "/password-authentication" :password-authentication)
