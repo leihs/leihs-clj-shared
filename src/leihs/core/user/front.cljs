@@ -54,7 +54,7 @@
          [:div.navbar-nav.user-nav
           [:div
            [:a
-            {:href (path :me-user {} {})}
+            {:href (path :my-user {} {})}
             [:span
              [:img.user-img-32
               {:width 32

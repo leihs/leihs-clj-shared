@@ -1,5 +1,5 @@
 (ns leihs.core.sql
-  (:refer-clojure :exclude [format])
+  (:refer-clojure :exclude [format update set])
   (:require
     [honeysql.format :as format]
     [honeysql.helpers :as helpers :refer [build-clause]]
@@ -50,7 +50,9 @@
 (defalias modifiers helpers/modifiers)
 (defalias offset helpers/offset)
 (defalias order-by helpers/order-by)
+(defalias update helpers/update)
 (defalias select helpers/select)
+(defalias set helpers/sset)
 (defalias values helpers/values)
 (defalias where helpers/where)
 

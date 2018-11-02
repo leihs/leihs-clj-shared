@@ -17,7 +17,7 @@
 (def group [:i.fas.fa-users])
 (def groups [:i.fas.fa-users])
 (def home [:i.fas.fa-home])
-(def me-user [:i.fas.fas-user])
+(def my-user [:i.fas.fas-user])
 (def password [:i.fas.fa-key])
 (def sign-in [:i.fas.fa-sign-in-alt])
 (def sign-out [:i.fas.fa-sign-out-alt])

@@ -14,7 +14,8 @@
       (sql/from :users)
       (sql/merge-where  
         [:or 
-         [:= (sql/call :lower :users.email) (sql/call :lower unique-id)]
+         [:= (sql/call :lower (sql/call :trim :users.email)) 
+          (sql/call :lower unique-id)]
          [:= :users.login unique-id]
          [:= :users.org_id unique-id]])
       (sql/merge-where [:= :users.account_enabled true])
