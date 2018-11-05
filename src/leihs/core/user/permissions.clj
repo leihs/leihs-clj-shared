@@ -3,6 +3,10 @@
             [clojure.tools.logging :as log]
             [leihs.core.sql :as sql]))
 
+(def MANAGER-ROLES ["group_manager"
+                    "lending_manager"
+                    "inventory_manager"])
+
 (defn- access-rights-sqlmap [user-id]
   (-> (sql/select :*)
       (sql/from :access_rights)
@@ -24,9 +28,17 @@
       access-rights-sqlmap
       (sql/join :inventory_pools
                 [:= :inventory_pools.id :access_rights.inventory_pool_id])
-      (sql/merge-where [:in :access_rights.role ["group_manager"
-                                                 "lending_manager"
-                                                 "inventory_manager"]])
+      (sql/merge-where [:in :access_rights.role MANAGER-ROLES])
       (sql/select :inventory_pools.*)
       sql/format
       (->> (jdbc/query tx))))
+
+(defn manager? [tx auth-entity]
+  (-> auth-entity
+      :id
+      access-rights-sqlmap
+      (sql/merge-where [:in :access_rights.role MANAGER-ROLES])
+      sql/format
+      (->> (jdbc/query tx))
+      empty?
+      not))
