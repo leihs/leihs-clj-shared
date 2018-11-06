@@ -47,8 +47,7 @@
 
 (defn navbar-user-nav []
   (reagent/create-class
-    {:component-did-mount load-user-data-from-dom
-     :reagent-render
+    {:reagent-render
      (fn [_]
        (if-let [user @state*]
          [:div.navbar-nav.user-nav
