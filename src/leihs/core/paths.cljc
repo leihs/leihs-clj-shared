@@ -22,7 +22,7 @@
                   (leaf "" :borrow)
                   (leaf "/user/documents" :user-documents))
           (branch "/manage" 
-                  (leaf "/" :lending)
+                  (leaf "/" :manage)
                   (branch "/" (param :inventory_pool_id)
                           (leaf "/daily" :daily)))
           (branch "/sign-in"
