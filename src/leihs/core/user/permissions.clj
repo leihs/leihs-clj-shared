@@ -30,6 +30,7 @@
                 [:= :inventory_pools.id :access_rights.inventory_pool_id])
       (sql/merge-where [:in :access_rights.role MANAGER-ROLES])
       (sql/select :inventory_pools.*)
+      (sql/order-by [:inventory_pools.name :asc])
       sql/format
       (->> (jdbc/query tx))))
 
