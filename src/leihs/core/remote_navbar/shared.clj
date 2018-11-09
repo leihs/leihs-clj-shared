@@ -1,11 +1,9 @@
 (ns leihs.core.remote-navbar.shared
   (:require [clojure.java.jdbc :as jdbc]
-            [leihs.core
-             [paths :refer [path]]
-             [sql :as sql]]
+            [clojure.tools.logging :as log]
+            [leihs.core [paths :refer [path]] [sql :as sql]]
             [leihs.core.anti-csrf.back :refer [anti-csrf-token]]
-            [leihs.core.user.permissions
-             :refer
+            [leihs.core.user.permissions :refer
              [borrow-access? managed-inventory-pools]]
             [leihs.core.user.permissions.procure :as procure]))
 
@@ -29,23 +27,32 @@
                       (managed-inventory-pools tx auth-entity))})))
 
 (defn- user-info
-  [auth-entity]
-  (if auth-entity
-    {:user {:id (:user_id auth-entity),
-            :firstname (:firstname auth-entity),
-            :lastname (:lastname auth-entity),
-            :login (:login auth-entity),
-            :email (:email auth-entity)
-            :selectedLocale (:language_id auth-entity)}}))
+  [tx auth-entity locales]
+  (when auth-entity
+    (let [user (-> (sql/select :*)
+                   (sql/from :users)
+                   (sql/where [:= :id (:user_id auth-entity)])
+                   sql/format
+                   (->> (jdbc/query tx))
+                   first)
+          default-language (first (filter :default locales))]
+      {:user {:id (:id user),
+              :firstname (:firstname user),
+              :lastname (:lastname user),
+              :login (:login user),
+              :email (:email user),
+              :selectedLocale (or (:language_id user)
+                                  (:id default-language))}})))
 
 (defn navbar-props
   [request]
   (let [csrf-token (anti-csrf-token request)
         tx (:tx request)
-        auth-entity (:authenticated-entity request)]
+        auth-entity (:authenticated-entity request)
+        locales (languages tx)]
     {:config {:appTitle "Leihs",
               :appColor "gray",
               :csrfToken csrf-token,
-              :me (user-info auth-entity),
+              :me (user-info tx auth-entity locales),
               :subApps (sub-apps tx auth-entity),
-              :locales (languages tx)}}))
+              :locales locales}}))
