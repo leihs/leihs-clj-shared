@@ -38,6 +38,6 @@
 (defn borrow-li [] (li :borrow "Borrow"))
 (defn debug-li [] (li :debug "Debug"))
 (defn initial-admin-li [] (li :initial-admin "Initial-Admin"))
-(defn leihs-li [] [:li.breadcrumb-item [:a {:href (path (:home)), :data-trigger true}]])
+(defn leihs-li [] [:li.breadcrumb-item [:a {:href (path :home), :data-trigger true}]])
 (defn lending-li [] (li :lending "Lending"))
 (defn procurement-li [] (li :procurement "Procurement"))
