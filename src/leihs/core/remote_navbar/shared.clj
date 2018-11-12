@@ -50,7 +50,7 @@
         tx (:tx request)
         auth-entity (:authenticated-entity request)
         locales (languages tx)]
-    {:config {:appTitle "Leihs",
+    {:config {:appTitle "leihs",
               :appColor "gray",
               :csrfToken csrf-token,
               :me (user-info tx auth-entity locales),
