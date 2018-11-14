@@ -58,10 +58,13 @@
   (fn [request]
     (handler (-> request
                  (assoc :params-raw
-                        (-> request :params-raw
+                        (-> request :params
                             (canonicalize-params-map :parse-json? false)))
                  (assoc :query-params-raw
                         (-> request :query-params
+                            (canonicalize-params-map :parse-json? false)))
+                 (assoc :form-params-raw
+                        (-> request :form-params
                             (canonicalize-params-map :parse-json? false)))
                  (update-in [:params] canonicalize-params-map)
                  (update-in [:query-params] canonicalize-params-map)
