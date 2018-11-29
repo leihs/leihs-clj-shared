@@ -44,3 +44,12 @@
       (->> (jdbc/query tx))
       empty?
       not))
+
+(defn sysadmin? [tx auth-entity]
+  (-> (sql/select :*)
+      (sql/from :system_admin_users)
+      (sql/where [:= :user_id (:id auth-entity)])
+      sql/format
+      (->> (jdbc/query tx))
+      empty?
+      not))
