@@ -11,3 +11,16 @@
     ))
 
 (def state* (reagent/atom nil))
+
+(defn short-id [uuid]
+  [:span {:style {:font-family :monospace}}
+   (->> uuid (take 8) clojure.string/join)])
+
+(defn user-name-html [user-id user-data]
+  (if-not user-data
+   [:span {:style {:font-family "monospace"}} (short-id user-id)]
+   [:em 
+    (if-let [name (-> (str (:firstname user-data) " " (:lastname user-data))
+                      clojure.string/trim presence)]
+      name
+      (:email user-data))] ))
