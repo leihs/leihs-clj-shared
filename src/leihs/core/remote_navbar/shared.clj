@@ -1,8 +1,10 @@
 (ns leihs.core.remote-navbar.shared
   (:require [clojure.java.jdbc :as jdbc]
             [clojure.tools.logging :as log]
+            [clojure.set :as set]
             [leihs.core [paths :refer [path]] [sql :as sql]]
             [leihs.core.anti-csrf.back :refer [anti-csrf-token]]
+            [leihs.core.locale :refer [get-user-language]]
             [leihs.core.user.permissions :refer
              [borrow-access? managed-inventory-pools]]
             [leihs.core.user.permissions.procure :as procure]))
@@ -40,16 +42,18 @@
               :firstname (:firstname user),
               :lastname (:lastname user),
               :login (:login user),
-              :email (:email user),
-              :selectedLocale (or (:language_id user)
-                                  (:id default-language))}})))
+              :email (:email user)}})))
 
 (defn navbar-props
   [request]
   (let [csrf-token (anti-csrf-token request)
         tx (:tx request)
         auth-entity (:authenticated-entity request)
-        locales (languages tx)]
+        user-language (get-user-language request)
+        locales (map #(as-> % <>
+                        (set/rename-keys <> {:default :isDefault})
+                        (assoc <> :isSelected (= (:id %) (:id user-language))))
+                     (languages tx))]
     {:config {:appTitle "leihs",
               :appColor "gray",
               :csrfToken csrf-token,
