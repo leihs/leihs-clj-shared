@@ -1,14 +1,14 @@
 (ns leihs.core.ds
   (:refer-clojure :exclude [str keyword])
-  (:require [leihs.core.core :refer [keyword str presence]])
   (:require
     [clojure.java.jdbc :as jdbc]
     [hikari-cp.core :as hikari]
     [pg-types.all]
     [ring.util.codec]
-
     [clj-logging-config.log4j :as logging-config]
     [clojure.tools.logging :as logging]
+    [leihs.core.core :refer [keyword str presence]]
+    [leihs.core.ring-exception :refer [get-cause]]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug :refer [I> I>> identity-with-logging]]
     [logbug.ring :refer [wrap-handler-with-logging]]
@@ -55,6 +55,7 @@
           resp)
         (catch Throwable th
           (logging/warn "Rolling back transaction because of " (.getMessage th))
+          (-> th get-cause logging/debug)
           (jdbc/db-set-rollback-only! tx)
           (throw th))))))
 
