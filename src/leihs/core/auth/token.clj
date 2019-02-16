@@ -4,6 +4,7 @@
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.ring-exception :as ring-exception]
     [leihs.core.sql :as sql]
+    [leihs.core.system-admin :refer [system-admin-sql-expr]]
 
     [clojure.java.jdbc :as jdbc]
     [clojure.walk :refer [keywordize-keys]]
@@ -34,10 +35,14 @@
         :scope_write
         :scope_admin_read
         :scope_admin_write
+        :scope_system_admin_read
+        :scope_system_admin_write
         [:users.id :user_id]
         :is_admin :account_enabled :firstname :lastname :email
         [:api_tokens.id :api_token_id]
         [:api_tokens.created_at :api_token_created_at])
+      (sql/merge-select [(sql/call :case system-admin-sql-expr true :else false)
+                         :is_system_admin])
       (sql/from :users)
       (sql/merge-join :api_tokens [:= :users.id :user_id])
       (sql/merge-where (token-matches-clause token-secret))
@@ -53,7 +58,9 @@
     (assoc uae
            :authentication-method :token
            :scope_admin_read (and (:scope_admin_read uae) (:is_admin uae))
-           :scope_admin_write (and (:scope_admin_write uae) (:is_admin uae)))
+           :scope_admin_write (and (:scope_admin_write uae) (:is_admin uae))
+           :scope_system_admin_read (and (:scope_system_admin_read uae) (:is_system_admin uae))
+           :scope_system_admin_write (and (:scope_system_admin_write uae) (:is_system_admin uae)))
     (throw (ex-info
              (str "No valid API-Token / User combination found! "
                   "Is the token present, not expired, and the user permitted to sign-in?"){}))))
