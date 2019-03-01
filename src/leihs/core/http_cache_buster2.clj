@@ -14,58 +14,7 @@
     [logbug.thrown :as thrown]
     ))
 
-
-;##############################################################################
-
-(def resource-cache* (atom {}))
-
-(defn cachable-resource-response [path request root-path options]
-  (some-> request
-          (assoc :path-info (codec/url-encode path))
-          (resource/resource-request root-path options)
-          (update-in [:headers] dissoc "Last-Modified")
-          (assoc-in [:headers "Cache-Control"] "public, max-age=31536000")
-          (update-in [:body] slurp)))
-
-(defn never-expire-cached-resource! [path request root-path options]
-  (or (get @resource-cache* path)
-      (let [response (cachable-resource-response path request root-path options)]
-        (swap! resource-cache* assoc path response)
-        response)))
-        
-
-;##############################################################################
-
-(defonce cache-bust-path->original-path* (atom {}))
-(defonce original-path->cache-bust-path* (atom {}))
-
-(defn extension [path]
-  (->> path
-       (re-matches #".*\.([^\.]+)")
-       last))
-
-(defn cache-bust-path! [path]
-  (let [signature (-> path sha1/sha1)
-        extension (extension path)
-        cache-bust-path (str path "_" signature "." extension)]
-    (swap! cache-bust-path->original-path* assoc cache-bust-path path)
-    (swap! original-path->cache-bust-path* assoc path cache-bust-path)
-    cache-bust-path))
-
-(defn cache-busted-path [path]
-  (or (get @original-path->cache-bust-path* path)
-      path))
-
-(defn cache-bust [path request root-path options]
-  (if-let [original-path (get @cache-bust-path->original-path* path)]
-    (never-expire-cached-resource! original-path request root-path options)
-    (ring.util.response/redirect
-      (str (:context request) (cache-bust-path! path)))))
-
-
-;##############################################################################
-
-(defn path-matches? [path xp]
+(defn- path-matches? [path xp]
   (boolean
     (some (fn [p]
             (if (string? p)
@@ -73,16 +22,68 @@
               (re-find p path)))
           xp)))
 
-(defn resource [request root-path options]
+;### never expire resource ####################################################
+
+(defn never-expire-resource [path request root-path options]
+  (some-> request
+          (assoc :path-info (codec/url-encode path))
+          (resource/resource-request root-path options)
+          (update-in [:headers] dissoc "Last-Modified")
+          (assoc-in [:headers "Cache-Control"] "public, max-age=31536000")))
+
+
+;### busted resource ##########################################################
+
+
+(defonce cache-bust-path->original-path* (atom {}))
+(defonce original-path->cache-bust-path* (atom {}))
+
+(defn- extension [path]
+  (->> path
+       (re-matches #".*\.([^\.]+)")
+       last))
+
+(defn- cache-busted-resource? [path options]
+  (or (path-matches? path (:cache-bust-paths options))
+      (get @cache-bust-path->original-path* path)))
+
+(defn- cache-bust! [path request root-path options]
+  (when-let [response (resource/resource-request request root-path options)]
+    (if-not (:body response)
+      response
+      (let [signature (-> response :body slurp sha1/sha1)
+            extension (extension path)
+            cache-bust-path (str path "_" signature "." extension)]
+        (swap! cache-bust-path->original-path* assoc cache-bust-path path)
+        (swap! original-path->cache-bust-path* assoc path cache-bust-path)
+        (ring.util.response/redirect
+          (str (:context request) cache-bust-path))))))
+
+(defn- cache-bust [path request root-path options]
+  (if-let [original-path (get @cache-bust-path->original-path* path)]
+    (never-expire-resource original-path request root-path options)
+    (cache-bust! path request root-path options)))
+
+
+(defn cache-busted-path [path]
+  (or (get @original-path->cache-bust-path* path)
+      path))
+
+;##############################################################################
+
+
+
+(defn- resource [request root-path options]
   (let [path (-> request request/path-info codec/url-decode)]
     (cond 
       (-> options :cache-enabled? not) (resource/resource-request 
                                          request root-path options)
-      (or (path-matches? path (:cache-bust-paths options))
-          (get @cache-bust-path->original-path* path)
-          ) (cache-bust path request root-path options)
+
+      (cache-busted-resource? 
+        path options) (cache-bust path request root-path options)
+
       (path-matches?
-        path (:never-expire-paths options)) (never-expire-cached-resource!
+        path (:never-expire-paths options)) (never-expire-resource
                                               path request root-path options)
       :else (resource/resource-request request root-path options))))
 
@@ -111,9 +112,6 @@
   :never-expire-paths - collection, each value is either a string or a regex,
   resources with matching paths will be set to never expire 
 
-  Note: the body of the resource will be cached in memory if either of
-  the pathes match and :cache-enabled? is true. Ensure there will be 
-  enough heap space.  
   "
 
   ([handler root-path]
