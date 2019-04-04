@@ -1,4 +1,4 @@
 (ns leihs.core.env)
 
-(defn use-remote-navbar? []
-  (= (.-remoteNavbar document.body.dataset) "true"))
+(defn use-global-navbar? []
+  (= (.-globalNavbar document.body.dataset) "true"))
