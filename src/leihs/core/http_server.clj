@@ -12,7 +12,7 @@
 
 (defn stop []
   (when-let [server @_server]
-    (logging/info stop)
+    (logging/info "Closing http server.")
     (.close server)
     (reset! _server nil)))
 
