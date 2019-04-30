@@ -49,6 +49,15 @@
     (js-engine/render-react "HomePage")
     render-page-base))
 
+(defn render-page-by-name
+  [request page-name page-props]
+  (as-> request <>
+    (navbar-props <>)
+    (hash-map :navbar <>)
+    (merge {:footer {:appVersion release/version}} <> page-props)
+    (js-engine/render-react page-name <>)
+    (render-page-base <>)))
+
 (defn render-sign-in-page
   ([user-param request] (render-sign-in-page user-param request {}))
   ([user-param request extra-props]
