@@ -10,7 +10,7 @@
     [leihs.core.shared :refer [head]]
     [leihs.core.ssr-engine :as js-engine]))
 
-(defn- render-page-base
+(defn render-page-base
   [inner-html]
   (html5
     (head)
@@ -57,18 +57,6 @@
     (merge {:footer {:appVersion release/version}} <> page-props)
     (js-engine/render-react page-name <>)
     (render-page-base <>)))
-
-(defn render-sign-in-page
-  ([user-param request] (render-sign-in-page user-param request {}))
-  ([user-param request extra-props]
-   (let [tx (:tx request)
-         auth-entity (:authenticated-entity request)]
-     (render-page-base
-       (js-engine/render-react
-         "SignInPage"
-         (merge
-           {:navbar (navbar-props request), :authFlow {:user user-param}}
-           extra-props))))))
 
 
 ;#### debug ###################################################################
