@@ -30,6 +30,7 @@
   (apply format/format [(dedup-join sql-map) params-or-opts]))
 
 
+(defalias array types/array)
 (defalias call types/call)
 (defalias param types/param)
 (defalias raw types/raw)
@@ -55,6 +56,7 @@
 (defalias set helpers/sset)
 (defalias values helpers/values)
 (defalias where helpers/where)
+(defalias with helpers/with)
 
 (defalias do-nothing pg-helpers/do-nothing)
 (defalias do-update-set pg-helpers/do-update-set)
