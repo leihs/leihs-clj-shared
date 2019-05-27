@@ -32,11 +32,15 @@
   (-> (apply sql/select user-select) 
       (sql/merge-select 
         [:user_sessions.id :user_session_id]
-        [:user_sessions.created_at :user_session_created_at])
+        [:user_sessions.created_at :user_session_created_at]
+        [:authentication_systems.external_sign_out_url :external_sign_out_url])
       (sql/merge-select [(sql/call :case system-admin-sql-expr true :else false)
                          :is_system_admin])
       (sql/from :users)
       (sql/merge-join :user_sessions [:= :users.id :user_id])
+      (sql/merge-join :authentication_systems 
+                      [:= :authentication_systems.id 
+                       :user_sessions.authentication_system_id])
       (sql/merge-join :settings [:= :settings.id 0])
       (sql/merge-where (sql/call
                          := :user_sessions.token_hash
@@ -85,7 +89,7 @@
 
 
 (defn create-user-session
-  [user {:as request tx :tx settings :settings}]
+  [user authentication_system_id {:as request tx :tx settings :settings}]
   "Create and returns the user_session. The map includes additionally
   the original token to be used as the value of the session cookie."
   (when (:sessions_force_uniqueness settings)
@@ -94,6 +98,7 @@
         token-hash (pandect.core/sha256 token)
         user-session (->> {:user_id (:id user)
                            :token_hash token-hash
+                           :authentication_system_id authentication_system_id
                            :meta_data  {:user_agent (get-in request [:headers "user-agent"])
                                         :remote_addr (get-in request [:remote-addr])}}
                           (jdbc/insert! tx :user_sessions)

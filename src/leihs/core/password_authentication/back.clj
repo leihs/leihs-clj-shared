@@ -28,6 +28,7 @@
                        :authentication_systems.id])
       (sql/merge-where [:and
                         [:<> :authentication_systems_users.data nil]
+                        [:= :authentication_systems.type "password"]
                         (sql/call
                           := :authentication_systems_users.data
                           (sql/call :crypt pw :authentication_systems_users.data))])
