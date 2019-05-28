@@ -1,4 +1,4 @@
-(ns leihs.core.password-authentication.back
+(ns leihs.core.sign-in.password-authentication.back
   (:refer-clojure :exclude [str keyword])
   (:require [leihs.core.core :refer [keyword str presence]])
   (:require

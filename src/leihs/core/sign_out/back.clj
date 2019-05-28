@@ -1,16 +1,21 @@
 (ns leihs.core.sign-out.back
   (:refer-clojure :exclude [str keyword])
-  (:require [clojure.tools.logging :as log]
-            [clojure.java.jdbc :as jdbc]
-            [leihs.core.constants :refer [USER_SESSION_COOKIE_NAME]]
-            [leihs.core.core :refer [str keyword presence presence!]]
-            [leihs.core.locale :refer [get-user-db-language set-language-cookie]]
-            [leihs.core.paths :refer [path]]
-            [leihs.core.sql :as sql]
-            [leihs.core.url.query-params :as query-params]
-            [logbug.catcher :as catcher]
-            [logbug.debug :as debug]
-            [ring.util.response :refer [redirect]])
+  (:require 
+    [leihs.core.constants :refer [USER_SESSION_COOKIE_NAME]]
+    [leihs.core.core :refer [str keyword presence presence!]]
+    [leihs.core.locale :refer [get-user-db-language set-language-cookie]]
+    [leihs.core.paths :refer [path]]
+    [leihs.core.sql :as sql]
+    [leihs.core.url.query-params :as query-params]
+
+    [clojure.java.jdbc :as jdbc]
+    [compojure.core :as cpj]
+    [ring.util.response :refer [redirect]]
+
+    [logbug.catcher :as catcher]
+    [logbug.debug :as debug]
+    [clojure.tools.logging :as log]
+    )
   (:import
    [java.util UUID]))
 
@@ -39,6 +44,11 @@
   (if (= (-> request :accept :mime) :json)
     {:status 406} 
     (redirect-sign-out-response request)))
+
+(def routes
+  (cpj/routes
+    (cpj/POST (path :sign-out) [] #'ring-handler)))
+
 
 ;#### debug ###################################################################
 ;(logging-config/set-logger! :level :debug)

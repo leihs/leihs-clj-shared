@@ -1,4 +1,4 @@
-(ns leihs.core.password-authentication.front
+(ns leihs.core.sign-in.password-authentication.front
   (:refer-clojure :exclude [str keyword])
   (:require-macros
     [reagent.ratom :as ratom :refer [reaction]]

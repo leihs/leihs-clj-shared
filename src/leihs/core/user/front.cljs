@@ -6,8 +6,8 @@
     )
   (:require
     [leihs.core.constants]
-    [leihs.core.core :refer [keyword str presence]]
     [leihs.core.dom :as dom]
+    [leihs.core.core :refer [keyword str presence]]
     [leihs.core.paths :refer [path]]
     [leihs.core.requests.core :as requests]
     [leihs.core.routing.front :as routing]
@@ -43,27 +43,3 @@
        (gstring/format
          "https://www.gravatar.com/avatar/%s?s=%d&d=retro"
          md5 size)))))
-
-
-(defn navbar-user-nav []
-  (reagent/create-class
-    {:reagent-render
-     (fn [_]
-       (if-let [user @state*]
-         [:div.navbar-nav.user-nav
-          [:div
-           [:a
-            {:href (path :my-user {} {})}
-            [:span
-             [:img.user-img-32
-              {:width 32
-               :height 32
-               :src (or (:img32_url user)
-                        (gravatar-url (:email user)))}]
-             [:span.sr-only (:email user)]]]]
-          [sign-out/component]]
-         (when-not (#{:initial-admin :sign-in}
-                                     (-> @routing/state* :handler-key))
-           [:div.navbar-nav
-            [sign-in/nav-email-continue-component]])))}))
-
