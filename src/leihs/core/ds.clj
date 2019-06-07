@@ -9,6 +9,7 @@
     [clojure.tools.logging :as logging]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.ring-exception :refer [get-cause]]
+    [leihs.core.sql :as sql]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug :refer [I> I>> identity-with-logging]]
     [logbug.ring :refer [wrap-handler-with-logging]]
@@ -59,6 +60,29 @@
           (jdbc/db-set-rollback-only! tx)
           (throw th))))))
 
+(defn check-pending-migrations [ds]
+  (let [run-versions (-> (sql/select :version)
+                         (sql/from :schema_migrations)
+                         sql/format
+                         (->> (jdbc/query ds)
+                              (map #(-> % :version Integer.))
+                              (into #{})))
+        migrations-dir "database/db/migrate"
+        files-versions (-> migrations-dir
+                           clojure.java.io/file
+                           file-seq
+                           (->> (filter #(and (.isFile %)
+                                              (= (.getParent %) migrations-dir)))
+                                (map (fn [f]
+                                       (-> f 
+                                           .getName
+                                           (clojure.string/split #"_")
+                                           first
+                                           Integer.)))
+                                (into #{})))
+        pending-versions (clojure.set/difference files-versions run-versions)]
+    (if-not (empty? pending-versions)
+      (throw (Exception. "pending migrations!")))))
 
 (defn init [params health-check-registry]
   (reset! metric-registry* (MetricRegistry.))
@@ -91,6 +115,7 @@
         :register-mbeans    false
         :metric-registry @metric-registry*
         :health-check-registry health-check-registry})})
+  (check-pending-migrations @ds)
   (logging/info "Initializing db pool done.")
   @ds)
 
