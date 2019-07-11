@@ -43,15 +43,17 @@
 
 ;(-> auth-system-user-base-query sql/format)
 
+(defn merge-identify-user [sqlmap unique-id]
+  (sql/merge-where sqlmap
+   [:or
+    [:= :users.org_id unique-id]
+    [:= :users.login unique-id]
+    [:= (sql/raw "lower(users.email)") (-> unique-id (or "") str/lower-case)]]))
 
 (defn auth-system-base-query-for-unique-id 
   ([unique-id]
-   (-> auth-system-user-base-query 
-       (sql/merge-where 
-         [:or 
-          [:= :users.org_id unique-id]
-          [:= :users.login unique-id]
-          [:= (sql/raw "lower(users.email)") (-> unique-id (or "") str/lower-case)]])))
+   (-> auth-system-user-base-query
+       (merge-identify-user unique-id)))
   ([user-unique-id authentication-system-id]
    (-> (auth-system-base-query-for-unique-id user-unique-id)
        (sql/merge-where [:= :authentication_systems.id authentication-system-id]))))

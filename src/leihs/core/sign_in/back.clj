@@ -15,7 +15,7 @@
     [leihs.core.ssr :as ssr]
     [leihs.core.ssr-engine :as js-engine]
     [leihs.core.sign-in.external-authentication.back :refer [ext-auth-system-token-url]]
-    [leihs.core.sign-in.shared :refer [auth-system-base-query-for-unique-id]]
+    [leihs.core.sign-in.shared :refer [auth-system-base-query-for-unique-id merge-identify-user]]
     [ring.util.response :refer [redirect]]
     
     [clojure.tools.logging :as log]
@@ -29,9 +29,9 @@
       auth-system-base-query-for-unique-id
       (sql/merge-select :authentication_systems.id
                         :authentication_systems.type
-                          :authentication_systems.name
+                        :authentication_systems.name
                         :authentication_systems.description
-                          :authentication_systems.external_sign_in_url)
+                        :authentication_systems.external_sign_in_url)
       sql/format))
 
 (defn auth-systems
@@ -41,6 +41,14 @@
     presence!
     auth-system-query
     (jdbc/query tx)))
+
+(defn user-with-unique-id [tx user-param]
+  (-> (sql/select :*)
+      (sql/from :users)
+      (merge-identify-user user-param)
+      sql/format
+      (->> (jdbc/query tx))
+      first))
 
 ; FIXME: should use ssr/render-page-by-name
 (defn render-sign-in-page
@@ -77,14 +85,20 @@
   "try to find a user account from the user param,
   then find all the availabe auth systems.
   if there is no user given, render initial page again.
-  if user does not exist or has no auth systems, show an error.
+  if user does not exist or
+    user's account is disabled or
+    has no auth systems and his password sign in is disabled
+    => show error
   if there is only an external auth system, redirect to it.
   otherwise show a form with all auth systems."
   [{tx :tx, {user-param :user} :params, settings :settings, :as request}]
   (if (nil? user-param)
     (render-sign-in-page user-param request)
-    (let [user-auth-systems (auth-systems tx user-param)]
-      (if (empty? user-auth-systems)
+    (let [user-auth-systems (auth-systems tx user-param)
+          user (user-with-unique-id tx user-param)]
+      (if (or (not (:account_enabled user))
+              (and (empty? user-auth-systems)
+                   (not (:password_sign_in_enabled user))))
         (render-sign-in-page
           user-param
           request
@@ -181,4 +195,4 @@
 ;#### debug ###################################################################
 ;(logging-config/set-logger! :level :debug)
 ;(logging-config/set-logger! :level :info)
-(debug/debug-ns *ns*)
+;(debug/debug-ns *ns*)
