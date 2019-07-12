@@ -2,36 +2,37 @@
   (:refer-clojure :exclude [str keyword])
   (:require
     [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.paths :refer [path]]
+    [leihs.core.ds :as ds]
 
-    [clojure.java.jdbc :as jdbc]
-    [compojure.core :as cpj]
-    [ring.util.response :refer [redirect]]
+    [clj-pid.core :as pid]
+    [signal.handler]
+    [yaml.core :as yaml]
 
     [clojure.tools.logging :as logging]
-    [logbug.debug :as debug])
-  (:import
-    [java.util UUID]
-    ))
+    [logbug.debug :as debug]))
 
-(def enabled* (atom false))
 
-(defn ring-handler [{method :request-method}]
-  (cond 
-    (not @enabled*) {:staus 403}
-    (not= method :post) {:status 405
-                         :headers {"allow" "POST"}}
-    :else (do (future (Thread/sleep 500)
-                      (System/exit 0))
-              {:status 204
-               :body "shutting down in 500 ms"})))
+(def pid-file-option 
+  [nil "--pid-file PIDFILE"
+   :default "./tmp/service.pid"
+   :parse-fn yaml/parse-string
+   ])
 
-(defn wrap [default-handler]
-  (fn [request]
-    ((cpj/routes
-       (cpj/POST (path :shutdown) [] ring-handler)
-       (cpj/ANY "*" [] default-handler)) request)))
+(defn pid [options]
+  (logging/info "PID" (pid/current))
+  (when-let [pid-file (:pid-file options)]
+    (logging/info "PID-FILE" pid-file)
+    (pid/save pid-file)
+    (pid/delete-on-shutdown! pid-file)))
+
 
 (defn init [options]
-  (when (:enable-shutdown-route options)
-    (reset! enabled* true)))
+  (pid options)
+
+  (logging/info "Registering SIGTERM handler for shutdown.")
+  (signal.handler/with-handler :term
+    (ds/close)
+    (System/exit 0))
+
+
+  )

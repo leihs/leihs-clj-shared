@@ -84,14 +84,17 @@
     (if-not (empty? pending-versions)
       (throw (Exception. "pending migrations!")))))
 
-(defn init [params health-check-registry]
-  (reset! metric-registry* (MetricRegistry.))
+(defn close []
   (when @ds
     (do
       (logging/info "Closing db pool ...")
       (-> @ds :datasource hikari/close-datasource)
       (reset! ds nil)
-      (logging/info "Closing db pool done.")))
+      (logging/info "Closing db pool done."))))
+
+(defn init [params health-check-registry]
+  (close)
+  (reset! metric-registry* (MetricRegistry.))
   (logging/info "Initializing db pool " params " ..." )
   (reset!
     ds
