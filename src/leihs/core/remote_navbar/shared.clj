@@ -45,18 +45,20 @@
               :email (:email user)}})))
 
 (defn navbar-props
-  [request]
-  (let [csrf-token (anti-csrf-token request)
-        tx (:tx request)
-        auth-entity (:authenticated-entity request)
-        user-language (get-user-language request)
-        locales (map #(as-> % <>
+  ([request] (navbar-props request {}))
+  ([request subapps-override]
+   (let [csrf-token (anti-csrf-token request)
+         tx (:tx request)
+         auth-entity (:authenticated-entity request)
+         user-language (get-user-language request)
+         locales (map #(as-> % <>
                         (set/rename-keys <> {:default :isDefault})
                         (assoc <> :isSelected (= (:id %) (:id user-language))))
-                     (languages tx))]
-    {:config {:appTitle "leihs",
-              :appColor "gray",
-              :csrfToken csrf-token,
-              :me (user-info tx auth-entity locales),
-              :subApps (sub-apps tx auth-entity),
-              :locales locales}}))
+                   (languages tx))]
+     {:config {:appTitle "leihs",
+               :appColor "gray",
+               :csrfToken csrf-token,
+               :me (user-info tx auth-entity locales),
+               :subApps (-> (sub-apps tx auth-entity)
+                            (merge subapps-override)),
+               :locales locales}})))

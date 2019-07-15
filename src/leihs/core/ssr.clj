@@ -33,11 +33,12 @@
       (jdbc/query tx))))
 
 (defn render-navbar
-  [request]
-  (->>
-    request
-    navbar-props
-    (js-engine/render-react "Navbar")))
+  ([request]
+   (render-navbar request {}))
+  ([request subapps-override]
+   (as-> request <>
+     (navbar-props <> subapps-override)
+     (js-engine/render-react "Navbar" <>))))
 
 (defn render-root-page
   [request]
