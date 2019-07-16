@@ -17,7 +17,7 @@
     [:body {:class "bg-paper"}
      [:noscript "This application requires Javascript."] inner-html
      (hiccup.page/include-js
-       (cache-buster/cache-busted-path "/my/leihs-shared-bundle.js"))]))
+       (cache-buster/cache-busted-path "leihs-shared-bundle.js"))]))
 
 (defn- auth-systems
   [tx]
