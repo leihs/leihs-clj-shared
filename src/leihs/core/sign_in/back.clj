@@ -89,7 +89,8 @@
     user's account is disabled or
     has no auth systems and his password sign in is disabled
     => show error
-  if there is only an external auth system, redirect to it.
+  if there is only an external auth system and
+    password sign is is disabled, redirect to it.
   otherwise show a form with all auth systems."
   [{tx :tx, {user-param :user} :params, settings :settings, :as request}]
   (if (nil? user-param)
@@ -109,7 +110,8 @@
                    user-param
                    request
                    user-auth-systems-props)]
-          (if (= (count user-auth-systems) 1)
+          (if (and (= (count user-auth-systems) 1)
+                   (not (:password_sign_in_enabled user)))
             (let [auth-system (first user-auth-systems)]
               (if (= (:type auth-system) "external")
                 (redirect
