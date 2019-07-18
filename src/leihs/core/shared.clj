@@ -4,12 +4,12 @@
 
 (defn include-site-css
   []
-  (hiccup.page/include-css (cache-buster/cache-busted-path "/my/css/site.css")))
+  (hiccup.page/include-css (cache-buster/cache-busted-path "procure/theme/bootstrap-leihs.css")))
 
 (defn include-font-css
   []
   (hiccup.page/include-css
-    "/my/css/fontawesome-free-5.0.13/css/fontawesome-all.css"))
+    "/css/fontawesome-free-5.0.13/css/fontawesome-all.css"))
 
 (defn head
   []
@@ -17,7 +17,9 @@
    [:meta
     {:name "viewport",
      :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
-   (include-site-css) (include-font-css)])
+   (include-site-css)
+   ;(include-font-css)
+   ])
 
 
 ;#### debug ###################################################################
