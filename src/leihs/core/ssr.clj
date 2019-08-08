@@ -4,20 +4,17 @@
     [clojure.java.jdbc :as jdbc]
     [clojure.tools.logging :as log]
     [hiccup.page :refer [html5 include-js]]
-    [leihs.core [http-cache-buster2 :as cache-buster] [release :as release]
+    [leihs.core
+     [http-cache-buster2 :as cache-buster]
+     [release :as release]
      [sql :as sql]]
     [leihs.core.remote-navbar.shared :refer [navbar-props]]
     [leihs.core.shared :refer [head]]
     [leihs.core.ssr-engine :as js-engine]))
 
-(defn render-page-base
-  [inner-html]
-  (html5
-    (head)
-    [:body {:class "bg-paper"}
-     [:noscript "This application requires Javascript."] inner-html
-     (hiccup.page/include-js
-       (cache-buster/cache-busted-path "/my/leihs-shared-bundle.js"))]))
+(def render-page-base
+  "Each subapp MUST INTERN the respective function
+  implementation for THIS VAR in THIS NAMESPACE!")
 
 (defn- auth-systems
   [tx]

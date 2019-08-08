@@ -50,7 +50,6 @@
       (->> (jdbc/query tx))
       first))
 
-; FIXME: should use ssr/render-page-by-name
 (defn render-sign-in-page
   ([user-param request] (render-sign-in-page user-param request {}))
   ([user-param request extra-props]
