@@ -3,8 +3,8 @@
   (:require
     [clojure.java.jdbc :as jdbc]
     [hikari-cp.core :as hikari]
-    [pg-types.all]
-    [ring.util.codec]
+    pg-types.all
+    ring.util.codec
     [clj-logging-config.log4j :as logging-config]
     [clojure.tools.logging :as logging]
     [leihs.core.core :refer [keyword str presence]]
@@ -16,7 +16,7 @@
     [logbug.thrown :as thrown]
     )
   (:import
-    [java.net.URI]
+    java.net.URI
     [com.codahale.metrics MetricRegistry]
     ))
 
