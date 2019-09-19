@@ -4,7 +4,10 @@
             [clj-time.core :as clj-time]
             [clojure.string :as string]
             [com.walmartlabs.lacinia [executor :as executor]]
-            [com.walmartlabs.lacinia.resolve :as graphql-resolve]
+            [com.walmartlabs.lacinia.resolve :refer [resolve-as
+                                                     wrap-resolver-result]]
+            [camel-snake-kebab.core :as csk]
+            [wharf.core :refer [transform-keys]]
             [leihs.core.ring-exception :refer [get-cause]]))
 
 (defn error-as-graphql-object
@@ -31,17 +34,19 @@
                        .getSimpleName)]
              (log/warn (or m n))
              (log/debug e)
-             (graphql-resolve/resolve-as nil
-                                         {:message (str m),
-                                          ; if message nil
-                                          ; convert to ""
-                                          :exception n}))))))
+             (resolve-as nil
+                         {:message (str m),
+                          ; if message nil
+                          ; convert to ""
+                          :exception n}))))))
 
-(defn wrap-map-with-error
-  [arg]
-  (into {}
-        (for [[k v] arg]
-          [k (wrap-resolver-with-error v)])))
+(defn wrap-resolver-with-camelCase [resolver]
+  (wrap-resolver-result resolver
+                        (fn [context args value value]
+                          (transform-keys csk/->camelCase value))))
+
+(defn transform-values [m f]
+  (into {} (for [[k v] m] [k (f v)])))
 
 ;#### debug ###################################################################
 ; (logging-config/set-logger! :level :debug)
