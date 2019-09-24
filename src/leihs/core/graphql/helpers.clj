@@ -5,7 +5,8 @@
             [clojure.string :as string]
             [com.walmartlabs.lacinia [executor :as executor]]
             [com.walmartlabs.lacinia.resolve :refer [resolve-as
-                                                     wrap-resolver-result]]
+                                                     wrap-resolver-result
+                                                     with-extensions]]
             [camel-snake-kebab.core :as csk]
             [wharf.core :refer [transform-keys]]
             [leihs.core.ring-exception :refer [get-cause]]))
@@ -44,6 +45,14 @@
   (wrap-resolver-result resolver
                         (fn [context args value value]
                           (transform-keys csk/->camelCase value))))
+
+(defn wrap-resolver-with-overall-timing [resolver]
+  (fn [context args value]
+    (let [start-ms (System/currentTimeMillis)
+          result (resolver context args value)
+          elapsed-ms (- (System/currentTimeMillis) start-ms)]
+      (with-extensions result
+        update :overall-timing (fnil + 0) elapsed-ms))))
 
 (defn transform-values [m f]
   (into {} (for [[k v] m] [k (f v)])))
