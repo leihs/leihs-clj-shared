@@ -1,9 +1,9 @@
 (ns leihs.core.pidfile
-  (:require [clj-pid.core :as pid]))
+  (:require [clj-pid.core :as pid]
+            [clojure.tools.logging :as log]))
 
-(defn handle
-  []
-  (let [pid-file "./tmp/server_pid"]
-    (.mkdirs (java.io.File. "./tmp"))
-    (pid/save pid-file)
-    (pid/delete-on-shutdown! pid-file)))
+(defn handle [file-path]
+  (.mkdirs (java.io.File. "./tmp"))
+  (pid/save file-path)
+  (pid/delete-on-shutdown! file-path)
+  (log/info "pidfile written to:" file-path))
