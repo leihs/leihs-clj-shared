@@ -13,6 +13,7 @@
     [clojure-humanize "0.2.2"]
     [com.github.mfornos/humanize-slim "1.2.2"]
     [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
+    [com.walmartlabs/lacinia "0.35.0"]
     [compojure "1.6.1"]
     [environ "1.1.0"]
     [hiccup "1.0.5"]
