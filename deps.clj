@@ -45,6 +45,7 @@
     [timothypratley/patchin "0.3.5"]
     [uritemplate-clj "1.2.1"]
     [venantius/accountant "0.2.4"]
+    [wharf "0.2.0-SNAPSHOT"] 
 
     ; force transitive dependency resolution
     [ring/ring-core "1.6.3"]
