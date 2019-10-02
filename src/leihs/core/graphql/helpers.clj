@@ -46,13 +46,18 @@
                         (fn [context args value value]
                           (transform-keys csk/->camelCase value))))
 
-(defn wrap-resolver-with-overall-timing [resolver]
-  (fn [context args value]
-    (let [start-ms (System/currentTimeMillis)
-          result (resolver context args value)
-          elapsed-ms (- (System/currentTimeMillis) start-ms)]
-      (with-extensions result
-        update :overall-timing (fnil + 0) elapsed-ms))))
+(defn find-all-nested
+  [m k]
+  (->> (tree-seq map? vals m)
+       (filter map?)
+       (keep k)))
+
+(defn attach-overall-timing [result]
+  (let [all-timings (find-all-nested result :execution/timings)
+        all-elapsed (->> all-timings flatten (map :elapsed))]
+    (assoc-in result
+              [:extensions :overall-timing :elapsed]
+              (apply + all-elapsed))))
 
 (defn transform-values [m f]
   (into {} (for [[k v] m] [k (f v)])))
