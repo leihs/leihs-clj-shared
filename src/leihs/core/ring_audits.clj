@@ -21,7 +21,6 @@
        first :txid))
 
 (defn deep-map-clean! [m]
-  (logging/info 'deep-map-clean! m)
   (->> m
        (map (fn [[k v]]
               (cond 
@@ -43,7 +42,6 @@
           :tx ))
 
 (defn persist-request [txid request]
-  (logging/error 'persist-request request)
   (jdbc/insert! @ds/ds :audited_requests
                 {:txid txid
                  :url (-> request :uri)
