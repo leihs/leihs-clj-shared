@@ -24,6 +24,7 @@
   (to-json (error-as-graphql-object code message)))
 
 (defn wrap-resolver-with-error
+  "Try resolver, catch exception and transform it into a graphql error."
   [resolver]
   (fn [context args value]
     (try (resolver context args value)
@@ -42,9 +43,17 @@
                           :exception n}))))))
 
 (defn wrap-resolver-with-camelCase [resolver]
+  "Change case type for the keys in the result map."
   (wrap-resolver-result resolver
                         (fn [context args value value]
                           (transform-keys csk/->camelCase value))))
+
+(defn wrap-resolver-with-kebab-case [resolver]
+  "Change case type for the keys in the args map."
+  (fn [context args value]
+    (resolver context
+              (transform-keys csk/->kebab-case args)
+              value)))
 
 (defn find-all-nested
   [m k]
@@ -59,7 +68,7 @@
               [:extensions :overall-timing :elapsed]
               (apply + all-elapsed))))
 
-(defn transform-values [m f]
+(defn transform-resolvers [m f]
   (into {} (for [[k v] m] [k (f v)])))
 
 ;#### debug ###################################################################
