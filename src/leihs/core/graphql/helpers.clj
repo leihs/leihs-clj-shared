@@ -44,16 +44,16 @@
 
 (defn wrap-resolver-with-camelCase [resolver]
   "Change case type for the keys in the result map."
-  (wrap-resolver-result resolver
-                        (fn [context args value value]
-                          (transform-keys csk/->camelCase value))))
+  (fn [context args value]
+    (transform-keys csk/->camelCase
+                    (resolver context args value))))
 
 (defn wrap-resolver-with-kebab-case [resolver]
   "Change case type for the keys in the args map."
   (fn [context args value]
     (resolver context
               (transform-keys csk/->kebab-case args)
-              value)))
+              (transform-keys csk/->kebab-case value))))
 
 (defn find-all-nested
   [m k]
