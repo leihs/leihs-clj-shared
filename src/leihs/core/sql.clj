@@ -20,12 +20,15 @@
 (defmethod format/fn-handler "~~*" [_ field value]
   (str (format/to-sql field) " ~~* " (format/to-sql value)))
 
-; contains (arrays)
-(defmethod format/fn-handler "@>" [_ field value]
-  (str (format/to-sql field) " @> " (format/to-sql value)))
-; overlaps (arrays)
-(defmethod format/fn-handler "&&" [_ field value]
-  (str (format/to-sql field) " && " (format/to-sql value)))
+; arrays: contains
+(defmethod format/fn-handler "@>" [_ array1 array2]
+  (str (format/to-sql array1) " @> " (format/to-sql array2)))
+; arrays: is contained by
+(defmethod format/fn-handler "<@" [_ array1 array2]
+  (str (format/to-sql array1) " <@ " (format/to-sql array2)))
+; arrays: overlaps
+(defmethod format/fn-handler "&&" [_ array1 array2]
+  (str (format/to-sql array1) " && " (format/to-sql array2)))
 
 (defn dedup-join [honeymap]
   (assoc honeymap :join
