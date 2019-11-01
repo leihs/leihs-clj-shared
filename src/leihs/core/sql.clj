@@ -1,6 +1,7 @@
 (ns leihs.core.sql
   (:refer-clojure :exclude [format update set])
   (:require
+    [honeysql.core :as core]
     [honeysql.format :as format]
     [honeysql.helpers :as helpers :refer [build-clause]]
     [honeysql.types :as types]
@@ -19,6 +20,13 @@
 (defmethod format/fn-handler "~~*" [_ field value]
   (str (format/to-sql field) " ~~* " (format/to-sql value)))
 
+; contains (arrays)
+(defmethod format/fn-handler "@>" [_ field value]
+  (str (format/to-sql field) " @> " (format/to-sql value)))
+; overlaps (arrays)
+(defmethod format/fn-handler "&&" [_ field value]
+  (str (format/to-sql field) " && " (format/to-sql value)))
+
 (defn dedup-join [honeymap]
   (assoc honeymap :join
          (reduce #(let [[k v] %2] (conj %1 k v)) []
@@ -29,9 +37,11 @@
   [sql-map & params-or-opts]
   (apply format/format [(dedup-join sql-map) params-or-opts]))
 
+(defalias qualify core/qualify)
 
 (defalias array types/array)
 (defalias call types/call)
+(defalias inline types/inline)
 (defalias param types/param)
 (defalias raw types/raw)
 
@@ -41,6 +51,7 @@
 (defalias delete-from helpers/delete-from)
 (defalias from helpers/from)
 (defalias group helpers/group)
+(defalias having helpers/having)
 (defalias insert-into helpers/insert-into)
 (defalias join helpers/join)
 (defalias limit helpers/limit)
