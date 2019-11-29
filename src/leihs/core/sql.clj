@@ -57,6 +57,7 @@
 (defalias having helpers/having)
 (defalias insert-into helpers/insert-into)
 (defalias join helpers/join)
+(defalias left-join helpers/left-join)
 (defalias limit helpers/limit)
 (defalias merge-from helpers/merge-from)
 (defalias merge-join helpers/merge-join)
