@@ -18,22 +18,28 @@
            (get-cause c) e))
        (catch Throwable _ e)))
 
-(defn exception-response [_e]
-  (let [e (get-cause _e)]
-    (logging/warn (thrown/to-string e))
-    (logging/debug e)
-    (cond
-      (and (instance? clojure.lang.ExceptionInfo e)
-           (contains? (ex-data e) :status)
-           ){:status (:status (ex-data e))
-             :headers {"Content-Type" "text/plain"}
-             :body (.getMessage e)}
-      (instance? org.postgresql.util.PSQLException
-                 e){:status 409
-                    :body (.getMessage e)}
-      :else {:status 500
-             :headers {"Content-Type" "text/plain"}
-             :body "Unclassified error, see the server logs for details."})))
+(defn exception-response
+  ([_e]
+   (exception-response _e nil))
+  ([_e request]
+   (let [e (get-cause _e)]
+     (logging/warn "test")
+     (if request
+       (logging/warn (str "Exception caught for uri: " (:uri request))))
+     (logging/warn (thrown/to-string e))
+     (logging/debug e)
+     (cond
+       (and (instance? clojure.lang.ExceptionInfo e)
+            (contains? (ex-data e) :status))
+       {:status (:status (ex-data e))
+        :headers {"Content-Type" "text/plain"}
+        :body (.getMessage e)}
+       (instance? org.postgresql.util.PSQLException e)
+       {:status 409
+        :body (.getMessage e)}
+       :else {:status 500
+              :headers {"Content-Type" "text/plain"}
+              :body "Unclassified error, see the server logs for details."}))))
 
 (defn wrap [handler]
   (fn [request]
