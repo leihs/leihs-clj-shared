@@ -60,6 +60,12 @@
           (jdbc/db-set-rollback-only! tx)
           (throw th))))))
 
+(defn wrap-after-tx [handler]
+  (fn [request]
+    (let [response (handler request)]
+      (doseq [hook (:after-tx response)] (hook))
+      response)))
+
 (defn check-pending-migrations [ds]
   (let [run-versions (-> (sql/select :version)
                          (sql/from :schema_migrations)
