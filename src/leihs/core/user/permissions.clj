@@ -13,8 +13,7 @@
       (sql/join :inventory_pools
                 [:= :inventory_pools.id :access_rights.inventory_pool_id])
       (sql/merge-where [:= :inventory_pools.is_active true])
-      (sql/merge-where [:= :access_rights.user_id user-id])
-      (sql/merge-where [:= :access_rights.deleted_at nil])))
+      (sql/merge-where [:= :access_rights.user_id user-id])))
 
 (defn borrow-access? [tx auth-entity]
   (-> auth-entity
