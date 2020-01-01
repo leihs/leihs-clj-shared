@@ -60,6 +60,8 @@
           (jdbc/db-set-rollback-only! tx)
           (throw th))))))
 
+(declare ^:dynamic after-tx)
+
 (defn wrap-after-tx [handler]
   (fn [request]
     (let [response (handler request)]
