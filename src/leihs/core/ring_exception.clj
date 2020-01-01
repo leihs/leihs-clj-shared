@@ -18,16 +18,19 @@
            (get-cause c) e))
        (catch Throwable _ e)))
 
+(defn log [_e]
+  (let [e (get-cause _e)]
+    (logging/warn (thrown/to-string e))
+    (logging/debug e)))
+
 (defn exception-response
   ([_e]
    (exception-response _e nil))
   ([_e request]
+   (if request
+     (logging/warn (str "Exception caught for uri: " (:uri request))))
+   (log _e)
    (let [e (get-cause _e)]
-     (logging/warn "test")
-     (if request
-       (logging/warn (str "Exception caught for uri: " (:uri request))))
-     (logging/warn (thrown/to-string e))
-     (logging/debug e)
      (cond
        (and (instance? clojure.lang.ExceptionInfo e)
             (contains? (ex-data e) :status))
