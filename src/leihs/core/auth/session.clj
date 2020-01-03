@@ -16,8 +16,14 @@
     [java.util UUID]
     ))
 
-(def user-select 
-  [:users.*    
+(def user-select
+  [:users.id
+   :users.firstname
+   :users.lastname
+   :users.login
+   :users.email
+   :users.org_id
+   :users.is_admin
    [:users.id :user_id]
    [(-> (sql/select :%count.*)
         (sql/from :contracts)
@@ -29,8 +35,8 @@
     :inventory_pool_roles_count]])
 
 (defn user-with-valid-session-query [session-token]
-  (-> (apply sql/select user-select) 
-      (sql/merge-select 
+  (-> (apply sql/select user-select)
+      (sql/merge-select
         [:user_sessions.id :user_session_id]
         [:user_sessions.created_at :user_session_created_at]
         [:authentication_systems.external_sign_out_url :external_sign_out_url])
@@ -38,8 +44,9 @@
                          :is_system_admin])
       (sql/from :users)
       (sql/merge-join :user_sessions [:= :users.id :user_id])
-      (sql/merge-join :authentication_systems 
-                      [:= :authentication_systems.id 
+      (sql/merge-join :authentication_systems
+                      [:= :authentication_systems.id
+
                        :user_sessions.authentication_system_id])
       (sql/merge-join :settings [:= :settings.id 0])
       (sql/merge-where (sql/call
