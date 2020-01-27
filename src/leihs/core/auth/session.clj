@@ -17,13 +17,14 @@
     ))
 
 (def user-select
-  [:users.id
+  [:users.email
    :users.firstname
+   :users.id
+   :users.is_admin
+   :users.language_id
    :users.lastname
    :users.login
-   :users.email
    :users.org_id
-   :users.is_admin
    [:users.id :user_id]
    [(-> (sql/select :%count.*)
         (sql/from :contracts)
