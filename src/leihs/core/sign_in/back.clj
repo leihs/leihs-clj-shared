@@ -5,7 +5,7 @@
     [clojure.string :as str]
     [compojure.core :as cpj]
     [leihs.core.auth.session :as session]
-    [leihs.core.core :refer [presence!]]
+    [leihs.core.core :refer [presence presence!]]
     [leihs.core.locale :refer [get-cookie-language delete-language-cookie]]
     [leihs.core.sign-in.password-authentication.back :refer [password-check-query]]
     [leihs.core.paths :refer [path]]
@@ -58,11 +58,11 @@
      (ssr/render-page-base
        (js-engine/render-react
          "SignInPage"
-         (merge
-           {:navbar (navbar-props request),
-            :authFlow
-              {:user user-param, :forgotPasswordLink "/forgot-password"}}
-           extra-props))))))
+         (merge-with into
+                     {:navbar (navbar-props request),
+                      :authFlow
+                      {:user user-param, :forgotPasswordLink "/forgot-password"}}
+                     extra-props))))))
 
 (def error-flash-invalid-user
   {:level "error",
@@ -91,9 +91,10 @@
   if there is only an external auth system and
     password sign is is disabled, redirect to it.
   otherwise show a form with all auth systems."
-  [{tx :tx, {user-param :user} :params, settings :settings, :as request}]
+  [{tx :tx, {user-param :user return-to :return-to} :params, settings :settings, :as request}]
   (if (nil? user-param)
-    (render-sign-in-page user-param request)
+    (render-sign-in-page user-param request
+                         {:authFlow {:returnTo return-to}})
     (let [user-auth-systems (auth-systems tx user-param)
           user (user-with-unique-id tx user-param)]
       (if (or (not (:account_enabled user))
@@ -103,12 +104,11 @@
           user-param
           request
           {:flashMessages [error-flash-invalid-user]})
-        (let [user-auth-systems-props {:authSystems user-auth-systems}
-              render-sign-in-page-fn
-                #(render-sign-in-page
-                   user-param
-                   request
-                   user-auth-systems-props)]
+        (let [render-sign-in-page-fn #(render-sign-in-page
+                                        user-param
+                                        request
+                                        {:authSystems user-auth-systems
+                                         :authFlow {:returnTo return-to}})]
           (if (and (= (count user-auth-systems) 1)
                    (not (:password_sign_in_enabled user)))
             (let [auth-system (first user-auth-systems)]
@@ -127,28 +127,32 @@
   on success, set cookie and redirect, otherwise render page again with error.
   param `invisible-pw` signals that password has been autofilled,
   in which case an error is ignored and it is handled like first step"
-  [{tx :tx,
-    {user-param :user, password :password, invisible-pw :invisible-password}
-    :form-params-raw,
+  [{tx :tx, {user-param :user,
+             password :password,
+             invisible-pw :invisible-password,
+             return-to :return-to,
+             :as form-params} :form-params-raw,
     settings :settings,
     :as request}]
   (if-let [user (->> [user-param password]
                      (apply password-check-query)
                      (jdbc/query tx)
                      first)]
-    (let [user-session (session/create-user-session 
-                         user leihs.core.constants/PASSWORD_AUTHENTICATION_SYSTEM_ID request)
+    (let [user-session
+          (session/create-user-session 
+            user
+            leihs.core.constants/PASSWORD_AUTHENTICATION_SYSTEM_ID request)
           cookie-language (get-cookie-language request)
-          response
-          {:status 302,
-           :headers {"Location" (redirect-target tx user)},
-           :cookies
-           {leihs.core.constants/USER_SESSION_COOKIE_NAME
-            {:value (:token user-session),
-             :http-only true,
-             :max-age (* 10 356 24 60 60),
-             :path "/",
-             :secure (:sessions_force_secure settings)}}}]
+          response {:status 302,
+                    :headers {"Location" (or (presence return-to)
+                                             (redirect-target tx user))},
+                    :cookies
+                    {leihs.core.constants/USER_SESSION_COOKIE_NAME
+                     {:value (:token user-session),
+                      :http-only true,
+                      :max-age (* 10 356 24 60 60),
+                      :path "/",
+                      :secure (:sessions_force_secure settings)}}}]
       (when cookie-language
         (jdbc/update!
           tx

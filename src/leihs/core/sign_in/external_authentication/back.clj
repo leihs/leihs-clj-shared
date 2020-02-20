@@ -1,10 +1,11 @@
 (ns leihs.core.sign-in.external-authentication.back
   (:refer-clojure :exclude [str keyword])
-  (:require [leihs.core.core :refer [keyword str presence]])
   (:require
+    [cemerick.url :refer [url-encode]]
     [clojure.java.jdbc :as jdbc]
     [clojure.string :as str]
     [leihs.core.auth.session :as session]
+    [leihs.core.core :refer [keyword str presence]]
     [leihs.core.paths :refer [path]]
     [leihs.core.redirects :refer [redirect-target]]
     [leihs.core.sign-in.shared :refer [auth-system-user-base-query auth-system-base-query-for-unique-id]]
@@ -19,6 +20,12 @@
     [clj-logging-config.log4j :as logging-config]
     [clojure.tools.logging :as logging]
     [logbug.debug :as debug]))
+
+(def skip-authorization-handler-keys
+  "These keys needs the be added to the list of the skipped handler keys
+  in each subapp in order to make the complete login process work in them."
+  #{:external-authentication-request
+    :external-authentication-sign-in})
 
 (defn auth-system-user-query [user-unique-id authentication-system-id]
   (-> (auth-system-base-query-for-unique-id user-unique-id authentication-system-id)
@@ -78,25 +85,31 @@
                {:authentication-system-id (:id authentication-system)})})
 
 (defn ext-auth-system-token-url
-  [tx user-unique-id authentication-system-id settings]
-  (let [data (authentication-system-user-data! user-unique-id authentication-system-id tx)
-        authentication-system (-> data :authentication_system)
-        priv-key (-> authentication-system :internal_private_key private-key!)
-        claims (claims! (-> data :user)
-                        (-> data :authentication_system_user) 
-                        authentication-system settings)
-        token (jwt/sign claims priv-key {:alg :es256})]
-    (str (:external_sign_in_url authentication-system) "?token=" token)))
+  ([tx user-unique-id authentication-system-id settings]
+   (ext-auth-system-token-url tx user-unique-id authentication-system-id settings nil))
+  ([tx user-unique-id authentication-system-id settings return-to]
+   (let [data (authentication-system-user-data! user-unique-id authentication-system-id tx)
+         authentication-system (-> data :authentication_system)
+         priv-key (-> authentication-system :internal_private_key private-key!)
+         claims (claims! (-> data :user)
+                         (-> data :authentication_system_user) 
+                         authentication-system settings)
+         token (jwt/sign claims priv-key {:alg :es256})]
+     (-> (:external_sign_in_url authentication-system)
+         (str "?token=" token)
+         (cond-> (presence return-to)
+           (str "&return-to=" (url-encode return-to)))))))
 
 (defn authentication-request 
   [{tx :tx :as request
     settings :settings
     {authentication-system-id :authentication-system-id} :route-params
-    {user-unique-id :user-unique-id} :params}]
+    {user-unique-id :user-unique-id return-to :return-to} :params}]
   (redirect (ext-auth-system-token-url tx
                                        user-unique-id
                                        authentication-system-id
-                                       settings)))
+                                       settings
+                                       return-to)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -145,7 +158,7 @@
 
 (defn authentication-sign-in-get 
   [{{authentication-system-id :authentication-system-id} :route-params
-    {token :token} :query-params-raw
+    {token :token return-to :return-to} :query-params-raw
     tx :tx
     :as request}]
   (let [authentication-system (authentication-system! authentication-system-id tx)
@@ -163,7 +176,7 @@
       (if-let [user (user-for-sign-in-token sign-in-token authentication-system-id tx)]
         (let [user-session (session/create-user-session user authentication-system-id request)]
           {:status 302
-           :headers {"Location" (redirect-target tx user)}
+           :headers {"Location" (or (presence return-to) (redirect-target tx user))}
            :cookies {leihs.core.constants/USER_SESSION_COOKIE_NAME
                      {:value (:token user-session)
                       :http-only true
