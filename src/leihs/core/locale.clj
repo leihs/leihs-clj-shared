@@ -26,16 +26,12 @@
       sql/format
       (->> (jdbc/query tx))))
 
-(defn get-cookie-language [request]
-  (let [cookie-lang-id (-> request
-                           :cookies
-                           (get "leihs-user-locale")
-                           :value)]
-    (-> get-active-languages-sqlmap
-        (sql/merge-where [:= :id cookie-lang-id])
-        sql/format
-        (->> (jdbc/query (:tx request)))
-        first)))
+(defn get-active-lang [tx lang-id]
+  (-> get-active-languages-sqlmap
+      (sql/merge-where [:= :id lang-id])
+      sql/format
+      (->> (jdbc/query tx))
+      first))
 
 (defn get-user-db-language [request]
   (let [tx (:tx request)
@@ -45,21 +41,47 @@
          (filter #(= (:id %) (:language_id auth-entity)))
          first)))
 
-(defn get-user-language [request]
+(defn get-selected-language [request]
   (let [tx (:tx request)
         languages (get-active-languages tx)
         default-language (->> languages
                               (filter :default)
                               first)
         user-db-language (get-user-db-language request)
-        language-from-cookie (get-cookie-language request)]
+        cookie-lang-id (-> request
+                           :cookies
+                           (get "leihs-user-locale")
+                           :value)
+        language-from-cookie (get-active-lang tx cookie-lang-id)]
     (or user-db-language
         language-from-cookie
         default-language)))
 
 (defn set-user-language [request] 
-  (let [language (get-user-language request)]
+  (let [language (get-selected-language request)]
     (assoc request :leihs-user-language language)))
+
+(defn setup-language-after-sign-in
+  [{:keys [tx] :as request} response user]
+  (let [cookie-lang-id (-> request
+                           :cookies
+                           (get "leihs-user-locale")
+                           :value)
+        cookie-language (get-active-lang tx cookie-lang-id)]
+    (cond cookie-language
+          (jdbc/update!
+            tx
+            :users
+            {:language_id (:id cookie-language)}
+            ["id = ?" (:id user)])
+          (when-let [user-lang-id (user :language_id)]
+            (not (get-active-lang tx user-lang-id))) 
+          (jdbc/update!
+            tx
+            :users
+            {:language_id nil}
+            ["id = ?" (:id user)]))
+    (delete-language-cookie response)))
 
 (defn wrap [handler]
   (fn [request]

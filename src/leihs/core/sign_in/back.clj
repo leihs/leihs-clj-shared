@@ -6,7 +6,7 @@
     [compojure.core :as cpj]
     [leihs.core.auth.session :as session]
     [leihs.core.core :refer [presence presence!]]
-    [leihs.core.locale :refer [get-cookie-language delete-language-cookie]]
+    [leihs.core.locale :as locale]
     [leihs.core.sign-in.password-authentication.back :refer [password-check-query]]
     [leihs.core.paths :refer [path]]
     [leihs.core.redirects :refer [redirect-target]]
@@ -142,7 +142,6 @@
           (session/create-user-session 
             user
             leihs.core.constants/PASSWORD_AUTHENTICATION_SYSTEM_ID request)
-          cookie-language (get-cookie-language request)
           response {:status 302,
                     :headers {"Location" (or (presence return-to)
                                              (redirect-target tx user))},
@@ -153,15 +152,7 @@
                       :max-age (* 10 356 24 60 60),
                       :path "/",
                       :secure (:sessions_force_secure settings)}}}]
-      (when cookie-language
-        (jdbc/update!
-          tx
-          :users
-          {:language_id (:id cookie-language)}
-          ["id = ?" (:id user)]))
-      (->
-        response
-        delete-language-cookie))
+      (locale/setup-language-after-sign-in request response user))
     (if (not (nil? invisible-pw))
       (handle-first-step request)
       {:status 401,
