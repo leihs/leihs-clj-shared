@@ -4,7 +4,7 @@
             [clojure.set :as set]
             [leihs.core [paths :refer [path]] [sql :as sql]]
             [leihs.core.anti-csrf.back :refer [anti-csrf-token]]
-            [leihs.core.locale :refer [get-user-language]]
+            [leihs.core.locale :refer [get-selected-language]]
             [leihs.core.user.permissions :refer
              [borrow-access? managed-inventory-pools]]
             [leihs.core.user.permissions.procure :as procure]))
@@ -50,7 +50,7 @@
    (let [csrf-token (anti-csrf-token request)
          tx (:tx request)
          auth-entity (:authenticated-entity request)
-         user-language (get-user-language request)
+         user-language (get-selected-language request)
          locales (map #(as-> % <>
                         (set/rename-keys <> {:default :isDefault})
                         (assoc <> :isSelected (= (:id %) (:id user-language))))
