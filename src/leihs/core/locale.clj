@@ -61,6 +61,28 @@
   (let [language (get-selected-language request)]
     (assoc request :leihs-user-language language)))
 
+(defn setup-language-after-sign-in
+  [{:keys [tx] :as request} response user]
+  (let [cookie-lang-id (-> request
+                           :cookies
+                           (get "leihs-user-locale")
+                           :value)
+        cookie-language (get-active-lang tx cookie-lang-id)]
+    (cond cookie-language
+          (jdbc/update!
+            tx
+            :users
+            {:language_id (:id cookie-language)}
+            ["id = ?" (:id user)])
+          (when-let [user-lang-id (user :language_id)]
+            (not (get-active-lang tx user-lang-id))) 
+          (jdbc/update!
+            tx
+            :users
+            {:language_id nil}
+            ["id = ?" (:id user)]))
+    (delete-language-cookie response)))
+
 (defn wrap [handler]
   (fn [request]
     (-> request
