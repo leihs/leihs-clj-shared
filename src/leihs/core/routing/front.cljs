@@ -23,8 +23,8 @@
 (defonce state* (reagent/atom {}))
 
 (defn hidden-state-component [handlers]
-  "handlers is a map of keys to functions where the keys :will-mount,
-  :did-mount, :did-update correspond to the react lifcycle methods.
+  "handlers is a map of keys to functions where the keys :did-mount,
+  :did-update, etc correspond to the react lifcycle methods.
   The custom :did-change will fire routing state changes including did-mount.
   In contrast do :did-mount, :did-change will not fire when other captured state changes."
   (let [old-state* (reagent/atom nil)
@@ -33,15 +33,13 @@
                                 new-state @state*]
                             (when (not= old-state new-state)
                               (reset! old-state* new-state)
-                              (apply handler (concat 
+                              (apply handler (concat
                                                [old-state (patchin/diff old-state new-state) new-state]
                                                args)))))]
     (reagent/create-class
-      {:component-will-mount (fn [& args] (when-let [handler (:will-mount handlers)]
+      {:component-will-unmount (fn [& args] (when-let [handler (:will-unmount handlers)]
                                             (apply handler args)))
-       :component-will-unmount (fn [& args] (when-let [handler (:will-unmount handlers)]
-                                            (apply handler args)))
-       :component-did-mount (fn [& args] 
+       :component-did-mount (fn [& args]
                               (when-let [handler (:did-mount handlers)]
                                 (apply handler args))
                               (when-let [handler (:did-change handlers)]
@@ -91,7 +89,7 @@
 (defn init [paths resolve-table external-handlers]
   "paths: definition of paths, see bidi;
   resolve-table: mapping from handler-keys to handlers,
-  external-handlers: will trigger a full page reload, used for handler-keys 
+  external-handlers: will trigger a full page reload, used for handler-keys
   defined in pahts but not in resolve-table"
   (reset! paths* paths)
   (reset! resolve-table* resolve-table)

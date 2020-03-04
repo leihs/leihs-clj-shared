@@ -38,7 +38,7 @@
     [org.slf4j/slf4j-log4j12 "1.7.25"]
     [pandect "0.6.1"]
     [pg-types "2.4.0-PRE.1"]
-    [reagent "0.8.1"]
+    [reagent "0.9.1"]
     [ring "1.6.3"]
     [ring-middleware-accept "2.0.3"]
     [ring/ring-json "0.4.0"]
@@ -46,7 +46,7 @@
     [timothypratley/patchin "0.3.5"]
     [uritemplate-clj "1.2.1"]
     [venantius/accountant "0.2.4"]
-    [wharf "0.2.0-SNAPSHOT"] 
+    [wharf "0.2.0-SNAPSHOT"]
 
     ; force transitive dependency resolution
     [ring/ring-core "1.6.3"]
