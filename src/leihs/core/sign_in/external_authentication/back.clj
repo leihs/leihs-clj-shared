@@ -72,7 +72,7 @@
             (ex-info "Public key error!" 
                      {:status 500})))))
  
-(defn claims! [user authentication-system-user authentication-system settings]
+(defn claims! [user authentication-system-user authentication-system settings return-to]
   {:email (when (:send_email authentication-system) (:email user)) 
    :login (when (:send_login authentication-system) (:login user)) 
    :org_id (when (:send_org_id authentication-system) (:org_id user)) 
@@ -81,6 +81,7 @@
    :exp (time/plus (time/now) (time/seconds 90))
    :iat (time/now)
    :server_base_url (:external_base_url settings)
+   :return_to (presence return-to)
    :path (path :external-authentication-sign-in
                {:authentication-system-id (:id authentication-system)})})
 
@@ -93,12 +94,9 @@
          priv-key (-> authentication-system :internal_private_key private-key!)
          claims (claims! (-> data :user)
                          (-> data :authentication_system_user) 
-                         authentication-system settings)
+                         authentication-system settings return-to)
          token (jwt/sign claims priv-key {:alg :es256})]
-     (-> (:external_sign_in_url authentication-system)
-         (str "?token=" token)
-         (cond-> (presence return-to)
-           (str "&return-to=" (url-encode return-to)))))))
+     (str (:external_sign_in_url authentication-system) "?token=" token))))
 
 (defn authentication-request 
   [{tx :tx :as request
@@ -158,7 +156,7 @@
 
 (defn authentication-sign-in-get 
   [{{authentication-system-id :authentication-system-id} :route-params
-    {token :token return-to :return-to} :query-params-raw
+    {token :token} :query-params-raw
     tx :tx
     :as request}]
   (let [authentication-system (authentication-system! authentication-system-id tx)
@@ -169,6 +167,7 @@
                                           internal-pub-key {:alg :es256})]
 
     (logging/debug 'sign-in-token sign-in-token)
+    (logging/debug 'sign-in-request-token sign-in-request-token)
     (if-not (:success sign-in-token)
       {:status 400
        :headers {"Content-Type" "text/plain"}
@@ -176,7 +175,7 @@
       (if-let [user (user-for-sign-in-token sign-in-token authentication-system-id tx)]
         (let [user-session (session/create-user-session user authentication-system-id request)]
           {:status 302
-           :headers {"Location" (or (presence return-to) (redirect-target tx user))}
+           :headers {"Location" (or (:return_to sign-in-request-token) (redirect-target tx user))}
            :cookies {leihs.core.constants/USER_SESSION_COOKIE_NAME
                      {:value (:token user-session)
                       :http-only true
