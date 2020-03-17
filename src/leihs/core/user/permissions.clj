@@ -24,11 +24,21 @@
       (sql/merge-where [:= :access_rights.user_id user-id])
       (sql/merge-where [:in :access_rights.role roles])))
 
+(defn user-group-access-right-subquery [user-id roles]
+  (-> (sql/select :1)
+      (sql/from :group_access_rights)
+      (sql/merge-where [:in :group_access_rights.role roles])
+      (sql/merge-join :groups [:= :groups.id  :group_access_rights.group_id])
+      (sql/merge-join :groups_users [:= :groups_users.group_id :groups.id])
+      (sql/merge-where [:= :groups_users.user_id user-id])))
+
 (defn borrow-access? [tx {user-id :id}]
   (-> inventory-access-base-query
       (sql/select :1)
       (sql/merge-where
-        {:exists (user-direct-access-right-subquery user-id CUSTOMER-ROLES)})
+        [:or
+         {:exists (user-direct-access-right-subquery user-id CUSTOMER-ROLES)}
+         {:exists (user-group-access-right-subquery user-id CUSTOMER-ROLES)}])
       sql/format
       (->> (jdbc/query tx))
       seq boolean))
@@ -37,7 +47,9 @@
   (-> inventory-access-base-query
       (sql/select :inventory_pools.*)
       (sql/merge-where
-        [:or {:exists (user-direct-access-right-subquery user-id MANAGER-ROLES)}])))
+        [:or
+         {:exists (user-direct-access-right-subquery user-id MANAGER-ROLES)}
+         {:exists (user-group-access-right-subquery user-id MANAGER-ROLES)}])))
 
 (defn managed-inventory-pools [tx {user-id :id}]
   (-> (managed-inventory-pools-query user-id)
@@ -48,7 +60,9 @@
   (-> inventory-access-base-query
       (sql/select :1)
       (sql/merge-where
-        [:or {:exists (user-direct-access-right-subquery user-id MANAGER-ROLES)}])
+        [:or
+         {:exists (user-direct-access-right-subquery user-id MANAGER-ROLES)}
+         {:exists (user-group-access-right-subquery user-id MANAGER-ROLES)}])
       sql/format
       (->> (jdbc/query tx))
       seq boolean))
