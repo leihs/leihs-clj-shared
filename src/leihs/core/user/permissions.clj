@@ -1,48 +1,57 @@
 (ns leihs.core.user.permissions
-  (:require [clojure.java.jdbc :as jdbc]
-            [clojure.tools.logging :as log]
-            [leihs.core.sql :as sql]))
+  (:require
+    [clojure.java.jdbc :as jdbc]
+    [clojure.tools.logging :as log]
+    [leihs.core.sql :as sql]
+
+    [clojure.tools.logging :as logging]
+    [logbug.debug :as debug]))
 
 (def MANAGER-ROLES ["group_manager"
                     "lending_manager"
                     "inventory_manager"])
 
-(defn- access-rights-sqlmap [user-id]
-  (-> (sql/select :*)
-      (sql/from :access_rights)
-      (sql/join :inventory_pools
-                [:= :inventory_pools.id :access_rights.inventory_pool_id])
-      (sql/merge-where [:= :inventory_pools.is_active true])
-      (sql/merge-where [:= :access_rights.user_id user-id])))
+(def CUSTOMER-ROLES (conj MANAGER-ROLES "customer"))
 
-(defn borrow-access? [tx auth-entity]
-  (-> auth-entity
-      :id
-      access-rights-sqlmap
+(def inventory-access-base-query
+  (-> (sql/from :inventory_pools)
+      (sql/merge-where [:= :inventory_pools.is_active true])))
+
+(defn user-direct-access-right-subquery [user-id roles]
+  (-> (sql/select :1)
+      (sql/from :access_rights)
+      (sql/merge-where [:= :inventory_pools.id :access_rights.inventory_pool_id])
+      (sql/merge-where [:= :access_rights.user_id user-id])
+      (sql/merge-where [:in :access_rights.role roles])))
+
+(defn borrow-access? [tx {user-id :id}]
+  (-> inventory-access-base-query
+      (sql/select :1)
+      (sql/merge-where
+        {:exists (user-direct-access-right-subquery user-id CUSTOMER-ROLES)})
       sql/format
       (->> (jdbc/query tx))
-      empty?
-      not))
+      seq boolean))
 
-(defn managed-inventory-pools [tx auth-entity]
-  (-> auth-entity
-      :id
-      access-rights-sqlmap
-      (sql/merge-where [:in :access_rights.role MANAGER-ROLES])
+(defn managed-inventory-pools-query [user-id]
+  (-> inventory-access-base-query
       (sql/select :inventory_pools.*)
-      (sql/order-by [:inventory_pools.name :asc])
+      (sql/merge-where
+        [:or {:exists (user-direct-access-right-subquery user-id MANAGER-ROLES)}])))
+
+(defn managed-inventory-pools [tx {user-id :id}]
+  (-> (managed-inventory-pools-query user-id)
       sql/format
       (->> (jdbc/query tx))))
 
-(defn manager? [tx auth-entity]
-  (-> auth-entity
-      :id
-      access-rights-sqlmap
-      (sql/merge-where [:in :access_rights.role MANAGER-ROLES])
+(defn manager? [tx {user-id :id}]
+  (-> inventory-access-base-query
+      (sql/select :1)
+      (sql/merge-where
+        [:or {:exists (user-direct-access-right-subquery user-id MANAGER-ROLES)}])
       sql/format
       (->> (jdbc/query tx))
-      empty?
-      not))
+      seq boolean))
 
 (defn sysadmin? [tx auth-entity]
   (-> (sql/select :*)
@@ -52,3 +61,9 @@
       (->> (jdbc/query tx))
       empty?
       not))
+
+
+;#### debug ###################################################################
+;(logging-config/set-logger! :level :debug)
+;(logging-config/set-logger! :level :info)
+;(debug/debug-ns *ns*)
