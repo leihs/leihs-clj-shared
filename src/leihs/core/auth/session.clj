@@ -61,12 +61,20 @@
       (sql/merge-where [:= :account_enabled true])
       sql/format))
 
+(defn access-rights [tx user-id]
+  (-> (sql/select :role :inventory_pool_id)
+      (sql/from :access_rights)
+      (sql/merge-where [:= :user_id user-id])
+      sql/format
+      (->> (jdbc/query tx))))
+
 (defn authenticated-user-entity [session-token tx]
   (when-let [user (->>
                     (user-with-valid-session-query session-token)
                     (jdbc/query tx) first)]
     (assoc user
            :authentication-method :session
+           :access-rights (access-rights tx (:id user))
            :scope_read true
            :scope_write true
            :scope_admin_read (:is_admin user)
@@ -118,4 +126,4 @@
 ;(logging-config/set-logger! :level :debug)
 ;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns 'cider-ci.utils.shutdown)
-;(debug/debug-ns *ns*)
+(debug/debug-ns *ns*)
