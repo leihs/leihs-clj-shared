@@ -18,6 +18,7 @@
 (def group [:i.fas.fa-users])
 (def groups [:i.fas.fa-users])
 (def home [:i.fas.fa-home])
+(def inventory [:i.fas.fa-cube])
 (def inventory-pool [:i.fas.fa-cube])
 (def inventory-pools [:i.fas.fa-cubes])
 (def my-user [:i.fas.fas-user])
