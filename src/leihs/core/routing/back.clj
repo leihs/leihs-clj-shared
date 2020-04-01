@@ -32,9 +32,13 @@
                   (-> request :uri presence))
          paths @paths*
          {route-params :route-params
-          handler-key :handler} (bidi/match-pair 
+          handler-key :handler} (bidi/match-pair
                                   paths {:remainder path :route paths})
-         handler-fn (get @resolve-table* handler-key nil)]
+         handler-fn (-> @resolve-table*
+                        (get  handler-key nil)
+                        (#(if (map? %)
+                            (:handler %)
+                            %)))]
      (handler (assoc request
                      :route-params route-params
                      :handler-key handler-key
@@ -43,7 +47,7 @@
 
 ;;; canonicalize request map ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- canonicalize-params-map 
+(defn- canonicalize-params-map
   [params & {:keys [parse-json?]
              :or {parse-json? true}}]
   (if-not (map? params)

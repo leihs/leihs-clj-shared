@@ -16,7 +16,7 @@
   ([handler-key-or-full-path inner route-params query-params]
    (let [active? (active? handler-key-or-full-path)]
      [:li.breadcrumb-item {:key handler-key-or-full-path :class (if active? "active" "")}
-      (if active? 
+      (if active?
         [:span inner]
         [:a {:href (if (string? handler-key-or-full-path)
                      handler-key-or-full-path
