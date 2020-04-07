@@ -4,6 +4,7 @@
     [leihs.core.constants :refer [USER_SESSION_COOKIE_NAME]]
     [leihs.core.core :refer [str keyword presence presence!]]
     [leihs.core.sql :as sql]
+    [leihs.core.auth.shared :refer [access-rights]]
     [leihs.core.system-admin :refer [system-admin-sql-expr]]
 
     [pandect.core]
@@ -61,12 +62,7 @@
       (sql/merge-where [:= :account_enabled true])
       sql/format))
 
-(defn access-rights [tx user-id]
-  (-> (sql/select :role :inventory_pool_id)
-      (sql/from :access_rights)
-      (sql/merge-where [:= :user_id user-id])
-      sql/format
-      (->> (jdbc/query tx))))
+
 
 (defn authenticated-user-entity [session-token tx]
   (when-let [user (->>

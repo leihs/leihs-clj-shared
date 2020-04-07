@@ -1,6 +1,7 @@
 (ns leihs.core.auth.token
   (:refer-clojure :exclude [str keyword])
   (:require
+    [leihs.core.auth.shared :refer [access-rights]]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.ring-exception :as ring-exception]
     [leihs.core.sql :as sql]
@@ -57,6 +58,7 @@
                     (jdbc/query tx) first)]
     (assoc uae
            :authentication-method :token
+           :access-rights (access-rights tx (:user_id uae))
            :scope_admin_read (and (:scope_admin_read uae) (:is_admin uae))
            :scope_admin_write (and (:scope_admin_write uae) (:is_admin uae))
            :scope_system_admin_read (and (:scope_system_admin_read uae) (:is_system_admin uae))
@@ -71,10 +73,10 @@
 
 (defn extract-token-value [request]
   (when-let [auth-header (-> request :headers :authorization)]
-    (or (some->> auth-header 
-                (re-find #"(?i)^token\s+(.*)$") 
+    (or (some->> auth-header
+                (re-find #"(?i)^token\s+(.*)$")
                 last presence)
-        (some->> auth-header 
+        (some->> auth-header
                  (re-find #"(?i)^basic\s+(.*)$")
                  last presence decode-base64
                  (#(clojure.string/split % #":" 2))
@@ -82,7 +84,7 @@
                  last))))
 
 (defn authenticate [{tx :tx
-                     sba :secret-ba 
+                     sba :secret-ba
                      :as request}
                     _handler]
   (catcher/snatch
