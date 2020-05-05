@@ -44,3 +44,7 @@
           #?(:clj IllegalStateException
              :cljs js/Error)
           "The argument must neither be nil, nor an empty string nor an empty collection."))))
+
+(defn flip [f]
+  (fn [& xs]
+    (apply f (reverse xs))))
