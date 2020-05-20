@@ -49,7 +49,8 @@
       (sql/merge-where
         [:or
          {:exists (user-direct-access-right-subquery user-id MANAGER-ROLES)}
-         {:exists (user-group-access-right-subquery user-id MANAGER-ROLES)}])))
+         {:exists (user-group-access-right-subquery user-id MANAGER-ROLES)}])
+      (sql/order-by :inventory_pools.name)))
 
 (defn managed-inventory-pools [tx {user-id :id}]
   (-> (managed-inventory-pools-query user-id)
