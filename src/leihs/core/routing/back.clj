@@ -25,24 +25,24 @@
 
 (defn wrap-resolve-handler
   ([handler]
+   (wrap-resolve-handler handler nil))
+  ([handler fallback-handler]
    (fn [request]
-     (wrap-resolve-handler handler request)))
-  ([handler request]
-   (let [path (or (-> request :path-info presence)
-                  (-> request :uri presence))
-         paths @paths*
-         {route-params :route-params
-          handler-key :handler} (bidi/match-pair
-                                  paths {:remainder path :route paths})
-         handler-fn (-> @resolve-table*
-                        (get  handler-key nil)
-                        (#(if (map? %)
-                            (:handler %)
-                            %)))]
-     (handler (assoc request
-                     :route-params route-params
-                     :handler-key handler-key
-                     :handler handler-fn)))))
+     (let [path (or (-> request :path-info presence)
+                    (-> request :uri presence))
+           paths @paths*
+           {route-params :route-params
+            handler-key :handler} (bidi/match-pair
+                                    paths {:remainder path :route paths})
+           handler-fn (-> @resolve-table*
+                          (get handler-key)
+                          (#(cond (map? %) (:handler %)
+                                  (and (nil? %) fallback-handler) fallback-handler
+                                  :else %)))]
+       (handler (assoc request
+                       :route-params route-params
+                       :handler-key handler-key
+                       :handler handler-fn))))))
 
 
 ;;; canonicalize request map ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
