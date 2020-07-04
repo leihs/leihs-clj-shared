@@ -1,14 +1,15 @@
 (ns leihs.core.sign-in.external-authentication.back
-  (:refer-clojure :exclude [str keyword])
+  (:refer-clojure :exclude [str keyword cond])
   (:require
     [cemerick.url :refer [url-encode]]
+    [better-cond.core :refer [cond]]
     [clojure.java.jdbc :as jdbc]
     [clojure.string :as str]
     [leihs.core.auth.session :as session]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.paths :refer [path]]
     [leihs.core.redirects :refer [redirect-target]]
-    [leihs.core.sign-in.shared :refer [auth-system-user-base-query auth-system-base-query-for-unique-id]]
+    [leihs.core.sign-in.shared :refer [auth-system-base-query-for-unique-id user-query-for-unique-id]]
     [leihs.core.sql :as sql]
 
     [buddy.core.keys :as keys]
@@ -29,29 +30,35 @@
 
 (defn auth-system-user-query [user-unique-id authentication-system-id]
   (-> (auth-system-base-query-for-unique-id user-unique-id authentication-system-id)
-      (sql/merge-select 
+      (sql/merge-select
         [(sql/call :row_to_json :authentication_systems) :authentication_system]
         [(sql/call :row_to_json :users) :user])
       sql/format))
 
-(defn authentication-system-user-data! 
+(defn authentication-system-user-data
   [user-unique-id authentication-system-id tx]
-  (if-let [authentication_system_and_user 
-           (->> (auth-system-user-query 
-                  user-unique-id authentication-system-id)
-                (jdbc/query tx) first)]
-    (merge authentication_system_and_user
+  (when-let [authentication-system-and-user
+             (->> (auth-system-user-query
+                    user-unique-id authentication-system-id)
+                  (jdbc/query tx) first)]
+    (merge authentication-system-and-user
            (->> (-> (sql/select :*)
                     (sql/from :authentication_systems_users)
-                    (sql/merge-where [:= :authentication_systems_users.authentication_system_id 
-                                      (-> authentication_system_and_user :authentication_system :id)])
+                    (sql/merge-where [:= :authentication_systems_users.authentication_system_id
+                                      (-> authentication-system-and-user :authentication_system :id)])
                     (sql/merge-where [:= :authentication_systems_users.user_id
-                                      (-> authentication_system_and_user :user_id:id)])
+                                      (-> authentication-system-and-user :user_id:id)])
                     sql/format)
-                (jdbc/query tx) first))
-    (or (throw (ex-info
-                 "External authentication system not found or not enabled" 
-                 {:status 500})))))
+                (jdbc/query tx) first))))
+
+(defn authentication-system-user-data!
+  [user-unique-id authentication-system-id tx]
+  (or (authentication-system-user-data
+        user-unique-id authentication-system-id tx)
+      (throw (ex-info
+               (str "External authentication system for existing user "
+                    user-unique-id " not found or not enabled")
+               {:status 500}))))
 
 (defn prepare-key-str [s]
   (->> (-> s (clojure.string/split #"\n"))
@@ -63,21 +70,19 @@
 (defn private-key! [s]
   (-> s prepare-key-str keys/str->private-key
       (or (throw
-            (ex-info "Private key error!" 
+            (ex-info "Private key error!"
                      {:status 500})))))
 
 (defn public-key! [s]
   (-> s prepare-key-str keys/str->public-key
       (or (throw
-            (ex-info "Public key error!" 
+            (ex-info "Public key error!"
                      {:status 500})))))
- 
-(defn claims! [user authentication-system-user authentication-system settings return-to]
-  {:email (when (:send_email authentication-system) (:email user)) 
-   :login (when (:send_login authentication-system) (:login user)) 
-   :org_id (when (:send_org_id authentication-system) (:org_id user)) 
-   :authentication_system_user_data (when (:send_auth_system_user_data authentication-system) 
-                                      (:data authentication-system-user))
+
+(defn claims! [user authentication-system settings return-to]
+  {:email (when (:send_email authentication-system) (:email user))
+   :login (when (:send_login authentication-system) (:login user))
+   :org_id (when (:send_org_id authentication-system) (:org_id user))
    :exp (time/plus (time/now) (time/seconds 90))
    :iat (time/now)
    :server_base_url (:external_base_url settings)
@@ -85,20 +90,34 @@
    :path (path :external-authentication-sign-in
                {:authentication-system-id (:id authentication-system)})})
 
+
+(defn authentication-system [tx authentication-system-id]
+  (->> (-> (sql/select :*)
+           (sql/from :authentication_systems)
+           (sql/merge-where [:= :id authentication-system-id])
+           (sql/format))
+       (jdbc/query tx) first))
+
+(defn user [tx user-unique-id]
+  (->> (-> user-unique-id
+           user-query-for-unique-id
+           sql/format)
+       (jdbc/query tx) first))
+
 (defn ext-auth-system-token-url
   ([tx user-unique-id authentication-system-id settings]
    (ext-auth-system-token-url tx user-unique-id authentication-system-id settings nil))
   ([tx user-unique-id authentication-system-id settings return-to]
-   (let [data (authentication-system-user-data! user-unique-id authentication-system-id tx)
-         authentication-system (-> data :authentication_system)
-         priv-key (-> authentication-system :internal_private_key private-key!)
-         claims (claims! (-> data :user)
-                         (-> data :authentication_system_user) 
-                         authentication-system settings return-to)
-         token (jwt/sign claims priv-key {:alg :es256})]
+   (cond
+     :let [authentication-system (authentication-system tx authentication-system-id)
+           user (or (user tx user-unique-id)
+                    {:email user-unique-id})
+           priv-key (-> authentication-system :internal_private_key private-key!)
+           claims (claims! user authentication-system settings return-to)
+           token (jwt/sign claims priv-key {:alg :es256})]
      (str (:external_sign_in_url authentication-system) "?token=" token))))
 
-(defn authentication-request 
+(defn authentication-request
   [{tx :tx :as request
     settings :settings
     {authentication-system-id :authentication-system-id} :route-params
@@ -124,9 +143,9 @@
   (let [unique-ids [:email :login :org_id]
         unique-id (some sign-in-token unique-ids)
         base-query (auth-system-base-query-for-unique-id unique-id authentication-system-id)]
-    (when-not unique-id 
-      (throw (ex-info 
-               "The sign-in token must at least submit one of email, org_id or login" 
+    (when-not unique-id
+      (throw (ex-info
+               "The sign-in token must at least submit one of email, org_id or login"
                {:status 400})))
     ; extending the base-query with the actual unique id(s) submitted makes this more stringent
     (as-> base-query query
@@ -146,15 +165,15 @@
   (let [query (user-for-sign-in-token-query sign-in-token authentication-system-id)
         resultset (jdbc/query tx query)]
     (when (> (count resultset) 1)
-      (throw (ex-info 
+      (throw (ex-info
                "More than one user matched the sign-in request."
                {:status 400})))
-    (or (first resultset) 
-        (throw (ex-info 
+    (or (first resultset)
+        (throw (ex-info
                  "No valid user account could be identified for this sign-in request."
                  {:status 400})))))
 
-(defn authentication-sign-in-get 
+(defn authentication-sign-in-get
   [{{authentication-system-id :authentication-system-id} :route-params
     {token :token} :query-params-raw
     tx :tx
@@ -163,7 +182,7 @@
         external-pub-key (-> authentication-system :external_public_key public-key!)
         sign-in-token (jwt/unsign token external-pub-key {:alg :es256})
         internal-pub-key (-> authentication-system :internal_public_key public-key!)
-        sign-in-request-token (jwt/unsign (:sign_in_request_token sign-in-token) 
+        sign-in-request-token (jwt/unsign (:sign_in_request_token sign-in-token)
                                           internal-pub-key {:alg :es256})]
 
     (logging/debug 'sign-in-token sign-in-token)
@@ -184,7 +203,7 @@
                       :secure (:sessions_force_secure (:settings request))}}})
         {:status 404}))))
 
-(defn authentication-sign-in-post 
+(defn authentication-sign-in-post
   [{{authentication-system-id :authentication-system-id} :route-params
     {token :token} :query-params-raw
     tx :tx
@@ -193,9 +212,8 @@
         external-pub-key (-> authentication-system :external_public_key public-key!)
         sign-in-token (jwt/unsign token external-pub-key {:alg :es256})
         internal-pub-key (-> authentication-system :internal_public_key public-key!)
-        sign-in-request-token (jwt/unsign (:sign_in_request_token sign-in-token) 
+        sign-in-request-token (jwt/unsign (:sign_in_request_token sign-in-token)
                                           internal-pub-key {:alg :es256})]
-
     (logging/debug 'sign-in-token sign-in-token)
     (if-not (:success sign-in-token)
       {:status 400
@@ -214,14 +232,14 @@
 
 (def routes
   (cpj/routes
-    (cpj/POST (path :external-authentication-request 
-                    {:authentication-system-id ":authentication-system-id"}) 
+    (cpj/POST (path :external-authentication-request
+                    {:authentication-system-id ":authentication-system-id"})
               [] #'authentication-request)
     (cpj/POST (path :external-authentication-sign-in
-                    {:authentication-system-id ":authentication-system-id"}) 
+                    {:authentication-system-id ":authentication-system-id"})
               [] #'authentication-sign-in-post)
     (cpj/GET (path :external-authentication-sign-in
-                   {:authentication-system-id ":authentication-system-id"}) 
+                   {:authentication-system-id ":authentication-system-id"})
              [] #'authentication-sign-in-get)))
 
 

@@ -14,9 +14,9 @@
     (-> (sql/select true)
         (sql/from :authentication_systems_users)
         (sql/merge-where [:= :authentication_systems_users.user_id :users.id])
-        (sql/merge-where [:= :authentication_systems.id 
+        (sql/merge-where [:= :authentication_systems.id
                           :authentication_systems_users.authentication_system_id])
-        (sql/merge-where [:or 
+        (sql/merge-where [:or
                           [:<> :authentication_systems.type "password"]
                           [:= :users.password_sign_in_enabled true]])
         (sql/merge-where [:= :users.account_enabled true]))]
@@ -24,9 +24,9 @@
     (-> (sql/select true)
         (sql/from [:authentication_systems :asxs])
         (sql/merge-where [:= :asxs.id :authentication_systems.id])
-        (sql/merge-join :authentication_systems_groups 
+        (sql/merge-join :authentication_systems_groups
                         [:and [:= :asxs.id :authentication_systems_groups.authentication_system_id]])
-        (sql/merge-join :groups_users [:and 
+        (sql/merge-join :groups_users [:and
                                        [:= :authentication_systems_groups.group_id :groups_users.group_id]
                                        [:= :authentication_systems_groups.group_id :groups_users.group_id]
                                        [:= :groups_users.user_id :users.id]])
@@ -50,7 +50,12 @@
     [:= :users.login unique-id]
     [:= (sql/raw "lower(users.email)") (-> unique-id (or "") str/lower-case)]]))
 
-(defn auth-system-base-query-for-unique-id 
+(defn user-query-for-unique-id [user-unique-id]
+  (-> (sql/select :*)
+      (sql/from :users)
+      (merge-identify-user user-unique-id)))
+
+(defn auth-system-base-query-for-unique-id
   ([unique-id]
    (-> auth-system-user-base-query
        (merge-identify-user unique-id)))
@@ -59,7 +64,7 @@
        (sql/merge-where [:= :authentication_systems.id authentication-system-id]))))
 
 (comment
-  (-> (auth-system-base-query-for-unique-id "mkmit") 
+  (-> (auth-system-base-query-for-unique-id "mkmit")
       (sql/merge-select :*)
       sql/format))
 

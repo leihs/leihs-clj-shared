@@ -1,5 +1,6 @@
 (def shared-deps
   '[[aleph "0.4.6"]
+    [better-cond "2.1.0"]
     [bidi "2.1.3"]
     [buddy/buddy-sign "3.0.0"]
     [camel-snake-kebab "0.4.0"]
