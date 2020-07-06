@@ -149,7 +149,8 @@
 
         ; there is not even an login/e-mail/org-id
         (nil? user-unique-id) (render-sign-in-page user-unique-id request
-                         {:authFlow {:returnTo return-to}})
+                                                   {:authFlow {:returnTo return-to}})
+
         ; no user found and no sign-up-auth-systems
         (and (not user)
              (empty? sign-up-auth-systems)) (render-sign-in-page-for-invalid-user
@@ -167,10 +168,12 @@
         (-> user :account_enabled not) (render-sign-in-page-for-invalid-user
                                         user-unique-id request)
 
-        ; the user is enabled but there are not any available sign in systems
+        ; the user is enabled but there no available sign in systems, but
+        ; he can reset his password to sing in via the new password
         (and (empty? user-auth-systems)
-             (empty? sign-up-auth-systems)) (render-sign-in-page-for-invalid-user
-                                              user-unique-id request)
+             (empty? sign-up-auth-systems)
+             (-> user :password_sign_in_enabled not)) (render-sign-in-page-for-invalid-user
+                                                        user-unique-id request)
 
         ; the single available auth system is external and the user can not reset the password
         (and (= 1 (count all-available-auth-systems))
@@ -252,6 +255,6 @@
     (cpj/POST (path :sign-in) [] #'sign-in-post)))
 
 ;#### debug ###################################################################
-(logging-config/set-logger! :level :debug)
+;(logging-config/set-logger! :level :debug)
 ;(logging-config/set-logger! :level :info)
-(debug/debug-ns *ns*)
+;(debug/debug-ns *ns*)
