@@ -1,6 +1,8 @@
 (ns leihs.core.core
   (:refer-clojure :exclude [str keyword])
-  )
+  (:require #?@(:clj [[clojure.tools.logging :as log]
+                      [clojure.pprint :refer [code-dispatch pprint with-pprint-dispatch]]] )
+            [clojure.string :refer [trim-newline]]))
 
 (defn str
   "Like clojure.core/str but maps keywords to strings without preceding colon."
@@ -48,3 +50,19 @@
 (defn flip [f]
   (fn [& xs]
     (apply f (reverse xs))))
+
+#?(:clj
+   (defmacro spy-with
+     "Like clojure.tools.logging/spy but takes a function which will be applied before logging."
+     ([func expr]
+      `(spy-with :debug ~func ~expr))
+     ([level func expr]
+      `(let [x# ~expr]
+         (log/log ~level
+                  (let [s# (with-out-str
+                             (with-pprint-dispatch code-dispatch
+                               (pprint '(~func ~expr))
+                               (print "=> ")
+                               (pprint (~func x#))))]
+                    (trim-newline s#)))
+         x#))))
