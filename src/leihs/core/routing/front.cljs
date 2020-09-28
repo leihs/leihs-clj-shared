@@ -3,8 +3,10 @@
   (:require-macros
     [reagent.ratom :as ratom :refer [reaction]])
   (:require
+    [leihs.core.defaults :as defaults]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.url.query-params :as query-params]
+    [leihs.core.paths :refer [path]]
 
     [bidi.bidi :as bidi]
     [accountant.core :as accountant]
@@ -86,6 +88,52 @@
                                 (when-not (handler-key @external-handlers*)
                                   handler-key))))}))
 
+(defn form-per-page-component []
+  (let [per-page (or (some-> @state* :query-params :per-page presence)
+                     defaults/PER-PAGE)
+        hk (some-> @state* :handler-key)
+        route-params (or (some-> @state* :route-params) {})
+        query-parameters-normalized (some-> @state* :query-params) ]
+    [:div.form-group.ml-2.mr-2.mt-2
+     [:label.mr-1 {:for :per-page} "Per page"]
+     [:select#per-page.form-control
+      {:value per-page
+       :on-change (fn [e]
+                    (let [val (or (-> e .-target .-value presence) defaults/PER-PAGE)]
+                      (accountant/navigate!
+                        (path hk route-params
+                              (merge query-parameters-normalized
+                                     {:page 1
+                                      :per-page val})))))}
+      (for [p defaults/PER-PAGE-VALUES]
+        [:option {:key p :value p} p])]]))
+
+(defn pagination-component []
+  (let [hk (some-> @state* :handler-key)
+        route-params (or (some-> @state* :route-params) {})
+        query-parameters-normalized (some-> @state* :query-params)
+        current-page (or (:page query-parameters-normalized) 1)]
+    (if-not hk
+      [:div "pagination not ready"]
+      [:div.clearfix.mt-2.mb-2
+       (console.log 'HK (clj->js hk))
+       (let [ppage (dec current-page)
+             ppagepath (path hk route-params
+                             (assoc query-parameters-normalized :page ppage))]
+         [:div.float-left
+          [:a.btn.btn-outline-primary.btn-sm
+           {:class (when (< ppage 1) "disabled")
+            :href ppagepath}
+           [:i.fas.fa-arrow-circle-left] " previous " ]])
+       (let [npage (inc current-page)
+             npagepath (path hk route-params
+                             (assoc query-parameters-normalized
+                                    :page npage))]
+         [:div.float-right
+          [:a.btn.btn-outline-primary.btn-sm
+           {:href npagepath}
+           " next " [:i.fas.fa-arrow-circle-right]]])])))
+
 (defn init [paths resolve-table external-handlers]
   "paths: definition of paths, see bidi;
   resolve-table: mapping from handler-keys to handlers,
@@ -97,5 +145,14 @@
   (init-navigation)
   (accountant/dispatch-current!))
 
+(defn form-reset-component []
+  [:div.form-group.mt-2
+   [:label {:for :reset-query-params} "Reset filters"]
+   [:div
+    [:button#reset-query-params.btn.btn-outline-warning
+     {:on-click #(accountant/navigate!
+                   (path (:handler-key @state*) (:route-params @state*) {}))}
+     [:i.fas.fa-times]
+     " Reset "]]])
 
 (def navigate! accountant/navigate!)
