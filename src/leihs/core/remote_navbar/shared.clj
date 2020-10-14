@@ -4,6 +4,7 @@
             [clojure.set :as set]
             [leihs.core [paths :refer [path]] [sql :as sql]]
             [leihs.core.anti-csrf.back :refer [anti-csrf-token]]
+            [leihs.core.constants :as constants]
             [leihs.core.locale :refer [get-selected-language]]
             [leihs.core.user.permissions :refer
              [borrow-access? managed-inventory-pools]]
@@ -57,6 +58,7 @@
                    (languages tx))]
      {:config {:appTitle "leihs",
                :appColor "gray",
+               :csrfTokenName constants/ANTI_CSRF_TOKEN_FORM_PARAM_NAME,
                :csrfToken csrf-token,
                :me (user-info tx auth-entity locales),
                :subApps (-> (sub-apps tx auth-entity)

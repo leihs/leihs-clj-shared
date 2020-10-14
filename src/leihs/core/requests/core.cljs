@@ -7,6 +7,7 @@
   (:require
     [leihs.core.anti-csrf.front :as anti-csrf]
     [leihs.core.core :refer [str keyword deep-merge presence]]
+    [leihs.core.constants :as constants]
 
     [leihs.core.requests.modal]
     [leihs.core.requests.shared :as shared]
@@ -69,7 +70,7 @@
         progress-chan (async/chan)
         req (deep-merge {:method :post
                          :headers {"accept" "application/json"
-                                   "X-CSRF-Token" (anti-csrf/anti-csrf-token)}
+                                   constants/ANTI_CSRF_TOKEN_HEADER_NAME (anti-csrf/anti-csrf-token)}
                          :progress progress-chan}
                         req-opts)
         meta (deep-merge META-DEFAULTS

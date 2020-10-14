@@ -30,14 +30,14 @@
       boolean not))
 
 (defn x-csrf-token! [request]
-  (or (-> request :headers :x-csrf-token presence)
-      (-> request :headers (get "x-csrf-token" nil))
-      (-> request :form-params :csrf-token)
+  (or (-> request :headers (get (keyword constants/ANTI_CSRF_TOKEN_HEADER_NAME)) presence)
+      (-> request :headers (get constants/ANTI_CSRF_TOKEN_HEADER_NAME nil))
+      (-> request :form-params (get (keyword constants/ANTI_CSRF_TOKEN_FORM_PARAM_NAME)))
       (throw (ex-info "The x-csrf-token has not been send!" {:status 403}))))
 
 (defn anti-csrf-token [request]
   (-> request :cookies
-      (get constants/ANTI_CRSF_TOKEN_COOKIE_NAME nil)
+      (get constants/ANTI_CSRF_TOKEN_COOKIE_NAME nil)
       :value presence))
 
 (defn wrap [handler]
@@ -53,7 +53,7 @@
         (if (and (or (session? request)
                      (not-authenticated? request))
                  (not anti-csrf-token))
-          (assoc-in response [:cookies constants/ANTI_CRSF_TOKEN_COOKIE_NAME]
+          (assoc-in response [:cookies constants/ANTI_CSRF_TOKEN_COOKIE_NAME]
                     {:value (str (UUID/randomUUID))
                      :http-only false
                      :path "/"

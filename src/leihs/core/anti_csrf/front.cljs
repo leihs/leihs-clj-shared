@@ -7,7 +7,7 @@
     ))
 
 (defn anti-csrf-token []
-  (.get goog.net.cookies constants/ANTI_CRSF_TOKEN_COOKIE_NAME))
+  (.get goog.net.cookies constants/ANTI_CSRF_TOKEN_COOKIE_NAME))
 
 (defn hidden-form-group-token-component []
   [:div.form-group
