@@ -24,6 +24,8 @@
 (def inventory-pools [:i.fas.fa-cubes])
 (def my-user [:i.fas.fas-user])
 (def password [:i.fas.fa-key])
+(def settings [:i.fas.fa-cog])
+(def settings-languages [:i.fas.fa-globe])
 (def sign-in [:i.fas.fa-sign-in-alt])
 (def sign-out [:i.fas.fa-sign-out-alt])
 (def system [:i.fas.fa-server])
