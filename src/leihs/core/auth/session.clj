@@ -22,7 +22,7 @@
    :users.firstname
    :users.id
    :users.is_admin
-   :users.language_id
+   :users.language_locale
    :users.lastname
    :users.login
    :users.org_id

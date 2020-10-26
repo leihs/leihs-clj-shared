@@ -54,7 +54,7 @@
          user-language (get-selected-language request)
          locales (map #(as-> % <>
                         (set/rename-keys <> {:default :isDefault})
-                        (assoc <> :isSelected (= (:id %) (:id user-language))))
+                        (assoc <> :isSelected (= (:locale %) (:locale user-language))))
                    (languages tx))]
      {:config {:appTitle "leihs",
                :appColor "gray",
