@@ -82,7 +82,7 @@
                            (->> (filter #(and (.isFile %)
                                               (= (.getParent %) migrations-dir)))
                                 (map (fn [f]
-                                       (-> f 
+                                       (-> f
                                            .getName
                                            (clojure.string/split #"_")
                                            first

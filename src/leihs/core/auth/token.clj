@@ -84,7 +84,6 @@
                  last))))
 
 (defn authenticate [{tx :tx
-                     sba :secret-ba
                      :as request}
                     _handler]
   (catcher/snatch

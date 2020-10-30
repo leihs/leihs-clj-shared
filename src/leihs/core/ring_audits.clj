@@ -2,10 +2,10 @@
   (:refer-clojure :exclude [str keyword])
   (:require [clj-logging-config.log4j :as logging-config]
             [leihs.core.core :refer [keyword str presence]])
-  (:require 
+  (:require
     [leihs.core.constants :as constants]
     [leihs.core.ds :as ds]
-    [leihs.core.ring-exception :as ring-exception] 
+    [leihs.core.ring-exception :as ring-exception]
 
     [clojure.java.jdbc :as jdbc]
 
@@ -23,7 +23,7 @@
 (defn deep-map-clean! [m]
   (->> m
        (map (fn [[k v]]
-              (cond 
+              (cond
                 (= k :password) [k "********"]
                 (= k :token_secret) [k "********"]
                 (map? v)[k (deep-map-clean! v)]
@@ -36,8 +36,7 @@
        (into {})))
 
 (defn clean-keys! [request]
-  (dissoc request 
-          :secret-ba 
+  (dissoc request
           :settings
           :tx ))
 
@@ -57,7 +56,7 @@
                  :data (-> response deep-map-clean!)
                  }))
 
-(defn wrap 
+(defn wrap
   ([handler]
    (fn [request]
      (wrap handler request)))
@@ -67,7 +66,7 @@
      (let [txid (txid (:tx request))]
        (persist-request txid request)
        (let [response (try (handler request)
-                           (catch Exception e 
+                           (catch Exception e
                              (ring-exception/exception-response e)))]
          (persist-response txid response)
          response)))))
