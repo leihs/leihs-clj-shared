@@ -53,6 +53,7 @@
          auth-entity (:authenticated-entity request)
          user-language (get-selected-language request)
          locales (map #(as-> % <>
+                        (dissoc <> [:active])
                         (set/rename-keys <> {:default :isDefault})
                         (assoc <> :isSelected (= (:locale %) (:locale user-language))))
                    (languages tx))]
