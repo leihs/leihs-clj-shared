@@ -14,7 +14,8 @@
 
 (def render-page-base
   "Each subapp MUST INTERN the respective function
-  implementation for THIS VAR in THIS NAMESPACE!")
+  implementation for THIS VAR in THIS NAMESPACE!"
+  nil)
 
 (defn- auth-systems
   [tx]

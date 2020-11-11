@@ -1,18 +1,22 @@
 (ns leihs.core.anti-csrf.back
+  "- The `anti-csrf-token` in cookie is a secret Javascript has no access to.
+   - The frontend gets directly the same secret.
+   - At every request, does not matter from where, the secret cookie is sent
+     (done by the browser).
+   - BUT: only requests from the frontend have directly got the secret and
+     thus can send it back to server via the form data.
+   - Then the comparison with the cookie proves the origin of the request."
   (:refer-clojure :exclude [str keyword])
   (:require
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.constants :as constants]
-
+    [clj-logging-config.log4j :as logging-config]
     [clojure.tools.logging :as logging]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug :refer [I>]]
-    [logbug.thrown :as thrown]
-
-    )
+    [logbug.thrown :as thrown])
   (:import
-    [java.util UUID]
-    ))
+    [java.util UUID]))
 
 (defn http-safe? [request]
   (boolean (constants/HTTP_SAVE_METHODS
@@ -36,9 +40,12 @@
       (throw (ex-info "The x-csrf-token has not been send!" {:status 403}))))
 
 (defn anti-csrf-token [request]
-  (-> request :cookies
-      (get constants/ANTI_CSRF_TOKEN_COOKIE_NAME nil)
-      :value presence))
+  (or (:anti-csrf-token request)
+      (-> request
+          :cookies
+          (get constants/ANTI_CSRF_TOKEN_COOKIE_NAME nil)
+          :value
+          presence)))
 
 (defn wrap [handler]
   (fn [request]
@@ -49,16 +56,18 @@
         (when-not (= anti-csrf-token (x-csrf-token! request))
           (throw (ex-info (str "The x-csrf-token is not equal to the "
                                "anti-csrf cookie value.") {:status 403}))))
-      (let [response (handler request)]
-        (if (and (or (session? request)
-                     (not-authenticated? request))
-                 (not anti-csrf-token))
-          (assoc-in response [:cookies constants/ANTI_CSRF_TOKEN_COOKIE_NAME]
-                    {:value (str (UUID/randomUUID))
-                     :http-only false
-                     :path "/"
-                     :secure false})
-          response)))))
+      (let [anti-csrf-token-new (when-not (presence anti-csrf-token)
+                                  (str (UUID/randomUUID)))]
+        (-> request
+            (cond-> anti-csrf-token-new
+              (assoc :anti-csrf-token anti-csrf-token-new))
+            handler
+            (cond-> anti-csrf-token-new
+              (assoc-in [:cookies constants/ANTI_CSRF_TOKEN_COOKIE_NAME]
+                        {:value anti-csrf-token-new
+                         :http-only false
+                         :path "/"
+                         :secure false})))))))
 
 ;#### debug ###################################################################
 ;(logging-config/set-logger! :level :debug)
