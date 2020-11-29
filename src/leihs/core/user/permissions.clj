@@ -19,14 +19,15 @@
 
 (defn user-direct-access-right-subquery [user-id roles]
   (-> (sql/select :1)
-      (sql/from :access_rights)
-      (sql/merge-where [:= :inventory_pools.id :access_rights.inventory_pool_id])
-      (sql/merge-where [:= :access_rights.user_id user-id])
-      (sql/merge-where [:in :access_rights.role roles])))
+      (sql/from :direct_access_rights)
+      (sql/merge-where [:= :inventory_pools.id :direct_access_rights.inventory_pool_id])
+      (sql/merge-where [:= :direct_access_rights.user_id user-id])
+      (sql/merge-where [:in :direct_access_rights.role roles])))
 
 (defn user-group-access-right-subquery [user-id roles]
   (-> (sql/select :1)
       (sql/from :group_access_rights)
+      (sql/merge-where [:= :inventory_pools.id :group_access_rights.inventory_pool_id])
       (sql/merge-where [:in :group_access_rights.role roles])
       (sql/merge-join :groups [:= :groups.id  :group_access_rights.group_id])
       (sql/merge-join :groups_users [:= :groups_users.group_id :groups.id])
