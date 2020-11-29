@@ -8,7 +8,13 @@
             [leihs.core.locale :refer [get-selected-language]]
             [leihs.core.user.permissions :refer
              [borrow-access? managed-inventory-pools]]
-            [leihs.core.user.permissions.procure :as procure]))
+            [leihs.core.user.permissions.procure :as procure]
+
+            [clojure.tools.logging :as logging]
+            [logbug.catcher :as catcher]
+            [logbug.debug :as debug :refer [I>]]
+            [logbug.ring :refer [wrap-handler-with-logging]]
+            [logbug.thrown :as thrown]))
 
 (defn- languages
   [tx]
@@ -65,3 +71,9 @@
                :subApps (-> (sub-apps tx auth-entity)
                             (merge subapps-override)),
                :locales locales}})))
+
+
+;#### debug ###################################################################
+;(logging-config/set-logger! :level :debug)
+;(logging-config/set-logger! :level :info)
+;(debug/debug-ns *ns*)

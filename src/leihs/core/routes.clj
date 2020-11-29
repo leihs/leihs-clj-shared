@@ -18,7 +18,7 @@
   #{:external-authentication-sign-in
     :sign-in})
 
-(def all-granted (constantly {:allowed? true}))
+(def all-granted (constantly true))
 
 (def resolve-table
   {:external-authentication-request  {:handler external-authentication/routes

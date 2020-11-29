@@ -10,7 +10,14 @@
      [sql :as sql]]
     [leihs.core.remote-navbar.shared :refer [navbar-props]]
     [leihs.core.shared :refer [head]]
-    [leihs.core.ssr-engine :as js-engine]))
+    [leihs.core.ssr-engine :as js-engine]
+
+    [clojure.tools.logging :as logging]
+    [logbug.catcher :as catcher]
+    [logbug.debug :as debug :refer [I>]]
+    [logbug.ring :refer [wrap-handler-with-logging]]
+    [logbug.thrown :as thrown]
+    ))
 
 (def render-page-base
   "Each subapp MUST INTERN the respective function

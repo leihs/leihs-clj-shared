@@ -1,15 +1,17 @@
 (ns leihs.core.routing.front
   (:refer-clojure :exclude [str keyword])
   (:require-macros
-    [reagent.ratom :as ratom :refer [reaction]])
+    [reagent.ratom :as ratom :refer [reaction]]
+    [cljs.core.async.macros :refer [go]])
   (:require
     [leihs.core.defaults :as defaults]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.url.query-params :as query-params]
     [leihs.core.paths :refer [path]]
 
-    [bidi.bidi :as bidi]
     [accountant.core :as accountant]
+    [bidi.bidi :as bidi]
+    [cljs.core.async :refer [timeout]]
     [clojure.pprint :refer [pprint]]
     [reagent.core :as reagent]
     [timothypratley.patchin :as patchin]
@@ -28,7 +30,7 @@
   "handlers is a map of keys to functions where the keys :did-mount,
   :did-update, etc correspond to the react lifcycle methods.
   The custom :did-change will fire routing state changes including did-mount.
-  In contrast do :did-mount, :did-change will not fire when other captured state changes."
+  In contrast do :did-update, :did-change will not fire when other captured state changes."
   (let [old-state* (reagent/atom nil)
         eval-did-change (fn [handler args]
                           (let [old-state @old-state*
@@ -93,16 +95,18 @@
                      defaults/PER-PAGE)
         hk (some-> @state* :handler-key)
         route-params (or (some-> @state* :route-params) {})
-        query-parameters-normalized (some-> @state* :query-params) ]
+        query-parameters (some-> @state* :query-params-raw) ]
     [:div.form-group.ml-2.mr-2.mt-2
      [:label.mr-1 {:for :per-page} "Per page"]
      [:select#per-page.form-control
       {:value per-page
+       :tab-index 100
        :on-change (fn [e]
-                    (let [val (or (-> e .-target .-value presence) defaults/PER-PAGE)]
+                    (let [val (int (or (some-> e .-target .-value presence)
+                                       defaults/PER-PAGE))]
                       (accountant/navigate!
                         (path hk route-params
-                              (merge query-parameters-normalized
+                              (merge query-parameters
                                      {:page 1
                                       :per-page val})))))}
       (for [p defaults/PER-PAGE-VALUES]
@@ -111,15 +115,15 @@
 (defn pagination-component []
   (let [hk (some-> @state* :handler-key)
         route-params (or (some-> @state* :route-params) {})
-        query-parameters-normalized (some-> @state* :query-params)
-        current-page (or (:page query-parameters-normalized) 1)]
+        query-parameters (some-> @state* :query-params-raw)
+        current-page (or (some-> query-parameters :page int) 1)]
     (if-not hk
       [:div "pagination not ready"]
       [:div.clearfix.mt-2.mb-2
-       (console.log 'HK (clj->js hk))
+       ;(console.log 'HK (clj->js hk))
        (let [ppage (dec current-page)
              ppagepath (path hk route-params
-                             (assoc query-parameters-normalized :page ppage))]
+                             (assoc query-parameters :page ppage))]
          [:div.float-left
           [:a.btn.btn-outline-primary.btn-sm
            {:class (when (< ppage 1) "disabled")
@@ -127,12 +131,19 @@
            [:i.fas.fa-arrow-circle-left] " previous " ]])
        (let [npage (inc current-page)
              npagepath (path hk route-params
-                             (assoc query-parameters-normalized
-                                    :page npage))]
+                             (assoc query-parameters :page npage))]
          [:div.float-right
           [:a.btn.btn-outline-primary.btn-sm
            {:href npagepath}
            " next " [:i.fas.fa-arrow-circle-right]]])])))
+
+(defn current-path-for-query-params
+  [default-query-params new-query-params]
+  (path (:handler-key @state*)
+        (:route-params @state*)
+        (merge default-query-params
+               (:query-params-raw @state*)
+               new-query-params)))
 
 (defn init [paths resolve-table external-handlers]
   "paths: definition of paths, see bidi;
@@ -145,13 +156,59 @@
   (init-navigation)
   (accountant/dispatch-current!))
 
-(defn form-reset-component []
+
+
+;;; form-term-filter-component ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce term-value* (reagent/atom ""))
+
+(defn form-term-filter-on-change-handler [event default-query-params]
+  (let [newval (or (some-> event .-target .-value presence) "")]
+    (reset! term-value* newval)
+    (go (<! (timeout 350))
+        (when (= @term-value* newval)
+          (accountant/navigate!
+            (current-path-for-query-params
+              default-query-params
+              {:page 1 :term @term-value*}))))))
+
+(defn form-term-filter-component
+  [& {:keys [:default-query-params :input-options :placeholder]
+      :or {default-query-params {}
+           input-options {}
+           placeholder "fuzzy term"}}]
+  [:div.form-group.ml-2.mr-2.mt-2.col-md-3
+   [hidden-state-component
+    {:did-mount #(reset! term-value* (-> @state* :query-params-raw :term))}]
+   [:label {:for :term} "Search"]
+   [:input#term.form-control.mb-1.mr-sm-1.mb-sm-0
+    (merge
+      {:type :text
+       :placeholder placeholder
+       :tab-index 1
+       :value @term-value*
+       :on-change #(form-term-filter-on-change-handler % default-query-params)}
+      input-options)]])
+
+
+;;; form reset component ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn form-reset-component [& {:keys [default-query-params]
+                               :or {default-query-params nil}}]
   [:div.form-group.mt-2
    [:label {:for :reset-query-params} "Reset filters"]
    [:div
     [:button#reset-query-params.btn.btn-outline-warning
-     {:on-click #(accountant/navigate!
-                   (path (:handler-key @state*) (:route-params @state*) {}))}
+     {:tab-index 1
+      :on-click #(do
+                   (reset! term-value* "")
+                   (accountant/navigate!
+                     (path (:handler-key @state*)
+                           (:route-params @state*)
+                           (if default-query-params
+                             (merge (:query-params-raw @state*)
+                                    default-query-params)
+                             {}))))}
      [:i.fas.fa-times]
      " Reset "]]])
 

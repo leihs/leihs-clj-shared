@@ -23,6 +23,10 @@
     [reagent.core :as reagent]))
 
 
+
+(defonce request-delay* (atom 0))
+
+
 ;;; request per se ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def META-DEFAULTS {:autoremove-on-success true
@@ -46,7 +50,6 @@
                    (assoc-in state [:requests id :progress] progress)))
                id progress))))
 
-(def request-delay* (atom 0))
 
 (defn request [id req meta chan callback]
   (go (<! (timeout @request-delay*))

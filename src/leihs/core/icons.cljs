@@ -15,6 +15,7 @@
 (def delegations delegation)
 (def delete [:i.fas.fa-times])
 (def edit [:i.fas.fa-edit])
+(def email [:i.fas.fa-envelope])
 (def entitlement-groups [:i.fas.object-group])
 (def group [:i.fas.fa-users])
 (def groups [:i.fas.fa-users])
@@ -34,4 +35,5 @@
 (def users [:i.fas.fa-user-friends])
 (def users-in-admin [:i.fas.fa-users-cog])
 (def view [:i.fas.fa-eye])
+(def save [:i.fas.fa-save])
 (def waiting [:i.fas.fa-sync-alt.fa-spin])

@@ -7,6 +7,12 @@
 
     [bidi.bidi :as bidi]
     [bidi.ring :refer [make-handler]]
+
+    [clojure.tools.logging :as logging]
+    [logbug.catcher :as catcher]
+    [logbug.debug :as debug :refer [I>]]
+    [logbug.ring :refer [wrap-handler-with-logging]]
+    [logbug.thrown :as thrown]
     ))
 
 ;;; resolving by handler ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -93,3 +99,8 @@
   (reset! paths* paths)
   (reset! resolve-table* resolve-table))
 
+
+;#### debug ###################################################################
+;(logging-config/set-logger! :level :debug)
+;(logging-config/set-logger! :level :info)
+;(debug/debug-ns *ns*)

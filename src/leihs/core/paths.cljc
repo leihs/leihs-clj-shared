@@ -21,7 +21,7 @@
           (branch "/borrow"
                   (leaf "" :borrow)
                   (leaf "/user/documents" :user-documents))
-          (branch "/manage" 
+          (branch "/manage"
                   (leaf "" :manage)
                   (branch "/" (param :inventory_pool_id)
                           (leaf "/daily" :daily)))
@@ -40,6 +40,24 @@
 
 (def paths* (atom core-paths))
 
+;(bidi.bidi/route-seq @paths*)
+
+
+(defn encode-route-param [param]
+  "Encode route-param but keep the first : because we use this
+  in pathmatchers frequently."
+  (let [first-letter (apply str (take 1 (str param)))
+        rest-letters (apply str (drop 1 (str param)))]
+    (str "" (if (= first-letter ":")
+              first-letter
+              (query-params/encode-primitive first-letter))
+         (query-params/encode-primitive rest-letters))))
+
+
+(defn encode-route-params [m]
+  (zipmap (keys m)
+          (map encode-route-param (vals m))))
+
 (defn path
   ([kw]
    (path kw {}))
@@ -47,6 +65,7 @@
    (apply (partial path-for @paths* kw)
           (->> route-params
                (merge {:user-id "me"})
+               encode-route-params
                (into []) flatten)))
   ([kw route-params query-params]
    (str (path kw route-params) "?"

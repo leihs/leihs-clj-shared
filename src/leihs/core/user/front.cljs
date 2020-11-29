@@ -5,16 +5,16 @@
     [cljs.core.async.macros :refer [go]]
     )
   (:require
+
     [leihs.core.constants]
-    [leihs.core.dom :as dom]
     [leihs.core.core :refer [keyword str presence]]
+    [leihs.core.dom :as dom]
     [leihs.core.paths :refer [path]]
     [leihs.core.requests.core :as requests]
     [leihs.core.routing.front :as routing]
     [leihs.core.sign-in.front :as sign-in]
     [leihs.core.sign-out.front :as sign-out]
     [leihs.core.user.shared :as shared]
-
     [cljs.core.async :as async]
     [cljsjs.moment]
     [clojure.pprint :refer [pprint]]
@@ -24,6 +24,10 @@
 
 
 (def state* shared/state*)
+
+(def admin?* (reaction (:is_admin @state*)))
+
+;(defonce admin-scopes?* (reaction (auth-core/admin-scopes? @state* nil)))
 
 (defn load-user-data-from-dom [& args]
   (when-not @state*
