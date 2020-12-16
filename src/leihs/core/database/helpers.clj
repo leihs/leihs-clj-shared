@@ -8,4 +8,6 @@
       (sql/where [:= :table_name table-name])
       sql/format
       (->> (jdbc/query tx)
-           (map (comp keyword :column_name)))))
+           (map (comp keyword
+                      (partial str table-name ".")
+                      :column_name)))))
