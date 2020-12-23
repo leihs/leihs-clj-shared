@@ -23,6 +23,7 @@
 (defn persist-request [txid request]
   (jdbc/insert! @ds/ds :audited_requests
                 {:txid txid
+                 :http_uid (-> request :headers (get "http-uid"))
                  :url (-> request :uri)
                  :user_id (-> request :authenticated-entity :id)
                  :method (-> request :request-method str)}))
