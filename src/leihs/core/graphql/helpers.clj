@@ -42,14 +42,16 @@
                           ; convert to ""
                           :exception n}))))))
 
-(defn wrap-resolver-with-camelCase [resolver]
+(defn wrap-resolver-with-camelCase
   "Change case type for the keys in the result map."
+  [resolver]
   (fn [context args value]
     (transform-keys csk/->camelCase
                     (resolver context args value))))
 
-(defn wrap-resolver-with-kebab-case [resolver]
-  "Change case type for the keys in the args map."
+(defn wrap-resolver-with-kebab-case
+  "Change case type for the keys in the args and value map."
+  [resolver]
   (fn [context args value]
     (resolver context
               (transform-keys csk/->kebab-case args)
