@@ -68,6 +68,14 @@
                encode-route-params
                (into []) flatten)))
   ([kw route-params query-params]
-   (str (path kw route-params) "?"
-        (query-params/encode query-params))))
+   (let [p (path kw route-params)
+         q (query-params/encode query-params)]
+     (if (presence q)
+       (str p "?" q)
+       p)))
+  ([kw route-params query-params fragment]
+   (let [p (path kw route-params query-params)]
+     (if (presence fragment)
+       (str p "#" fragment)
+       p ))))
 

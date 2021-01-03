@@ -44,6 +44,8 @@
 (defonce ds (atom nil))
 (defn get-ds [] @ds)
 
+; TODO only start transcation when HTTP-unsafe
+;  or :sign-or or :external-authentication-sign-in, see also audits
 (defn wrap-tx [handler]
   (fn [request]
     (jdbc/with-db-transaction [tx @ds]
@@ -82,7 +84,7 @@
                            (->> (filter #(and (.isFile %)
                                               (= (.getParent %) migrations-dir)))
                                 (map (fn [f]
-                                       (-> f 
+                                       (-> f
                                            .getName
                                            (clojure.string/split #"_")
                                            first

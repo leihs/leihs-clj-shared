@@ -8,14 +8,15 @@
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.url.query-params :as query-params]
     [leihs.core.paths :refer [path]]
+    [leihs.core.icons :as icons]
 
     [accountant.core :as accountant]
     [bidi.bidi :as bidi]
     [cljs.core.async :refer [timeout]]
     [clojure.pprint :refer [pprint]]
     [reagent.core :as reagent]
-    [timothypratley.patchin :as patchin]
-    ))
+    [timothypratley.patchin :as patchin])
+  (:import goog.Uri))
 
 
 (def paths* (reagent/atom nil))
@@ -25,6 +26,8 @@
 (def external-handlers* (reagent/atom nil))
 
 (defonce state* (reagent/atom {}))
+
+(def current-url* (reaction (:url @state*)))
 
 (defn hidden-state-component [handlers]
   "handlers is a map of keys to functions where the keys :did-mount,
@@ -64,6 +67,26 @@
 
 (defn match-path [path]
   (bidi/match-route @paths* path))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn dissect-href [href]
+  (let [uri (.parse Uri href)
+        path (.getPath uri)
+        {route-params :route-params
+         handler-key :handler} (match-path path)
+        query (.getQuery uri)
+        fragment (.getFragment uri)]
+    {:url href
+     :path path
+     :handler-key handler-key
+     :route-params route-params
+     :query-params-raw (query-params/decode query :parse-json? false)
+     :query-params (query-params/decode query :parse-json? true)
+     :fragment fragment}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defn init-navigation []
   (accountant/configure-navigation!
@@ -157,6 +180,54 @@
   (accountant/dispatch-current!))
 
 
+
+;;; ;;;;;;;;;;;;;;;;;;;;;;;;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn delayed-query-params-input-component
+  [& {:keys [input-options query-params-key label prepend]
+      :or {input-options {}
+           query-params-key "replace-me"
+           label "LABEL"
+           prepend nil}}]
+  (let [value* (reagent/atom "")]
+    (fn [& _]
+      [:div.form-group.m-2
+       [hidden-state-component
+        {:did-change #(reset! value* (-> @state* :query-params-raw query-params-key))}]
+       [:label {:for query-params-key} [:span label [:small.text-monospace " (" query-params-key ")"]]]
+       [:div.input-group
+        (when prepend [prepend])
+        [:input.form-control
+         (merge
+           {:id query-params-key
+            :value @value*
+            :tab-index 1
+            :placeholder query-params-key
+            :on-change (fn [e]
+                         (let [newval (or (some-> e .-target .-value presence) "")]
+                           (reset! value* newval)
+                           (go (<! (timeout 500))
+                               (when (= @value* newval)
+                                 (accountant/navigate!
+                                   (path (:handler-key @state*)
+                                         (:route-params @state*)
+                                         (merge {}
+                                                (:query-params-raw @state*)
+                                                {:page 1
+                                                 query-params-key newval})))))))}
+           input-options)]
+        [:div.input-group-append
+         [:button.btn.btn-outline-warning
+          {:on-click (fn [_]
+                       (reset! value* "")
+                       (accountant/navigate!
+                         (path (:handler-key @state*)
+                               (:route-params @state*)
+                               (merge {}
+                                      (:query-params-raw @state*)
+                                      {:page 1
+                                       query-params-key ""}))))}
+          icons/delete]]]])))
 
 ;;; form-term-filter-component ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

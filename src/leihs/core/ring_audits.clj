@@ -5,6 +5,7 @@
   (:require
     [leihs.core.constants :as constants]
     [leihs.core.ds :as ds]
+    [leihs.core.sql :as sql]
     [leihs.core.ring-exception :as ring-exception]
 
     [clojure.java.jdbc :as jdbc]
@@ -24,9 +25,24 @@
   (jdbc/insert! @ds/ds :audited_requests
                 {:txid txid
                  :http_uid (-> request :headers (get "http-uid"))
-                 :url (-> request :uri)
+                 :path (-> request :uri)
                  :user_id (-> request :authenticated-entity :id)
                  :method (-> request :request-method str)}))
+
+(defn update-request-user-id-from-session [txid tx]
+  "A note to the tx: this one must be run in the transaction
+  otherwise it will not see the row in the user_sessions "
+  (->> (-> (sql/update :audited_requests)
+           (sql/set {:user_id :user_sessions.user_id})
+           (sql/from :user_sessions)
+           (sql/join :audited_changes
+                     [:and
+                      [:= :audited_changes.txid txid]
+                      (sql/raw " audited_changes.table_name = 'user_sessions'")
+                      [:= :user_sessions.id (sql/call :cast :audited_changes.pkey :uuid)]])
+           (sql/merge-where [:= :audited_requests.txid txid])
+           sql/format)
+       (jdbc/execute! tx)))
 
 (defn persist-response [txid response]
   (jdbc/insert! @ds/ds :audited_responses
@@ -37,8 +53,11 @@
   ([handler]
    (fn [request]
      (wrap handler request)))
-  ([handler request]
-   (if-not ((-> request :request-method) constants/HTTP_UNSAVE_METHODS)
+  ([handler {handler-key :handler-key
+             method :request-method
+             tx :tx :as request}]
+   (if-not (or (constants/HTTP_UNSAVE_METHODS method)
+               (= handler-key :external-authentication-sign-in))
      (handler request)
      (let [txid (txid (:tx request))]
        (persist-request txid request)
@@ -46,6 +65,8 @@
                            (catch Exception e
                              (ring-exception/exception-response e)))]
          (persist-response txid response)
+         (when (#{:external-authentication-sign-in :sign-in} handler-key)
+           (update-request-user-id-from-session txid tx))
          response)))))
 
 ;#### debug ###################################################################

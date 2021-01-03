@@ -10,6 +10,9 @@
     [honeysql-postgres.helpers :as pg-helpers]
     [honeysql-postgres.format :as pg-format]
 
+    [leihs.core.core :refer [presence]]
+
+    [clojure.string :as string]
     ))
 
 ; regex
@@ -29,6 +32,21 @@
 ; arrays: overlaps
 (defmethod format/fn-handler "&&" [_ array1 array2]
   (str (format/to-sql array1) " && " (format/to-sql array2)))
+
+(defn expand-text-search-terms [terms]
+  (str "(" (string/join
+             " && "
+             (map (fn [term]
+                    (format/to-sql (types/call :to_tsquery term)))
+                  terms)) ")"))
+
+(defmethod format/fn-handler "@@" [_ field term]
+  (let [terms (->> (-> term (string/split #"\s+"))
+                   (map presence)
+                   (filter identity))]
+    (str (format/to-sql (types/call :to_tsvector field))
+         " @@ " (expand-text-search-terms terms))))
+
 
 (defn dedup-join [honeymap]
   (assoc honeymap :join

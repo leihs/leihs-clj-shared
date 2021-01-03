@@ -85,7 +85,8 @@
                             (get handler-key)
                             :authorizers)]
     (when (nil? authorizers)
-      (throw (ex-info (str "No authorizers for handler " handler-key " are defined!")
+      (throw (ex-info (str "No authorizers for the handler " handler-key " are defined! "
+                           "This is most likely a programming error.")
                       {:status 555})))
     (if (some
           (fn [authorizer] (-> request authorizer))

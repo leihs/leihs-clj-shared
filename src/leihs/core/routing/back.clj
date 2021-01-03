@@ -4,6 +4,7 @@
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.json :as json]
     [leihs.core.json-protocol]
+    [leihs.core.sql :as sql]
 
     [bidi.bidi :as bidi]
     [bidi.ring :refer [make-handler]]
@@ -45,6 +46,9 @@
                           (#(cond (map? %) (:handler %)
                                   (and (nil? %) fallback-handler) fallback-handler
                                   :else %)))]
+       (if-not handler-key
+         (throw (ex-info "No handler-key, route could not be resolved to a handler."
+                         {:status 551})))
        (handler (assoc request
                        :route-params route-params
                        :handler-key handler-key
@@ -83,7 +87,6 @@
 
 ;;; misc helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (defn wrap-add-vary-header [handler]
   "should be used if content varies based on `Accept` header, e.g. if using `ring.middleware.accept`"
   (fn [request]
@@ -95,9 +98,46 @@
     (or (handler request)
         {:status 404})))
 
+
+;;; pagination ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn set-per-page-and-offset
+  ([query {{per-page :per-page page :page} :query-params}]
+   (when (or (-> per-page presence not)
+             (-> per-page integer? not)
+             (> per-page 1000)
+             (< per-page 1))
+     (throw (ex-info "The query parameter per-page must be present and set to an integer between 1 and 1000."
+                     {:status 422})))
+   (when (or (-> page presence not)
+             (-> page integer? not)
+             (< page 0))
+     (throw (ex-info "The query parameter page must be present and set to a positive integer."
+                     {:status 422})))
+   (set-per-page-and-offset query per-page page))
+  ([query per-page page]
+   (-> query
+       (sql/limit per-page)
+       (sql/offset (* per-page (- page 1))))))
+
+
+;;; default-query-params-mixin ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn wrap-mixin-default-query-params [handler default-query-params]
+  (fn [request]
+    (-> request
+        (update-in [:query-params] #(merge default-query-params %))
+        (update-in [:query-params-raw] #(merge default-query-params %))
+        handler )))
+
+
+;;; init ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn init [paths resolve-table]
   (reset! paths* paths)
   (reset! resolve-table* resolve-table))
+
+
 
 
 ;#### debug ###################################################################

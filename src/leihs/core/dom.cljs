@@ -24,4 +24,3 @@
        (catch js/Object e
          (js/console.log e)
          nil)))
-
