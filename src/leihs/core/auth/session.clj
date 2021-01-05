@@ -50,7 +50,7 @@
                       [:= :authentication_systems.id
 
                        :user_sessions.authentication_system_id])
-      (sql/merge-join :settings [:= :settings.id 0])
+      (sql/merge-join :system_and_security_settings [:= :system_and_security_settings.id 0])
       (sql/merge-where (sql/call
                          := :user_sessions.token_hash
                          (sql/call :encode
@@ -58,13 +58,13 @@
                                    "hex")))
       (sql/merge-where
         (sql/raw (str "now() < user_sessions.created_at + "
-                      " settings.sessions_max_lifetime_secs * interval '1 second'")))
+                      "system_and_security_settings.sessions_max_lifetime_secs * interval '1 second'")))
       (sql/merge-where [:= :account_enabled true])
       sql/format))
 
 
 
-(defn authenticated-user-entity [session-token tx]
+(defn authenticated-user-entity [session-token {tx :tx :as request}]
   (when-let [user (->>
                     (user-with-valid-session-query session-token)
                     (jdbc/query tx) first)]
@@ -88,7 +88,7 @@
        :return-expr request}
       (if-let [user (some-> request
                             session-token
-                            (authenticated-user-entity (:tx request)))]
+                            (authenticated-user-entity request))]
         (assoc request :authenticated-entity user)
         request)))
 

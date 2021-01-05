@@ -1,12 +1,34 @@
 (ns leihs.core.settings
+  (:refer-clojure :exclude [str keyword])
   (:require
+    [leihs.core.core :refer [keyword str presence]]
+    [leihs.core.sql :as sql]
+
     [clojure.java.jdbc :as jdbc]
+
+    [logbug.debug :as debug]
     [clojure.tools.logging :as logging]
-    [logbug.debug :as debug]))
+    ))
+
+
+(def selected-rows
+  [:system_and_security_settings.external_base_url
+   :system_and_security_settings.sessions_force_secure
+   :system_and_security_settings.sessions_force_uniqueness
+   :system_and_security_settings.sessions_max_lifetime_secs
+   [:smtp_settings.default_from_address :smtp_default_from_address]])
+
+(def settings-base-query
+  (-> (apply sql/select selected-rows)
+      (sql/from :settings)
+      (sql/merge-join :system_and_security_settings
+                      [:= :settings.id :system_and_security_settings.id])
+      (sql/merge-join :smtp_settings
+                      [:= :settings.id :smtp_settings.id])))
 
 (defn settings! [tx]
-  (or (->> ["SELECT * FROM settings"] (jdbc/query tx) first)
-      (first (jdbc/insert! tx :settings {:id 0}))
+  (or (->> (-> settings-base-query sql/format)
+           (jdbc/query tx) first)
       (throw (IllegalStateException. "No settings here!"))))
 
 (defn wrap

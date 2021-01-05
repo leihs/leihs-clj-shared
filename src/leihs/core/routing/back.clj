@@ -45,14 +45,14 @@
                           (get handler-key)
                           (#(cond (map? %) (:handler %)
                                   (and (nil? %) fallback-handler) fallback-handler
-                                  :else %)))]
-       (if-not handler-key
-         (throw (ex-info "No handler-key, route could not be resolved to a handler."
-                         {:status 551})))
-       (handler (assoc request
-                       :route-params route-params
-                       :handler-key handler-key
-                       :handler handler-fn))))))
+                                  :else %)))
+           request (assoc request :route-params route-params
+                          :handler-key handler-key
+                          :handler handler-fn)
+           resp (or  (handler request) {})]
+       (if (and (not handler-key) (-> resp :status not))
+         (assoc resp :status 404)
+         resp)))))
 
 
 ;;; canonicalize request map ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

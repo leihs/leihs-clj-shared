@@ -230,7 +230,7 @@
          {:flashMessages [error-flash-invalid-password]})})))
 
 (defn sign-in-get
-  [{tx :tx, settings :settings, {user-param :user} :query-params, :as request}]
+  [{tx :tx :as request}]
   (if-let [user (:authenticated-entity request)]
     ; shortcut: if already signed in, skip everything but redirect like succcess
     (redirect (redirect-target tx user))
@@ -239,7 +239,6 @@
 (defn sign-in-post
   [{tx :tx,
     {user-param :user, password :password} :form-params,
-    settings :settings,
     :as request}]
   ; shortcut: if already signed in, skip everything but redirect like succcess
   (if-let [user (:authenticated-entity request)]

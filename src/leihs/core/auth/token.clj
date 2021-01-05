@@ -38,6 +38,7 @@
         :scope_admin_write
         :scope_system_admin_read
         :scope_system_admin_write
+        [:users.id :id]
         [:users.id :user_id]
         :is_admin :account_enabled :firstname :lastname :email
         [:api_tokens.id :api_token_id]

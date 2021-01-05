@@ -26,7 +26,7 @@
                 {:txid txid
                  :http_uid (-> request :headers (get "http-uid"))
                  :path (-> request :uri)
-                 :user_id (-> request :authenticated-entity :id)
+                 :user_id (-> request :authenticated-entity :user_id)
                  :method (-> request :request-method str)}))
 
 (defn update-request-user-id-from-session [txid tx]
