@@ -5,9 +5,9 @@
     [cljs.core.async.macros :refer [go]]
     )
   (:require
-
     [leihs.core.constants]
     [leihs.core.core :refer [keyword str presence]]
+    [leihs.core.digest]
     [leihs.core.dom :as dom]
     [leihs.core.paths :refer [path]]
     [leihs.core.requests.core :as requests]
@@ -16,7 +16,6 @@
     [leihs.core.sign-out.front :as sign-out]
     [leihs.core.user.shared :as shared]
     [cljs.core.async :as async]
-    [cljsjs.moment]
     [clojure.pprint :refer [pprint]]
     [goog.string :as gstring]
     [reagent.core :as reagent]
