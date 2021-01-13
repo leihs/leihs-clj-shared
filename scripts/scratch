@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+egrep -R -l 'routing-state' src/ | xargs -o -I {} vim "+%s/\vrouting-state/routing\/state/gI" '+wq' {}
+
+grep -R -l 'state/hidden-routing-state-component' src/ | xargs -o -I {} vim "+%s/\vstate\/hidden-routing-state-component/routing\/hidden-state-component/gI" '+wq' {}
+
+grep -R -l 'state/user' src/ | xargs -o -I {} vim '+%s/\vstate\/user/core-user\/state/gI' '+wq' {}

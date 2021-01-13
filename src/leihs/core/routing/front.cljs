@@ -72,11 +72,11 @@
 
 (defn dissect-href [href]
   (let [uri (.parse Uri href)
-        path (.getPath uri)
+        path (.getPath ^js uri)
         {route-params :route-params
          handler-key :handler} (match-path path)
-        query (.getQuery uri)
-        fragment (.getFragment uri)]
+        query (.getQuery ^js uri)
+        fragment (.getFragment ^js uri)]
     {:url href
      :path path
      :handler-key handler-key

@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-egrep -R -l "leihs.core.utils."  src/ leihs-clj-shared/src/ | xargs -o -I {} vim "+%s/\vleihs.core.utils.(\S+)/leihs.core.\1/gI" '+wq' {}
-
-

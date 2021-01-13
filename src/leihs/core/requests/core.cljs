@@ -16,7 +16,6 @@
     [cljs-uuid-utils.core :as uuid]
     [cljs.core.async :as async]
     [cljs.core.async :refer [timeout]]
-    [cljsjs.moment]
     [clojure.pprint :refer [pprint]]
     [goog.string :as gstring]
     [goog.string.format]
@@ -59,7 +58,7 @@
                  update-in [:requests id]
                  (fn [req resp]
                    (merge req {:response resp
-                               :responsed_at (js/moment)}))
+                               :responsed_at (js/Date.)}))
                  resp)
           (when (and (shared/response-success? resp)
                      (:autoremove-on-success meta))
@@ -86,7 +85,7 @@
             :meta meta
             :id id
             :key id
-            :requested_at (js/moment)
+            :requested_at (js/Date.)
             })
     (update-progress id progress-chan)
     (request id req meta chan callback)

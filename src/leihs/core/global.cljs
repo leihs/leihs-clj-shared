@@ -8,18 +8,17 @@
     [leihs.core.core :refer [keyword str presence]]
 
     [cljs.core.async :as async]
-    [cljsjs.moment]
     [clojure.pprint :refer [pprint]]
     [reagent.core :as reagent]
     ))
 
 
-(def timestamp* (reagent/atom (js/moment)))
+(def timestamp* (reagent/atom (js/Date.)))
 
 (defn init []
   (go
     (loop []
       (async/<! (async/timeout 250))
-      (reset! timestamp* (js/moment))
+      (reset! timestamp* (js/Date.))
       (recur))))
 
