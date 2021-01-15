@@ -12,9 +12,12 @@
 
     [accountant.core :as accountant]
     [bidi.bidi :as bidi]
+    [cljs-uuid-utils.core :as uuid]
     [cljs.core.async :refer [timeout]]
     [clojure.pprint :refer [pprint]]
+    [clojure.string :as string]
     [reagent.core :as reagent]
+    [taoensso.timbre :as logging]
     [timothypratley.patchin :as patchin])
   (:import goog.Uri))
 
@@ -96,6 +99,7 @@
                           location-href (-> js/window .-location .-href)
                           location-url (goog.Uri. location-href)]
                       (swap! state* assoc
+                             :id (uuid/uuid-string (uuid/make-random-uuid))
                              :route-params route-params
                              :handler-key handler-key
                              :page (resolve-page handler-key)
@@ -104,61 +108,12 @@
                              :query-params-raw (-> location-url .getQuery
                                                    (query-params/decode :parse-json? false))
                              :query-params (-> location-url .getQuery
-                                               query-params/decode))
-                      ;(js/console.log (with-out-str (pprint [handler-key route-params])))
-                      ))
+                                               query-params/decode))))
      :path-exists? (fn [path]
                      ;(js/console.log (with-out-str (pprint (match-path path))))
                      (boolean (when-let [handler-key (:handler (match-path path))]
                                 (when-not (handler-key @external-handlers*)
                                   handler-key))))}))
-
-(defn form-per-page-component []
-  (let [per-page (or (some-> @state* :query-params :per-page presence)
-                     defaults/PER-PAGE)
-        hk (some-> @state* :handler-key)
-        route-params (or (some-> @state* :route-params) {})
-        query-parameters (some-> @state* :query-params-raw) ]
-    [:div.form-group.ml-2.mr-2.mt-2
-     [:label.mr-1 {:for :per-page} "Per page"]
-     [:select#per-page.form-control
-      {:value per-page
-       :tab-index 100
-       :on-change (fn [e]
-                    (let [val (int (or (some-> e .-target .-value presence)
-                                       defaults/PER-PAGE))]
-                      (accountant/navigate!
-                        (path hk route-params
-                              (merge query-parameters
-                                     {:page 1
-                                      :per-page val})))))}
-      (for [p defaults/PER-PAGE-VALUES]
-        [:option {:key p :value p} p])]]))
-
-(defn pagination-component []
-  (let [hk (some-> @state* :handler-key)
-        route-params (or (some-> @state* :route-params) {})
-        query-parameters (some-> @state* :query-params-raw)
-        current-page (or (some-> query-parameters :page int) 1)]
-    (if-not hk
-      [:div "pagination not ready"]
-      [:div.clearfix.mt-2.mb-2
-       ;(console.log 'HK (clj->js hk))
-       (let [ppage (dec current-page)
-             ppagepath (path hk route-params
-                             (assoc query-parameters :page ppage))]
-         [:div.float-left
-          [:a.btn.btn-outline-primary.btn-sm
-           {:class (when (< ppage 1) "disabled")
-            :href ppagepath}
-           [:i.fas.fa-arrow-circle-left] " previous " ]])
-       (let [npage (inc current-page)
-             npagepath (path hk route-params
-                             (assoc query-parameters :page npage))]
-         [:div.float-right
-          [:a.btn.btn-outline-primary.btn-sm
-           {:href npagepath}
-           " next " [:i.fas.fa-arrow-circle-right]]])])))
 
 (defn current-path-for-query-params
   [default-query-params new-query-params]
@@ -180,18 +135,19 @@
   (accountant/dispatch-current!))
 
 
-
-;;; ;;;;;;;;;;;;;;;;;;;;;;;;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Filter Components ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn delayed-query-params-input-component
-  [& {:keys [input-options query-params-key label prepend]
+  [& {:keys [input-options query-params-key label prepend classes]
       :or {input-options {}
+           classes []
            query-params-key "replace-me"
            label "LABEL"
            prepend nil}}]
   (let [value* (reagent/atom "")]
     (fn [& _]
       [:div.form-group.m-2
+       {:class (->> classes (map str) (string/join " "))}
        [hidden-state-component
         {:did-change #(reset! value* (-> @state* :query-params-raw query-params-key))}]
        [:label {:for query-params-key} [:span label [:small.text-monospace " (" query-params-key ")"]]]
@@ -229,57 +185,116 @@
                                        query-params-key ""}))))}
           icons/delete]]]])))
 
-;;; form-term-filter-component ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defonce term-value* (reagent/atom ""))
-
-(defn form-term-filter-on-change-handler [event default-query-params]
-  (let [newval (or (some-> event .-target .-value presence) "")]
-    (reset! term-value* newval)
-    (go (<! (timeout 350))
-        (when (= @term-value* newval)
-          (accountant/navigate!
-            (current-path-for-query-params
-              default-query-params
-              {:page 1 :term @term-value*}))))))
-
 (defn form-term-filter-component
-  [& {:keys [:default-query-params :input-options :placeholder]
-      :or {default-query-params {}
-           input-options {}
-           placeholder "fuzzy term"}}]
-  [:div.form-group.ml-2.mr-2.mt-2.col-md-3
-   [hidden-state-component
-    {:did-mount #(reset! term-value* (-> @state* :query-params-raw :term))}]
-   [:label {:for :term} "Search"]
-   [:input#term.form-control.mb-1.mr-sm-1.mb-sm-0
-    (merge
-      {:type :text
-       :placeholder placeholder
-       :tab-index 1
-       :value @term-value*
-       :on-change #(form-term-filter-on-change-handler % default-query-params)}
-      input-options)]])
+  [& {:keys [input-options query-params-key label prepend classes]
+      :or {input-options {}
+           query-params-key :term
+           label "Search"
+           prepend nil
+           classes [:col-md-3]}}]
+  [delayed-query-params-input-component
+   :label label
+   :classes classes
+   :query-params-key :term
+   :input-options {:placeholder "fuzzy term"}
+   :prepend nil])
+
+(defn select-component
+  [& {:keys [options default-option query-params-key label classes]
+      :or {label "Select"
+           query-params-key :select
+           classes []}}]
+  (let [options (cond
+                  (map? options) options
+                  (sequential? options) (->> options (map (fn [k] [k k])) (into {}))
+                  :else {"" ""})
+        default-option (or default-option
+                           (-> options first first))]
+    [:div.form-group.m-2
+     [:label {:for query-params-key}
+      [:span label [:small.text-monospace " (" query-params-key ")"]]]
+     [:div.input-group
+      [:select.form-control
+       {:id query-params-key
+        :value (let [val (get-in @state* [:query-params-raw query-params-key])]
+                 (if (some #{val} (keys options))
+                   val
+                   default-option))
+        :on-change (fn [e]
+                     (let [val (or (-> e .-target .-value presence) "")]
+                       (accountant/navigate!
+                         (path (:handler-key @state*)
+                               (:route-params @state*)
+                               (merge {}
+                                      (:query-params-raw @state*)
+                                      {:page 1
+                                       query-params-key val})))))}
+       (for [[k n] options]
+         [:option {:key k :value k} n])]
+      [:div.input-group-append
+       [:button.btn.btn-outline-warning
+        {:on-click (fn [_]
+                     (accountant/navigate!
+                       (path (:handler-key @state*)
+                             (:route-params @state*)
+                             (merge {}
+                                    (:query-params-raw @state*)
+                                    {:page 1
+                                     query-params-key default-option}))))}
+        icons/delete]]]]))
+
+
+;;; pagination ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn form-per-page-component []
+  [select-component
+   :label "Per page"
+   :query-params-key :per-page
+   :options (map str defaults/PER-PAGE-VALUES)
+   :default-option (str defaults/PER-PAGE)])
+
+(defn pagination-component []
+  (let [hk (some-> @state* :handler-key)
+        route-params (or (some-> @state* :route-params) {})
+        query-parameters (some-> @state* :query-params-raw)
+        current-page (or (some-> query-parameters :page int) 1)]
+    (if-not hk
+      [:div "pagination not ready"]
+      [:div.clearfix.mt-2.mb-2
+       ;(console.log 'HK (clj->js hk))
+       (let [ppage (dec current-page)
+             ppagepath (path hk route-params
+                             (assoc query-parameters :page ppage))]
+         [:div.float-left
+          [:a.btn.btn-outline-primary.btn-sm
+           {:class (when (< ppage 1) "disabled")
+            :href ppagepath}
+           [:i.fas.fa-arrow-circle-left] " previous " ]])
+       (let [npage (inc current-page)
+             npagepath (path hk route-params
+                             (assoc query-parameters :page npage))]
+         [:div.float-right
+          [:a.btn.btn-outline-primary.btn-sm
+           {:href npagepath}
+           " next " [:i.fas.fa-arrow-circle-right]]])])))
 
 
 ;;; form reset component ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn form-reset-component [& {:keys [default-query-params]
                                :or {default-query-params nil}}]
-  [:div.form-group.mt-2
-   [:label {:for :reset-query-params} "Reset filters"]
+  [:div.form-group.m-2
+   [:label {:for :reset-query-params} "Reset all filters"]
    [:div
     [:button#reset-query-params.btn.btn-outline-warning
      {:tab-index 1
-      :on-click #(do
-                   (reset! term-value* "")
-                   (accountant/navigate!
-                     (path (:handler-key @state*)
-                           (:route-params @state*)
-                           (if default-query-params
-                             (merge (:query-params-raw @state*)
-                                    default-query-params)
-                             {}))))}
+      :on-click #(do (accountant/navigate!
+                       (path (:handler-key @state*)
+                             (:route-params @state*)
+                             (if default-query-params
+                               (merge (:query-params-raw @state*)
+                                      default-query-params)
+                               {}))))}
      [:i.fas.fa-times]
      " Reset "]]])
 

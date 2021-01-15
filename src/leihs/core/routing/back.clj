@@ -123,21 +123,22 @@
 
 ;;; default-query-params-mixin ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn mixin-default-query-params [request default-query-params]
+  (-> request
+      (update-in [:query-params] #(merge default-query-params %))
+      (update-in [:query-params-raw] #(merge default-query-params %))))
+
 (defn wrap-mixin-default-query-params [handler default-query-params]
   (fn [request]
     (-> request
-        (update-in [:query-params] #(merge default-query-params %))
-        (update-in [:query-params-raw] #(merge default-query-params %))
-        handler )))
-
+        (mixin-default-query-params default-query-params)
+        handler)))
 
 ;;; init ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn init [paths resolve-table]
   (reset! paths* paths)
   (reset! resolve-table* resolve-table))
-
-
 
 
 ;#### debug ###################################################################
