@@ -10,3 +10,5 @@
 
 (def HTTP_UNSAVE_METHODS #{:delete :patch :post :put})
 (def HTTP_SAVE_METHODS #{:get :head :options :trace})
+
+(def TAB-INDEX 1)

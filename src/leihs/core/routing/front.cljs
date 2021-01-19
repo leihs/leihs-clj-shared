@@ -4,6 +4,7 @@
     [reagent.ratom :as ratom :refer [reaction]]
     [cljs.core.async.macros :refer [go]])
   (:require
+    [leihs.core.constants :as constants]
     [leihs.core.defaults :as defaults]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.url.query-params :as query-params]
@@ -138,12 +139,13 @@
 ;;; Filter Components ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn delayed-query-params-input-component
-  [& {:keys [input-options query-params-key label prepend classes]
+  [& {:keys [input-options query-params-key label prepend prepend-args classes]
       :or {input-options {}
            classes []
            query-params-key "replace-me"
            label "LABEL"
-           prepend nil}}]
+           prepend nil
+           prepend-args []}}]
   (let [value* (reagent/atom "")]
     (fn [& _]
       [:div.form-group.m-2
@@ -152,7 +154,7 @@
         {:did-change #(reset! value* (-> @state* :query-params-raw query-params-key))}]
        [:label {:for query-params-key} [:span label [:small.text-monospace " (" query-params-key ")"]]]
        [:div.input-group
-        (when prepend [prepend])
+        (when prepend [apply prepend prepend-args])
         [:input.form-control
          (merge
            {:id query-params-key
@@ -198,6 +200,35 @@
    :query-params-key :term
    :input-options {:placeholder "fuzzy term"}
    :prepend nil])
+
+
+(defn user-choose-prepend-component
+  [& {:keys [text query-params-key] :or {text "Choose"}}]
+  [:div.input-group-prepend
+   [:a.btn.btn-info
+    {:tab-index constants/TAB-INDEX
+     :href (path :users-choose {}
+                 {:return-to (:url @state*)
+                  :query-params-key query-params-key})}
+    [:span
+     [:i.fas.fa-rotate-90.fa-hand-pointer.px-2]
+     " " text " "]]])
+
+(defn choose-user-component
+  [& {:keys [input-options query-params-key label choose-text classes]
+      :or {input-options {}
+           query-params-key :user-uid
+           label "User"
+           choose-text "Choose"
+           classes [:col-md-3]}}]
+  [:div.col-md-4
+   [delayed-query-params-input-component
+    :label label
+    :query-params-key query-params-key
+    :input-options input-options
+    :prepend user-choose-prepend-component
+    :prepend-args [:text choose-text
+                   :query-params-key query-params-key]]])
 
 (defn select-component
   [& {:keys [options default-option query-params-key label classes]
