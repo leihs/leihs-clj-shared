@@ -236,8 +236,12 @@
            query-params-key :select
            classes []}}]
   (let [options (cond
-                  (map? options) options
-                  (sequential? options) (->> options (map (fn [k] [k k])) (into {}))
+                  (map? options) (->> options
+                                      (map (fn [[k v]] [(str k) (str v)]))
+                                      (into {}))
+                  (sequential? options) (->> options
+                                             (map (fn [k] [(str k) (str k)]))
+                                             (into {}))
                   :else {"" ""})
         default-option (or default-option
                            (-> options first first))]
