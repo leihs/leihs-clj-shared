@@ -5,7 +5,6 @@
     [leihs.core.core :refer [str keyword presence presence!]]
     [leihs.core.sql :as sql]
     [leihs.core.auth.shared :refer [access-rights]]
-    [leihs.core.system-admin :refer [system-admin-sql-expr]]
 
     [pandect.core]
     [logbug.catcher :as catcher]
@@ -26,6 +25,7 @@
    :users.lastname
    :users.login
    :users.org_id
+   :users.is_system_admin
    [:users.id :user_id]
    [(-> (sql/select :%count.*)
         (sql/from :contracts)
@@ -42,8 +42,6 @@
         [:user_sessions.id :user_session_id]
         [:user_sessions.created_at :user_session_created_at]
         [:authentication_systems.external_sign_out_url :external_sign_out_url])
-      (sql/merge-select [(sql/call :case system-admin-sql-expr true :else false)
-                         :is_system_admin])
       (sql/from :users)
       (sql/merge-join :user_sessions [:= :users.id :user_id])
       (sql/merge-join :authentication_systems

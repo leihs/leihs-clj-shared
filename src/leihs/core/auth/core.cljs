@@ -67,3 +67,9 @@
     (admin-scopes? @current-user/state* nil)
     false ))
 
+(defn current-user-system-admin-scopes? []
+  (if @current-user/state*
+    (system-admin-scopes? @current-user/state* nil)
+    false ))
+
+

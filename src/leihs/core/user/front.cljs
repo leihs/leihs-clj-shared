@@ -25,6 +25,7 @@
 (def state* shared/state*)
 
 (def admin?* (reaction (:is_admin @state*)))
+(def system-admin?* (reaction (:is_system_admin @state*)))
 
 ;(defonce admin-scopes?* (reaction (auth-core/admin-scopes? @state* nil)))
 

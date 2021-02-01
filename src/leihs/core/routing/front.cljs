@@ -148,7 +148,7 @@
            prepend-args []}}]
   (let [value* (reagent/atom "")]
     (fn [& _]
-      [:div.form-group.m-2
+      [:div.form-group.my-2
        {:class (->> classes (map str) (string/join " "))}
        [hidden-state-component
         {:did-change #(reset! value* (-> @state* :query-params-raw query-params-key))}]

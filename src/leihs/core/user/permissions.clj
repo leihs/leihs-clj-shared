@@ -70,9 +70,10 @@
       seq boolean))
 
 (defn sysadmin? [tx auth-entity]
-  (-> (sql/select :*)
-      (sql/from :system_admin_users)
-      (sql/where [:= :user_id (:id auth-entity)])
+  (-> (sql/select true)
+      (sql/from :users)
+      (sql/where [:= :id (:id auth-entity)])
+      (sql/merge-where [:= :is_system_admin true])
       sql/format
       (->> (jdbc/query tx))
       empty?
