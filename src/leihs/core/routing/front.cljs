@@ -106,6 +106,9 @@
                              :page (resolve-page handler-key)
                              :url location-href
                              :path (.getPath location-url)
+                             :route (str (.getPath location-url)
+                                         (when-let [query (-> location-url .getQuery presence)]
+                                           (str "?" query)))
                              :query-params-raw (-> location-url .getQuery
                                                    (query-params/decode :parse-json? false))
                              :query-params (-> location-url .getQuery
