@@ -50,7 +50,7 @@
 (defn wrap [handler]
   (fn [request]
     (let [anti-csrf-token (anti-csrf-token request)]
-      (when (and (http-unsafe? request) (session? request))
+      (when (http-unsafe? request)
         (when-not (presence anti-csrf-token)
           (throw (ex-info "The anti-csrf-token cookie value is not set." {:status 403})))
         (when-not (= anti-csrf-token (x-csrf-token! request))
