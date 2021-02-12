@@ -3,7 +3,7 @@
             [clojure.tools.logging :as log]
             [clojure.set :as set]
             [leihs.core [paths :refer [path]] [sql :as sql]]
-            [leihs.core.anti-csrf.back :refer [anti-csrf-token]]
+            [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
             [leihs.core.constants :as constants]
             [leihs.core.locale :refer [get-selected-language]]
             [leihs.core.user.permissions :refer
@@ -54,8 +54,7 @@
 (defn navbar-props
   ([request] (navbar-props request {}))
   ([request subapps-override]
-   (let [csrf-token (anti-csrf-token request)
-         tx (:tx request)
+   (let [tx (:tx request)
          auth-entity (:authenticated-entity request)
          user-language (get-selected-language request)
          locales (map #(as-> % <>
@@ -63,14 +62,14 @@
                         (set/rename-keys <> {:default :isDefault})
                         (assoc <> :isSelected (= (:locale %) (:locale user-language))))
                    (languages tx))]
-     {:config {:appTitle "leihs",
+     (merge
+      (anti-csrf-props request)
+      {:config {:appTitle "leihs",
                :appColor "gray",
-               :csrfTokenName constants/ANTI_CSRF_TOKEN_FORM_PARAM_NAME,
-               :csrfToken csrf-token,
                :me (user-info tx auth-entity locales),
                :subApps (-> (sub-apps tx auth-entity)
                             (merge subapps-override)),
-               :locales locales}})))
+               :locales locales}}))))
 
 
 ;#### debug ###################################################################

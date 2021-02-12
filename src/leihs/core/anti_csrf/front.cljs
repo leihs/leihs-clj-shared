@@ -12,6 +12,6 @@
 (defn hidden-form-group-token-component []
   [:div.form-group
    [:input
-    {:name :csrf-token
-     :type :hidden
+    {:type :hidden
+     :name constants/ANTI_CSRF_TOKEN_FORM_PARAM_NAME
      :value (anti-csrf-token)}]])

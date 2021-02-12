@@ -47,6 +47,9 @@
           :value
           presence)))
 
+(defn anti-csrf-props [request]
+  {:csrfToken {:value (anti-csrf-token request), :name constants/ANTI_CSRF_TOKEN_FORM_PARAM_NAME}})
+
 (defn wrap [handler]
   (fn [request]
     (let [anti-csrf-token (anti-csrf-token request)]

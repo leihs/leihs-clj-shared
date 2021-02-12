@@ -11,6 +11,7 @@
     [leihs.core.remote-navbar.shared :refer [navbar-props]]
     [leihs.core.shared :refer [head]]
     [leihs.core.ssr-engine :as js-engine]
+   [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
 
     [clojure.tools.logging :as logging]
     [logbug.catcher :as catcher]
@@ -52,6 +53,7 @@
     navbar-props
     (hash-map :navbar)
     (merge {:footer {:appVersion release/version}})
+    (merge (anti-csrf-props request))
     (js-engine/render-react "HomePage")
     render-page-base))
 
@@ -60,6 +62,7 @@
   (as-> request <>
     (navbar-props <>)
     (hash-map :navbar <>)
+    (merge (anti-csrf-props request) <>)
     (merge {:footer {:appVersion release/version}} <> page-props)
     (js-engine/render-react page-name <>)
     (render-page-base <>)))

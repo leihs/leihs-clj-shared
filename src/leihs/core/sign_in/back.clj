@@ -16,6 +16,7 @@
     [leihs.core.sql :as sql]
     [leihs.core.ssr :as ssr]
     [leihs.core.ssr-engine :as js-engine]
+    [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
     [leihs.core.sign-in.external-authentication.back :refer [ext-auth-system-token-url]]
     [leihs.core.sign-in.shared :refer [auth-system-user-base-query merge-identify-user]]
     [ring.util.response :refer [redirect]]
@@ -59,6 +60,7 @@
                                           {:navbar (navbar-props request),
                                            :authFlow
                                            {:user user-param, :forgotPasswordLink "/forgot-password"}}
+                                          (anti-csrf-props request)
                                           extra-props)]
      (log/debug 'sign-in-page-params sign-in-page-params)
      (ssr/render-page-base
