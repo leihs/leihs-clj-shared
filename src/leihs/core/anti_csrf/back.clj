@@ -24,9 +24,9 @@
 
 (def http-unsafe? (complement http-safe?))
 
-(defn session? [request]
-  (= :session (-> request :authenticated-entity
-                  :authentication-method)))
+(defn token? [request]
+  (= :token (-> request :authenticated-entity
+                :authentication-method)))
 
 (defn not-authenticated? [request]
   (-> request
@@ -53,7 +53,7 @@
 (defn wrap [handler]
   (fn [request]
     (let [anti-csrf-token (anti-csrf-token request)]
-      (when (http-unsafe? request)
+      (when (and (http-unsafe? request) (not (token? request)))
         (when-not (presence anti-csrf-token)
           (throw (ex-info "The anti-csrf-token cookie value is not set." {:status 403})))
         (when-not (= anti-csrf-token (x-csrf-token! request))
