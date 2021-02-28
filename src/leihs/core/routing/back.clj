@@ -2,10 +2,11 @@
   (:refer-clojure :exclude [str keyword])
   (:require
     [leihs.core.core :refer [keyword str presence]]
+    [leihs.core.defaults :as defaults]
     [leihs.core.json :as json]
     [leihs.core.json-protocol]
     [leihs.core.sql :as sql]
-    [leihs.core.defaults :as defaults]
+    [leihs.core.url.core :as url]
 
     [bidi.bidi :as bidi]
     [bidi.ring :refer [make-handler]]
@@ -69,6 +70,8 @@
                  (if parse-json? (json/try-parse-json v) v)]))
          (into {}))))
 
+
+
 (defn wrap-canonicalize-params-maps [handler]
   (fn [request]
     (handler (-> request
@@ -83,7 +86,10 @@
                             (canonicalize-params-map :parse-json? false)))
                  (update-in [:params] canonicalize-params-map)
                  (update-in [:query-params] canonicalize-params-map)
-                 (update-in [:form-params] canonicalize-params-map)))))
+                 (update-in [:form-params] canonicalize-params-map)
+                 (update-in [:route-params] #(-> %
+                                                 (canonicalize-params-map :parse-json? false)
+                                                 url/decode-keys))))))
 
 
 ;;; misc helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

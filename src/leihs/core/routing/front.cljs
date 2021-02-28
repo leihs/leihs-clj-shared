@@ -5,11 +5,12 @@
     [cljs.core.async.macros :refer [go]])
   (:require
     [leihs.core.constants :as constants]
-    [leihs.core.defaults :as defaults]
     [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.url.query-params :as query-params]
-    [leihs.core.paths :refer [path]]
+    [leihs.core.defaults :as defaults]
     [leihs.core.icons :as icons]
+    [leihs.core.paths :refer [path]]
+    [leihs.core.url.core :as url]
+    [leihs.core.url.query-params :as query-params]
 
     [accountant.core :as accountant]
     [bidi.bidi :as bidi]
@@ -84,7 +85,7 @@
     {:url href
      :path path
      :handler-key handler-key
-     :route-params route-params
+     :route-params (url/decode-keys route-params)
      :query-params-raw (query-params/decode query :parse-json? false)
      :query-params (query-params/decode query :parse-json? true)
      :fragment fragment}))
@@ -101,7 +102,7 @@
                           location-url (goog.Uri. location-href)]
                       (swap! state* assoc
                              :id (uuid/uuid-string (uuid/make-random-uuid))
-                             :route-params route-params
+                             :route-params (url/decode-keys route-params)
                              :handler-key handler-key
                              :page (resolve-page handler-key)
                              :url location-href
