@@ -232,19 +232,19 @@
          {:flashMessages [error-flash-invalid-password]})})))
 
 (defn sign-in-get
-  [{tx :tx :as request}]
+  [{tx :tx, {return-to :return-to} :params :as request}]
   (if-let [user (:authenticated-entity request)]
     ; shortcut: if already signed in, skip everything but redirect like succcess
-    (redirect (redirect-target tx user))
+    (redirect (or (presence return-to) (redirect-target tx user)))
     (handle-first-step request)))
 
 (defn sign-in-post
   [{tx :tx,
-    {user-param :user, password :password} :form-params,
+    {user-param :user, password :password return-to :return-to} :form-params,
     :as request}]
   ; shortcut: if already signed in, skip everything but redirect like succcess
   (if-let [user (:authenticated-entity request)]
-    (redirect (redirect-target tx user))
+    (redirect (or (presence return-to) (redirect-target tx user)))
     ; if no user or password was entered handle like step 1
     (if (or (nil? user-param) (nil? password))
       (handle-first-step request)

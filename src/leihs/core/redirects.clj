@@ -4,7 +4,10 @@
             [clojure.tools.logging :as log]
             [leihs.core.paths :refer [path]]))
 
-(defn redirect-target [tx user]
+(defn redirect-target
+  "Decides here to redirect a user from a root page based on access right, mostly after a login. 
+   Used as a last resort if no explicit target (like a return-to parameter)is present."
+  [tx user]
   (cond (user-perms/sysadmin? tx user) (path :admin)
         (:is_admin user) (path :admin)
         (user-perms/manager? tx user) (path :manage)
