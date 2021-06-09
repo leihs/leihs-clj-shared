@@ -5,6 +5,7 @@
     [leihs.core.sign-in.external-authentication.back :as external-authentication]
     [leihs.core.sign-in.back :as sign-in]
     [leihs.core.sign-out.back :as sign-out]
+    [leihs.core.translations :as translations]
     ))
 
 
@@ -16,7 +17,8 @@
 
 (def no-spa-handler-keys
   #{:external-authentication-sign-in
-    :sign-in})
+    :sign-in
+    :translations})
 
 (def all-granted (constantly true))
 
@@ -29,4 +31,6 @@
    :sign-in {:handler sign-in/routes
              :authorizers [all-granted]}
    :sign-out {:handler sign-out/routes
-              :authorizers [all-granted]}})
+              :authorizers [all-granted]}
+   :translations {:handler translations/routes
+                  :authorizers [all-granted]}})

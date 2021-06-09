@@ -11,7 +11,8 @@
   (branch "/my/user/"
           (param [#"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})|(me)" :user-id])
           (leaf "" :my-user)
-          (leaf "/auth-info" :auth-info)))
+          (leaf "/auth-info" :auth-info)
+          (leaf "/translations" :translations)))
 
 (def core-paths
   (branch ""
