@@ -210,16 +210,16 @@
           (session/create-user-session
             user
             leihs.core.constants/PASSWORD_AUTHENTICATION_SYSTEM_ID request)
-          response {:status 302,
-                    :headers {"Location" (or (presence return-to)
-                                             (redirect-target tx user))},
-                    :cookies
-                    {leihs.core.constants/USER_SESSION_COOKIE_NAME
-                     {:value (:token user-session),
-                      :http-only true,
-                      :max-age (* 10 356 24 60 60),
-                      :path "/",
-                      :secure (:sessions_force_secure settings)}}}]
+          location (or (presence return-to) (redirect-target tx user))
+          cookies {:cookies {leihs.core.constants/USER_SESSION_COOKIE_NAME
+                             {:value (:token user-session),
+                              :http-only true,
+                              :max-age (* 10 356 24 60 60),
+                              :path "/",
+                              :secure (:sessions_force_secure settings)}}}
+          response (if (= (-> request :accept :mime) :json)
+                     (merge {:status 200, :body {:location location}} cookies)
+                     (merge {:status 302, :headers {"Location" location}} cookies))]
       (locale/setup-language-after-sign-in request response user))
     (if (not (nil? invisible-pw))
       (handle-first-step request)
