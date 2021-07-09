@@ -23,6 +23,14 @@
 (defmethod format/fn-handler "~~*" [_ field value]
   (str (format/to-sql field) " ~~* " (format/to-sql value)))
 
+; IS NULL
+(defmethod format/fn-handler "is-null" [_ field]
+  (str (format/to-sql field) " IS NULL"))
+
+; IS NOT NULL
+(defmethod format/fn-handler "is-not-null" [_ field]
+  (str (format/to-sql field) " IS NOT NULL"))
+
 ; arrays: contains
 (defmethod format/fn-handler "@>" [_ array1 array2]
   (str (format/to-sql array1) " @> " (format/to-sql array2)))
