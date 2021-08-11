@@ -40,6 +40,11 @@
 ; arrays: overlaps
 (defmethod format/fn-handler "&&" [_ array1 array2]
   (str (format/to-sql array1) " && " (format/to-sql array2)))
+; arrays: contain the same elements (set equality)
+(defmethod format/fn-handler "<@>" [_ array1 array2]
+  (str (format/to-sql array1) " <@ " (format/to-sql array2)
+       "AND"
+       (format/to-sql array1) " @> " (format/to-sql array2)))
 
 (defn expand-text-search-terms [terms]
   (str "(" (string/join
