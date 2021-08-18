@@ -20,8 +20,9 @@
   (reduce (fn [m {k :key t :translation l :language_locale}]
             (let [ks (-> k
                          (string/split #"\.")
-                         (->> (map keyword)))]
-              (assoc-in m (cons (keyword l) ks) t)))
+                         (->> (map keyword) (into [])))
+                  ks-with-locale (conj ks (keyword l))]
+              (assoc-in m ks-with-locale t)))
           {}
           ts))
 
