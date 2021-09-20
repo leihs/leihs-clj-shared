@@ -80,3 +80,8 @@
           (dissoc m k)))
       m)
     (dissoc m k)))
+
+(defn remove-nils
+  "Dissociate all keys from the map where the value is nil."
+  [m]
+  (into {} (filter second m)))
