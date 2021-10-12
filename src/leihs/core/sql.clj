@@ -45,6 +45,9 @@
   (str (format/to-sql array1) " <@ " (format/to-sql array2)
        "AND"
        (format/to-sql array1) " @> " (format/to-sql array2)))
+; arrays: contains an element
+(defmethod format/fn-handler "any" [_ el arr]
+  (str (format/to-sql el) " = ANY(" (format/to-sql arr) ")"))
 
 (defn expand-text-search-terms [terms]
   (str "(" (string/join
