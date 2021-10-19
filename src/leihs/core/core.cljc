@@ -85,3 +85,10 @@
   "Dissociate all keys from the map where the value is nil."
   [m]
   (into {} (filter second m)))
+
+(defn remove-blanks
+  "Dissociate all keys from the map where the value is blank."
+  [m]
+  (->> m
+       (filter (fn [[_ v]] (presence v)))
+       (into {})))
