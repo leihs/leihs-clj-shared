@@ -92,3 +92,10 @@
   (->> m
        (filter (fn [[_ v]] (presence v)))
        (into {})))
+
+(defn update-vals "Apply function to all values in map."
+  [f m]
+  (reduce-kv (fn [memo k v]
+               (assoc memo k (f v)))
+             {}
+             m))
