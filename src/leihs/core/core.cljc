@@ -99,3 +99,8 @@
                (assoc memo k (f v)))
              {}
              m))
+
+(defn raise
+  ([msg] (throw (ex-info msg {})))
+  ([msg m] (throw (ex-info msg m)))
+  ([msg m c] (throw (ex-info msg m c))))
