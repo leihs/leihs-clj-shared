@@ -49,6 +49,12 @@
 (defmethod format/fn-handler "any" [_ el arr]
   (str (format/to-sql el) " = ANY(" (format/to-sql arr) ")"))
 
+; dates: overlaps
+(defmethod format/fn-handler "overlaps" [_ [s1 e1] [s2 e2]]
+  (clojure.core/format "(%s, %s) OVERLAPS (%s, %s)"
+                       (format/to-sql s1) (format/to-sql e1)
+                       (format/to-sql s2) (format/to-sql e2)))
+
 (defn expand-text-search-terms [terms]
   (str "(" (string/join
              " && "
