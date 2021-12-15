@@ -26,7 +26,7 @@
     [inflections "0.13.0"]
     [io.dropwizard.metrics/metrics-core "4.0.3"]
     [io.dropwizard.metrics/metrics-healthchecks "4.0.3"]
-    [io.forward/yaml "1.0.9"]
+    [io.forward/yaml "1.0.11"]
     [log4j/log4j "1.2.17" :exclusions [javax.mail/mail javax.jms/jms com.sun.jdmk/jmxtools com.sun.jmx/jmxri]]
     [logbug "4.2.2"]
     [clj-commons/conch "0.9.2"]
