@@ -29,7 +29,7 @@
     [io.forward/yaml "1.0.9"]
     [log4j/log4j "1.2.17" :exclusions [javax.mail/mail javax.jms/jms com.sun.jdmk/jmxtools com.sun.jmx/jmxri]]
     [logbug "4.2.2"]
-    [me.raynes/conch "0.8.0"]
+    [clj-commons/conch "0.9.2"]
     [nilenso/honeysql-postgres "0.2.4"]
     [org.clojure/clojure "1.9.0"]
     [org.clojure/clojurescript "1.10.597" :scope "provided"]
