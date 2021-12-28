@@ -1,16 +1,14 @@
 (ns leihs.core.auth.token
   (:refer-clojure :exclude [str keyword])
   (:require
+    [clj-time.core :as time]
+    [clojure.java.jdbc :as jdbc]
+    [clojure.tools.logging :as logging]
+    [clojure.walk :refer [keywordize-keys]]
     [leihs.core.auth.shared :refer [access-rights]]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.ring-exception :as ring-exception]
     [leihs.core.sql :as sql]
-
-    [clojure.java.jdbc :as jdbc]
-    [clojure.walk :refer [keywordize-keys]]
-    [clj-time.core :as time]
-
-    [clojure.tools.logging :as logging]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug]
     [logbug.thrown :as thrown]
@@ -99,8 +97,6 @@
     (authenticate request handler)))
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns 'cider-ci.utils.shutdown)
 ;(debug/debug-ns 'cider-ci.open-session.encryptor)
 ;(debug/debug-ns *ns*)

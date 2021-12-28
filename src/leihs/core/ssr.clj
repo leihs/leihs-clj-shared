@@ -2,28 +2,26 @@
   (:refer-clojure :exclude [str keyword])
   (:require
     [clojure.java.jdbc :as jdbc]
-    [clojure.tools.logging :as log]
     [hiccup.page :refer [html5 include-js]]
-    [leihs.core
-     [http-cache-buster2 :as cache-buster]
-     [release :as release]
-     [sql :as sql]]
+    [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
+    [leihs.core.http-cache-buster2 :as cache-buster]
+    [leihs.core.release :as release]
     [leihs.core.remote-navbar.shared :refer [navbar-props]]
     [leihs.core.shared :refer [head]]
+    [leihs.core.sql :as sql]
     [leihs.core.ssr-engine :as js-engine]
-   [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
-
-    [clojure.tools.logging :as logging]
-    [logbug.catcher :as catcher]
-    [logbug.debug :as debug :refer [I>]]
-    [logbug.ring :refer [wrap-handler-with-logging]]
-    [logbug.thrown :as thrown]
+    [logbug.debug :as debug]
+    [taoensso.timbre :as log :refer [error warn info debug spy]]
     ))
 
-(def render-page-base
-  "Each subapp MUST INTERN the respective function
-  implementation for THIS VAR in THIS NAMESPACE!"
-  nil)
+(def render-page-base*
+  (atom (fn [_inner]
+          (throw (ex-info
+                   "No implementaion for render-page-base provided yet"
+                   {})))))
+
+(defn render-page-base [inner]
+  (@render-page-base* inner))
 
 (defn- auth-systems
   [tx]
@@ -67,8 +65,12 @@
     (js-engine/render-react page-name <>)
     (render-page-base <>)))
 
+(defn init [render-page-base-fn]
+  (info "initializing core.ssr, setting implementation for render-page-base*")
+  (assert (fn? render-page-base-fn))
+  (reset! render-page-base* render-page-base-fn)
+  (info "initialized core.ssr"))
+
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns *ns*)

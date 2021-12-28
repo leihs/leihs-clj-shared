@@ -1,17 +1,15 @@
 (ns leihs.core.routing.back
   (:refer-clojure :exclude [str keyword])
   (:require
+    [bidi.bidi :as bidi]
+    [bidi.ring :refer [make-handler]]
+    [clojure.tools.logging :as logging]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.defaults :as defaults]
     [leihs.core.json :as json]
     [leihs.core.json-protocol]
     [leihs.core.sql :as sql]
     [leihs.core.url.core :as url]
-
-    [bidi.bidi :as bidi]
-    [bidi.ring :refer [make-handler]]
-
-    [clojure.tools.logging :as logging]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug :refer [I>]]
     [logbug.ring :refer [wrap-handler-with-logging]]
@@ -152,6 +150,4 @@
 
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns *ns*)

@@ -1,18 +1,15 @@
 (ns leihs.core.sql
   (:refer-clojure :exclude [format update set])
   (:require
+    [clojure.string :as string]
+    [honeysql-postgres.format :as pg-format]
+    [honeysql-postgres.helpers :as pg-helpers]
     [honeysql.core :as core]
     [honeysql.format :as format]
     [honeysql.helpers :as helpers :refer [build-clause]]
     [honeysql.types :as types]
     [honeysql.util :as util :refer [defalias]]
-
-    [honeysql-postgres.helpers :as pg-helpers]
-    [honeysql-postgres.format :as pg-format]
-
     [leihs.core.core :refer [presence]]
-
-    [clojure.string :as string]
     ))
 
 ; regex

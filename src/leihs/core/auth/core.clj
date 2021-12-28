@@ -1,10 +1,9 @@
 (ns leihs.core.auth.core
   (:refer-clojure :exclude [str keyword])
   (:require
-    [leihs.core.core :refer [str keyword presence presence!]]
     [leihs.core.auth.session :as session]
     [leihs.core.auth.token :as token]
-
+    [leihs.core.core :refer [str keyword presence presence!]]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug]
     ))
@@ -100,6 +99,4 @@
 
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns *ns*)

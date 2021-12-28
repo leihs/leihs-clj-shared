@@ -1,16 +1,14 @@
 (ns leihs.core.auth.session
   (:refer-clojure :exclude [str keyword])
   (:require
+    [clojure.java.jdbc :as jdbc]
+    [leihs.core.auth.shared :refer [access-rights]]
     [leihs.core.constants :refer [USER_SESSION_COOKIE_NAME]]
     [leihs.core.core :refer [str keyword presence presence!]]
     [leihs.core.sql :as sql]
-    [leihs.core.auth.shared :refer [access-rights]]
-
-    [pandect.core]
     [logbug.catcher :as catcher]
-    [clojure.java.jdbc :as jdbc]
-
     [logbug.debug :as debug]
+    [pandect.core]
     )
   (:import
     [java.util UUID]
@@ -117,7 +115,5 @@
 
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns 'cider-ci.utils.shutdown)
 ;(debug/debug-ns *ns*)

@@ -64,10 +64,9 @@
        (for [li right] li)])]])
 
 (defn admin-li []
-  [li :admin [:span icons/admin " Admin "] {} {}
+  [li :admin [:span [icons/admin] " Admin "] {} {}
    :authorizers [auth/all-granted]])
 
-;(defn me-user-li [] (li :me-user [:span icons/user " User "]))
 
 (defn borrow-li [] (li :borrow "Borrow"))
 
@@ -76,7 +75,7 @@
 (defn initial-admin-li [] (li :initial-admin "Initial-Admin"))
 
 (defn leihs-li []
-  [li :home [:span icons/home " Home "] {} {}
+  [li :home [:span [icons/home] " Home "] {} {}
    :authorizers [auth/all-granted]])
 
 (defn lending-li []

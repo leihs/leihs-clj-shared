@@ -1,11 +1,13 @@
 (ns leihs.core.redirects
-  (:require [leihs.core.user.permissions :as user-perms]
-            [leihs.core.user.permissions.procure :as procure-perms]
-            [clojure.tools.logging :as log]
-            [leihs.core.paths :refer [path]]))
+  (:require
+    [clojure.tools.logging :as log]
+    [leihs.core.paths :refer [path]]
+    [leihs.core.user.permissions :as user-perms]
+    [leihs.core.user.permissions.procure :as procure-perms]
+    ))
 
 (defn redirect-target
-  "Decides here to redirect a user from a root page based on access right, mostly after a login. 
+  "Decides here to redirect a user from a root page based on access right, mostly after a login.
    Used as a last resort if no explicit target (like a return-to parameter)is present."
   [tx user]
   (cond (user-perms/sysadmin? tx user) (path :admin)

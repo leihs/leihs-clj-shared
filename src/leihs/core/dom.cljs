@@ -1,13 +1,11 @@
 (ns leihs.core.dom
   (:refer-clojure :exclude [str keyword])
   (:require
-
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.url.core :as url]
-
     [camel-snake-kebab.core :refer [->camelCase]]
     [goog.dom :as dom]
     [goog.dom.dataset :as dataset]
+    [leihs.core.core :refer [keyword str presence]]
+    [leihs.core.url.core :as url]
     ))
 
 (defn data-attribute

@@ -1,13 +1,11 @@
 (ns leihs.core.settings
   (:refer-clojure :exclude [str keyword])
   (:require
+    [clojure.java.jdbc :as jdbc]
+    [clojure.tools.logging :as logging]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.sql :as sql]
-
-    [clojure.java.jdbc :as jdbc]
-
     [logbug.debug :as debug]
-    [clojure.tools.logging :as logging]
     ))
 
 
@@ -39,7 +37,5 @@
    (handler (assoc request :settings (settings! (:tx request))))))
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns 'cider-ci.utils.shutdown)
 ;(debug/debug-ns *ns*)

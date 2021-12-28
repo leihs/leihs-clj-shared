@@ -1,17 +1,14 @@
 (ns leihs.core.http-cache-buster2
   (:require
+    [clojure.tools.logging :as logging]
+    [logbug.debug :as debug :refer [I> I>> identity-with-logging]]
+    [logbug.ring :refer [wrap-handler-with-logging]]
+    [logbug.thrown :as thrown]
     [pandect.algo.sha1 :as sha1]
     [ring.middleware.resource :as resource]
     [ring.util.codec :as codec]
     [ring.util.request :as request]
     [ring.util.response :as response]
-    [clojure.core.memoize :as memoize]
-
-    [clj-logging-config.log4j :as logging-config]
-    [clojure.tools.logging :as logging]
-    [logbug.debug :as debug :refer [I> I>> identity-with-logging]]
-    [logbug.ring :refer [wrap-handler-with-logging]]
-    [logbug.thrown :as thrown]
     ))
 
 (defn- path-matches? [path xp]
@@ -75,11 +72,11 @@
 
 (defn- resource [request root-path options]
   (let [path (-> request request/path-info codec/url-decode)]
-    (cond 
-      (-> options :cache-enabled? not) (resource/resource-request 
+    (cond
+      (-> options :cache-enabled? not) (resource/resource-request
                                          request root-path options)
 
-      (cache-busted-resource? 
+      (cache-busted-resource?
         path options) (cache-bust path request root-path options)
 
       (path-matches?
@@ -100,8 +97,8 @@
 
   Accepts the following additional options:
 
-  :cache-enabled? - pass directly on to resource/resource-request if set to false, 
-  regardless of the value of :cache-bust-paths or :never-expire-paths, 
+  :cache-enabled? - pass directly on to resource/resource-request if set to false,
+  regardless of the value of :cache-bust-paths or :never-expire-paths,
   default is true
 
   :cache-bust-paths - collection, each value is either a string or a regex,
@@ -110,7 +107,7 @@
   cache-busted-path will return the cache-busted path.
 
   :never-expire-paths - collection, each value is either a string or a regex,
-  resources with matching paths will be set to never expire 
+  resources with matching paths will be set to never expire
 
   "
 
@@ -124,7 +121,5 @@
 
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns 'cider-ci.utils.shutdown)
 ;(debug/debug-ns *ns*)

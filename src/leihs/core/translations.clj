@@ -1,10 +1,12 @@
 (ns leihs.core.translations
-  (:require [clojure.java.jdbc :as jdbc]
-            [clojure.string :as string]
-            [clojure.tools.logging :as log]
-            [compojure.core :as cpj]
-            [leihs.core.paths :refer [path]]
-            [leihs.core.sql :as sql]))
+  (:require
+    [clojure.java.jdbc :as jdbc]
+    [clojure.string :as string]
+    [clojure.tools.logging :as log]
+    [compojure.core :as cpj]
+    [leihs.core.paths :refer [path]]
+    [leihs.core.sql :as sql]
+    ))
 
 (defn fetch-from-db
   ([tx prefix] (fetch-from-db tx prefix nil))
@@ -36,6 +38,4 @@
     (cpj/GET (path :translations) [] #'translations-handler)))
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns *ns*)

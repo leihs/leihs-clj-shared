@@ -1,26 +1,22 @@
 (ns leihs.core.sign-in.external-authentication.back
   (:refer-clojure :exclude [str keyword cond])
   (:require
-    [cemerick.url :refer [url-encode]]
     [better-cond.core :refer [cond]]
+    [buddy.core.keys :as keys]
+    [buddy.sign.jwt :as jwt]
+    [clj-time.core :as time]
     [clojure.java.jdbc :as jdbc]
     [clojure.string :as str]
+    [clojure.tools.logging :as logging]
+    [compojure.core :as cpj]
     [leihs.core.auth.session :as session]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.paths :refer [path]]
     [leihs.core.redirects :refer [redirect-target]]
     [leihs.core.sign-in.shared :refer [auth-system-base-query-for-unique-id user-query-for-unique-id]]
     [leihs.core.sql :as sql]
-
-    [buddy.core.keys :as keys]
-    [buddy.sign.jwt :as jwt]
-    [clj-time.core :as time]
-    [compojure.core :as cpj]
-    [ring.util.response :refer [redirect]]
-
-    [clj-logging-config.log4j :as logging-config]
-    [clojure.tools.logging :as logging]
-    [logbug.debug :as debug]))
+    [logbug.debug :as debug]
+    [ring.util.response :refer [redirect]]))
 
 (def skip-authorization-handler-keys
   "These keys needs the be added to the list of the skipped handler keys
@@ -244,6 +240,4 @@
 
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns *ns*)

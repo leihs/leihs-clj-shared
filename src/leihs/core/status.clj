@@ -1,8 +1,10 @@
 (ns leihs.core.status
-  (:require [clojure.data.json :as json]
-            [clojure.tools.logging :as logging]
-            [compojure.core :as cpj]
-            [leihs.core.ds :as ds])
+  (:require
+    [clojure.tools.logging :as logging]
+    [compojure.core :as cpj]
+    [leihs.core.db :as db]
+    [logbug.debug :as debug]
+    [taoensso.timbre :refer [debug info warn error]])
   (:import com.codahale.metrics.health.HealthCheckRegistry
            humanize.Humanize))
 
@@ -53,9 +55,10 @@
   [request]
   (let [memory-status (check-memory-usage)
         health-checks (health-checks)
-        body (json/write-str {:memory memory-status,
-                              :db-pool (ds/status),
-                              :health-checks health-checks})]
+        body {:memory memory-status,
+              :db-pool (db/status),
+              :health-checks health-checks}]
+    (debug body)
     {:status (if (and (->> [memory-status]
                            (map :ok?)
                            (every? true?))
@@ -65,22 +68,14 @@
                            (apply true?)))
                200
                900),
-     :body body,
-     :headers {"content-type" "application/json; charset=utf-8"}}))
+     :body body}))
 
-(defn wrap
-  [default-handler]
+(defn wrap [default-handler path]
   (fn [request]
-    (if (and (= (:handler-key request) :status)
-             (= (-> request
-                    :accept
-                    :mime)
-                :json))
+    (debug {'request request})
+    (if (= (:uri request) path)
       (status-handler request)
       (default-handler request))))
-
-(defn routes [rel-path]
-  (cpj/routes (cpj/GET rel-path [] #'status-handler)))
 
 (defn init
   []
@@ -89,6 +84,4 @@
 
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns *ns*)

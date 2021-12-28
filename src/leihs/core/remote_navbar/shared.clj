@@ -1,20 +1,20 @@
 (ns leihs.core.remote-navbar.shared
-  (:require [clojure.java.jdbc :as jdbc]
-            [clojure.tools.logging :as log]
-            [clojure.set :as set]
-            [leihs.core [paths :refer [path]] [sql :as sql]]
-            [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
-            [leihs.core.constants :as constants]
-            [leihs.core.locale :refer [get-selected-language]]
-            [leihs.core.user.permissions :refer
-             [borrow-access? managed-inventory-pools]]
-            [leihs.core.user.permissions.procure :as procure]
-
-            [clojure.tools.logging :as logging]
-            [logbug.catcher :as catcher]
-            [logbug.debug :as debug :refer [I>]]
-            [logbug.ring :refer [wrap-handler-with-logging]]
-            [logbug.thrown :as thrown]))
+  (:require
+    [clojure.java.jdbc :as jdbc]
+    [clojure.set :as set]
+    [clojure.tools.logging :as log]
+    [clojure.tools.logging :as logging]
+    [leihs.core [paths :refer [path]] [sql :as sql]]
+    [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
+    [leihs.core.constants :as constants]
+    [leihs.core.locale :refer [get-selected-language]]
+    [leihs.core.user.permissions :refer [borrow-access? managed-inventory-pools]]
+    [leihs.core.user.permissions.procure :as procure]
+    [logbug.catcher :as catcher]
+    [logbug.debug :as debug :refer [I>]]
+    [logbug.ring :refer [wrap-handler-with-logging]]
+    [logbug.thrown :as thrown]
+    ))
 
 (defn- languages
   [tx]
@@ -73,6 +73,4 @@
 
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns *ns*)

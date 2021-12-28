@@ -1,16 +1,13 @@
 (ns leihs.core.ring-audits
   (:refer-clojure :exclude [str keyword])
-  (:require [clj-logging-config.log4j :as logging-config]
-            [leihs.core.core :refer [keyword str presence]])
   (:require
-    [leihs.core.constants :as constants]
-    [leihs.core.ds :as ds]
-    [leihs.core.sql :as sql]
-    [leihs.core.ring-exception :as ring-exception]
-
     [clojure.java.jdbc :as jdbc]
-
     [clojure.tools.logging :as logging]
+    [leihs.core.constants :as constants]
+    [leihs.core.core :refer [keyword str presence]]
+    [leihs.core.db :as db]
+    [leihs.core.ring-exception :as ring-exception]
+    [leihs.core.sql :as sql]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug :refer [I>]]
     [logbug.ring :refer [wrap-handler-with-logging]]
@@ -22,7 +19,7 @@
        first :txid))
 
 (defn persist-request [txid request]
-  (jdbc/insert! @ds/ds :audited_requests
+  (jdbc/insert! (db/get-ds) :audited_requests
                 {:txid txid
                  :http_uid (-> request :headers (get "http-uid"))
                  :path (-> request :uri)
@@ -45,7 +42,7 @@
        (jdbc/execute! tx)))
 
 (defn persist-response [txid response]
-  (jdbc/insert! @ds/ds :audited_responses
+  (jdbc/insert! (db/get-ds) :audited_responses
                 {:txid txid
                  :status (:status response)}))
 
@@ -70,6 +67,4 @@
          response)))))
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns *ns*)

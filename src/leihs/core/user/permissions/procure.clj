@@ -1,7 +1,9 @@
 (ns leihs.core.user.permissions.procure
-  (:require [clojure.java.jdbc :as jdbc]
-            [clojure.tools.logging :as log]
-            [leihs.core.sql :as sql]))
+  (:require
+    [clojure.java.jdbc :as jdbc]
+    [clojure.tools.logging :as log]
+    [leihs.core.sql :as sql]
+    ))
 
 (defn admin?
   [tx auth-entity]

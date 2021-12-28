@@ -5,7 +5,7 @@
 (ns leihs.core.url.http
   (:require
     [leihs.core.url.shared :refer [host-port-dissect path-dissect auth-dissect parse-int]]
-    #?(:clj [yaml.core :as yaml])
+    #?(:clj [clj-yaml.core :as yaml])
     ))
 
 (def pattern
