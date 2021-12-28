@@ -1,11 +1,9 @@
 (ns leihs.core.user.permissions
   (:require
     [clojure.java.jdbc :as jdbc]
-    [clojure.tools.logging :as log]
     [leihs.core.sql :as sql]
-
-    [clojure.tools.logging :as logging]
-    [logbug.debug :as debug]))
+    [logbug.debug :as debug]
+    ))
 
 (def MANAGER-ROLES ["group_manager"
                     "lending_manager"
@@ -81,6 +79,4 @@
 
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns *ns*)

@@ -1,16 +1,14 @@
 (ns leihs.core.auth.token
   (:refer-clojure :exclude [str keyword])
   (:require
+    [clj-time.core :as time]
+    [clojure.java.jdbc :as jdbc]
+    [clojure.tools.logging :as logging]
+    [clojure.walk :refer [keywordize-keys]]
     [leihs.core.auth.shared :refer [access-rights]]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.ring-exception :as ring-exception]
     [leihs.core.sql :as sql]
-
-    [clojure.java.jdbc :as jdbc]
-    [clojure.walk :refer [keywordize-keys]]
-    [clj-time.core :as time]
-
-    [clojure.tools.logging :as logging]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug]
     [logbug.thrown :as thrown]
@@ -70,7 +68,7 @@
   (apply str (map char (.decode (Base64/getDecoder) (.getBytes string)))))
 
 (defn extract-token-value [request]
-  (when-let [auth-header (-> request :headers :authorization)]
+  (when-let [auth-header (get-in request [:headers "authorization"])]
     (or (some->> auth-header
                 (re-find #"(?i)^token\s+(.*)$")
                 last presence)
@@ -81,16 +79,14 @@
                  (map presence) (filter identity)
                  last))))
 
-(defn authenticate [{tx :tx
-                     sba :secret-ba
-                     :as request}
+(defn authenticate [{tx :tx :as request}
                     _handler]
   (catcher/snatch
     {:level :warn
      :return-fn (fn [e] (token-error-page e request))}
     (let [handler (ring-exception/wrap _handler)]
       (if-let [token-secret (extract-token-value request)]
-                 (let [user-auth-entity (user-auth-entity! token-secret tx)]
+        (let [user-auth-entity (user-auth-entity! token-secret tx)]
           (handler (assoc request :authenticated-entity user-auth-entity)))
         (handler request)))))
 
@@ -99,8 +95,6 @@
     (authenticate request handler)))
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns 'cider-ci.utils.shutdown)
 ;(debug/debug-ns 'cider-ci.open-session.encryptor)
 ;(debug/debug-ns *ns*)

@@ -1,39 +1,15 @@
 (ns leihs.core.icons
   (:refer-clojure :exclude [str keyword])
   (:require
+    ["@fortawesome/react-fontawesome" :as fa-react-fontawesome :refer [FontAwesomeIcon]]
+    ["@fortawesome/free-solid-svg-icons" :as solids]
+    ["@fortawesome/free-brands-svg-icons" :as brands]
     [leihs.core.core :refer [keyword str presence]]))
 
-(def abort [:i.fas.fa-times-circle])
-(def add [:i.fas.fa-plus-circle])
-(def admin [:i.fas.fa-wrench])
-(def api-token [:i.fas.fa-coins])
-(def api-tokens api-token)
-(def authentication-system [:i.fas.fa-external-link-alt])
-(def authentication-systems authentication-system)
-(def database [:i.fas.fa-database])
-(def delegation [:i.fas.fa-hands-helping])
-(def delegations delegation)
-(def delete [:i.fas.fa-times])
-(def edit [:i.fas.fa-edit])
-(def email [:i.fas.fa-envelope])
-(def entitlement-groups [:i.fas.object-group])
-(def group [:i.fas.fa-users])
-(def groups [:i.fas.fa-users])
-(def home [:i.fas.fa-home])
-(def inventory [:i.fas.fa-cube])
-(def inventory-pool [:i.fas.fa-cube])
-(def inventory-pools [:i.fas.fa-cubes])
-(def my-user [:i.fas.fas-user])
-(def password [:i.fas.fa-key])
-(def sign-in [:i.fas.fa-sign-in-alt])
-(def sign-out [:i.fas.fa-sign-out-alt])
-(def system [:i.fas.fa-server])
-(def system-admin [:i.fas.fa-user-astronaut])
-(def system-admins [:i.fas.fa-user-astronaut])
-(def user [:i.fas.fa-user])
-(def user-in-admin [:i.fas.fa-user-cog])
-(def users [:i.fas.fa-user-friends])
-(def users-in-admin [:i.fas.fa-users-cog])
-(def view [:i.fas.fa-eye])
-(def save [:i.fas.fa-save])
-(def waiting [:i.fas.fa-sync-alt.fa-spin])
+
+(defn admin [] (FontAwesomeIcon #js{:icon solids/faWrench :className ""}))
+(defn delete [] (FontAwesomeIcon #js{:icon solids/faTimes :className ""}))
+(defn home [] (FontAwesomeIcon #js{:icon solids/faHome :className ""}))
+
+
+

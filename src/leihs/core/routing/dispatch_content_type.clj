@@ -4,7 +4,6 @@
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.json :as json]
     [leihs.core.json-protocol]
-
     [ring.middleware.accept]
     ))
 

@@ -8,10 +8,9 @@
    - Then the comparison with the cookie proves the origin of the request."
   (:refer-clojure :exclude [str keyword])
   (:require
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.constants :as constants]
-    [clj-logging-config.log4j :as logging-config]
     [clojure.tools.logging :as logging]
+    [leihs.core.constants :as constants]
+    [leihs.core.core :refer [keyword str presence]]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug :refer [I>]]
     [logbug.thrown :as thrown])
@@ -73,7 +72,5 @@
                          :secure false})))))))
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns 'cider-ci.utils.shutdown)
 ;(debug/debug-ns *ns*)

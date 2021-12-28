@@ -1,20 +1,20 @@
 (ns leihs.core.sign-in.password-authentication.back
   (:refer-clojure :exclude [str keyword])
-  (:require [leihs.core.core :refer [keyword str presence]])
   (:require
-    [leihs.core.sql :as sql]
-    [leihs.core.auth.session :as session]
-
     [clojure.java.jdbc :as jdbc]
-    [clojure.string :as str]))
+    [clojure.string :as str]
+    [leihs.core.auth.session :as session]
+    [leihs.core.core :refer [keyword str presence]]
+    [leihs.core.sql :as sql]
+    ))
 
 
 (defn password-check-query [unique-id pw]
   (-> (sql/select :users.* [:users.id :user_id])
       (sql/from :users)
-      (sql/merge-where  
-        [:or 
-         [:= (sql/call :lower (sql/call :trim :users.email)) 
+      (sql/merge-where
+        [:or
+         [:= (sql/call :lower (sql/call :trim :users.email))
           (sql/call :lower unique-id)]
          [:= :users.login unique-id]
          [:= :users.org_id unique-id]])

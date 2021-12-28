@@ -1,12 +1,12 @@
 (ns leihs.core.auth.core
   (:refer-clojure :exclude [str keyword])
   (:require
-    [leihs.core.core :refer [str keyword presence presence!]]
     [leihs.core.auth.session :as session]
     [leihs.core.auth.token :as token]
-
+    [leihs.core.core :refer [str keyword presence presence!]]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug]
+    [taoensso.timbre :refer [error warn info debug]]
     ))
 
 
@@ -15,9 +15,7 @@
 (defn wrap-authenticate [handler]
   (-> handler
       token/wrap-authenticate
-      session/wrap-authenticate
-      ))
-
+      session/wrap-authenticate))
 
 
 ;;; authorization helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -84,6 +82,11 @@
         authorizers (some-> resolve-table
                             (get handler-key)
                             :authorizers)]
+    (debug {'authorizers authorizers
+            'request request})
+    (when (nil? handler-key)
+      (throw (ex-info (str "No handler for the route " (:uri request))
+                      {:status 544})))
     (when (nil? authorizers)
       (throw (ex-info (str "No authorizers for the handler " handler-key " are defined! "
                            "This is most likely a programming error.")
@@ -96,10 +99,9 @@
 
 (defn wrap [handler resolve-table]
   (fn [request]
+    (debug 'wrap {'request request})
     (authorize! request handler resolve-table)))
 
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns *ns*)

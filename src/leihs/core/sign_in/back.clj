@@ -1,30 +1,25 @@
 (ns leihs.core.sign-in.back
   (:refer-clojure :exclude [str keyword])
-
   (:require
-    [leihs.core.ds :as ds]
     [clojure.java.jdbc :as jdbc]
     [clojure.string :as str]
+    [clojure.tools.logging :as log]
     [compojure.core :as cpj]
+    [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
     [leihs.core.auth.session :as session]
     [leihs.core.core :refer [presence presence! keyword]]
     [leihs.core.locale :as locale]
-    [leihs.core.sign-in.password-authentication.back :refer [password-check-query]]
     [leihs.core.paths :refer [path]]
     [leihs.core.redirects :refer [redirect-target]]
     [leihs.core.remote-navbar.shared :refer [navbar-props]]
+    [leihs.core.sign-in.external-authentication.back :refer [ext-auth-system-token-url]]
+    [leihs.core.sign-in.password-authentication.back :refer [password-check-query]]
+    [leihs.core.sign-in.shared :refer [auth-system-user-base-query merge-identify-user]]
     [leihs.core.sql :as sql]
     [leihs.core.ssr :as ssr]
     [leihs.core.ssr-engine :as js-engine]
-    [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
-    [leihs.core.sign-in.external-authentication.back :refer [ext-auth-system-token-url]]
-    [leihs.core.sign-in.shared :refer [auth-system-user-base-query merge-identify-user]]
-    [ring.util.response :refer [redirect]]
-
-    [clj-logging-config.log4j :as logging-config]
-    [clojure.tools.logging :as log]
     [logbug.debug :as debug]
-
+    [ring.util.response :refer [redirect]]
     ))
 
 (defn auth-system-query [user-id]
@@ -256,6 +251,4 @@
     (cpj/POST (path :sign-in) [] #'sign-in-post)))
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns *ns*)

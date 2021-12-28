@@ -4,9 +4,10 @@
   (:require
     [clojure.string :as str]
     [clojure.tools.logging :as logging]
-    [leihs.core.sql :as sql]
     [leihs.core.paths :refer [path]]
-    [logbug.debug :as debug]))
+    [leihs.core.sql :as sql]
+    [logbug.debug :as debug]
+    ))
 
 (def authentication-systems-users-sql-expr
   [:or
@@ -69,6 +70,4 @@
       sql/format))
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns *ns*)

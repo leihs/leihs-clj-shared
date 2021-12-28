@@ -189,7 +189,7 @@
                                       (:query-params-raw @state*)
                                       {:page 1
                                        query-params-key ""}))))}
-          icons/delete]]]])))
+          [icons/delete]]]]])))
 
 (defn form-term-filter-component
   [& {:keys [input-options query-params-key label prepend classes]
@@ -280,7 +280,7 @@
                                     (:query-params-raw @state*)
                                     {:page 1
                                      query-params-key default-option}))))}
-        icons/delete]]]]))
+        [icons/delete]]]]]))
 
 
 ;;; pagination ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

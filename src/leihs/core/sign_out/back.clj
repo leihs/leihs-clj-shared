@@ -1,6 +1,6 @@
 (ns leihs.core.sign-out.back
   (:refer-clojure :exclude [str keyword])
-  (:require 
+  (:require
     [leihs.core.constants :refer [USER_SESSION_COOKIE_NAME]]
     [leihs.core.core :refer [str keyword presence presence!]]
     [leihs.core.locale :refer [get-user-db-language set-language-cookie]]
@@ -23,14 +23,14 @@
   (jdbc/delete! tx :user_sessions ["id = ?" id]))
 
 
-(defn redirect-sign-out-response 
+(defn redirect-sign-out-response
   [{tx :tx
     authenticated-entity :authenticated-entity
     :as request}]
   (let [user-db-language (get-user-db-language request)
         home-url (str (-> request :settings :external_base_url) (path :home))
-        redirect-resp (redirect 
-                        (if-let [sign-out-url (:external_sign_out_url authenticated-entity)] 
+        redirect-resp (redirect
+                        (if-let [sign-out-url (:external_sign_out_url authenticated-entity)]
                           (str sign-out-url "?" (query-params/encode {:back_to home-url}))
                           home-url))]
     (when-let [user-session-id (:user_session_id authenticated-entity)]
@@ -42,7 +42,7 @@
 
 (defn ring-handler [request]
   (if (= (-> request :accept :mime) :json)
-    {:status 406} 
+    {:status 406}
     (redirect-sign-out-response request)))
 
 (def routes
@@ -51,7 +51,5 @@
 
 
 ;#### debug ###################################################################
-;(logging-config/set-logger! :level :debug)
-;(logging-config/set-logger! :level :info)
 ;(debug/debug-ns 'cider-ci.utils.shutdown)
 ;(debug/debug-ns *ns*)
