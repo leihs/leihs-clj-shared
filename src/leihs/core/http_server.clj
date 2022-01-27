@@ -40,11 +40,13 @@
 
 
 (defn stop []
-  (when-let [server @server*]
-    (info "stopping running http-server: " server)
-    (.close server)
-    (reset! server* nil)
-    (info "stopped http-server")))
+  (when-let [_server @server*]
+    (locking _server
+      (when-let [server @server*]
+        (info "stopping running http-server: " server)
+        (.close server)
+        (reset! server* nil)
+        (info "stopped http-server")))))
 
 (defn start [options main-handler]
   "Starts (or stops and then starts) the webserver"

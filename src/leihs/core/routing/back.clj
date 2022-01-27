@@ -14,13 +14,14 @@
     [logbug.debug :as debug :refer [I>]]
     [logbug.ring :refer [wrap-handler-with-logging]]
     [logbug.thrown :as thrown]
+    [taoensso.timbre :refer [debug info warn error]]
     ))
 
 ;;; resolving by handler ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def resolve-table* (atom nil))
+(defonce resolve-table* (atom nil))
 
-(def paths* (atom nil))
+(defonce paths* (atom nil))
 
 (defn dispatch-to-handler [request]
   (if-let [handler (:handler request)]
@@ -145,8 +146,10 @@
 ;;; init ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn init [paths resolve-table]
+  (info " initalizing routing ..." )
   (reset! paths* paths)
-  (reset! resolve-table* resolve-table))
+  (reset! resolve-table* resolve-table)
+  (info " initiazlied routing " {'paths @paths* 'resolve-table @resolve-table*}))
 
 
 ;#### debug ###################################################################

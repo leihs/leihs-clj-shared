@@ -39,7 +39,7 @@
           core-user-paths))
 
 
-(def paths* (atom core-paths))
+(defonce paths* (atom core-paths))
 
 ;(bidi.bidi/route-seq @paths*)
 
