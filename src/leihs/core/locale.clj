@@ -1,7 +1,10 @@
 (ns leihs.core.locale
   (:require [clojure.java.jdbc :as jdbc]
             [clojure.tools.logging :as log]
-            [leihs.core.sql :as sql]))
+            [leihs.core.paths :refer [path]]
+            [leihs.core.sql :as sql]
+            [compojure.core :as cpj]
+            [ring.util.response :refer [redirect]]))
 
 (defn set-language-cookie
   ([response language]
@@ -12,6 +15,14 @@
              {:value (some-> language :locale),
               :path "/",
               :max-age max-age})))
+
+(defn redirect-back-with-language-cookie
+  [{tx :tx
+    {locale :locale} :form-params
+    {referer :referer} :headers
+    :as request}]
+  (-> (redirect referer)
+      (set-language-cookie (jdbc/get-by-id tx :languages locale :locale))))
 
 (defn delete-language-cookie [response]
   (set-language-cookie response nil 0))
@@ -88,3 +99,7 @@
     (-> request
         set-user-language
         handler)))
+
+(def routes
+  (cpj/routes
+    (cpj/POST (path :language) [] #'redirect-back-with-language-cookie)))

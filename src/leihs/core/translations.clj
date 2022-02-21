@@ -8,16 +8,6 @@
     [leihs.core.sql :as sql]
     ))
 
-(defn fetch-from-db
-  ([tx prefix] (fetch-from-db tx prefix nil))
-  ([tx prefix user-id]
-   (-> (sql/select :*)
-       (sql/from (sql/call :get_translations user-id))
-       (sql/where ["~~*" :key (str prefix ".%")])
-       sql/format
-       (->> (jdbc/query tx))
-       #_(->> (group-by :language_locale)))))
-
 (defn transform [ts]
   (reduce (fn [m {k :key t :translation l :language_locale}]
             (let [ks (-> k
@@ -28,10 +18,26 @@
           {}
           ts))
 
+(defn fetch-from-db
+  ([tx prefix] (fetch-from-db tx prefix nil))
+  ([tx prefix user-id]
+   (let [translations (-> (sql/select :*)
+                          (sql/from (sql/call :get_translations user-id))
+                          (sql/where ["~~*" :key (str prefix ".%")])
+                          sql/format
+                          (->> (jdbc/query tx))
+                          transform)
+         languages (-> (sql/select :*)
+                       (sql/from :languages)
+                       (sql/where [:= :active true])
+                       sql/format
+                       (->> (jdbc/query tx)))]
+     {:translations translations
+      :languages languages})))
+
 (defn translations-handler
   [{tx :tx user :authenticated-entity {:keys [prefix]} :params}]
-  {:body (-> (fetch-from-db tx prefix (:id user))
-             transform)})
+  {:body (fetch-from-db tx prefix (:id user))})
 
 (def routes
   (cpj/routes
