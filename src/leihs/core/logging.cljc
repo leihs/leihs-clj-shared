@@ -1,14 +1,12 @@
 (ns leihs.core.logging
   (:require
-    [taoensso.timbre :as timbre :refer [debug info]]))
+   [taoensso.timbre :as timbre :refer [debug info]]))
 
 (def LOGGING_CONFIG
-  {:min-level [[#{
-                  ; "leihs.admin.resources.inventory-pools.*"
+  {:min-level [[#{; "leihs.admin.resources.inventory-pools.*"
                   ; "leihs.core.auth.core.*"
-                  } :debug]
-               [#{
-                  #?(:clj "com.zaxxer.hikari.*")
+                  "leihs.*"} :debug]
+               [#{#?(:clj "com.zaxxer.hikari.*")
                   "leihs.*"} :info]
                [#{"*"} :warn]]
    :log-level nil})
