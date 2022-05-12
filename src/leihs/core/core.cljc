@@ -104,3 +104,9 @@
   ([msg] (throw (ex-info msg {})))
   ([msg m] (throw (ex-info msg m)))
   ([msg m c] (throw (ex-info msg m c))))
+
+(defn detect
+  "Returns first element x for any x in coll where (pred x)
+  returns logical true value, else nil."
+  [pred coll]
+  (first (filter pred coll)))
