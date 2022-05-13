@@ -4,7 +4,7 @@
     [cheshire.core :refer [generate-string] :rename {generate-string to-json}]
     [clj-time.core :as clj-time]
     [clojure.string :as string]
-    [clojure.tools.logging :as log]
+    [taoensso.timbre :as timbre :refer [debug info spy warn]]
     [com.walmartlabs.lacinia [executor :as executor]]
     [com.walmartlabs.lacinia.resolve :refer [resolve-as wrap-resolver-result with-extensions]]
     [leihs.core.ring-exception :refer [get-cause]]
@@ -34,8 +34,8 @@
                  n (-> e*
                        .getClass
                        .getSimpleName)]
-             (log/warn (or m n))
-             (log/debug e)
+             (warn (or m n))
+             (debug e)
              (resolve-as nil
                          {:message (str m),
                           ; if message nil
