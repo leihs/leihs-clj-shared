@@ -1,7 +1,7 @@
 (ns leihs.core.core
   (:refer-clojure :exclude [str keyword])
   (:require #?@(:clj [[clojure.tools.logging :as log]
-                      [clojure.pprint :refer [code-dispatch pprint with-pprint-dispatch]]] )
+                      [clojure.pprint :refer [code-dispatch pprint with-pprint-dispatch]]])
             [clojure.string :refer [trim-newline]]))
 
 (defn str
@@ -41,11 +41,11 @@
   "Pipes v through presence returns the result of that iff it is not nil.
   Throws an IllegalStateException otherwise. "
   (or (-> v presence)
-      (throw 
-        (new 
-          #?(:clj IllegalStateException
-             :cljs js/Error)
-          "The argument must neither be nil, nor an empty string nor an empty collection."))))
+      (throw
+       (new
+        #?(:clj IllegalStateException
+           :cljs js/Error)
+        "The argument must neither be nil, nor an empty string nor an empty collection."))))
 
 (defn flip [f]
   (fn [& xs]
@@ -92,13 +92,6 @@
   (->> m
        (filter (fn [[_ v]] (presence v)))
        (into {})))
-
-(defn update-vals "Apply function to all values in map."
-  [f m]
-  (reduce-kv (fn [memo k v]
-               (assoc memo k (f v)))
-             {}
-             m))
 
 (defn raise
   ([msg] (throw (ex-info msg {})))
