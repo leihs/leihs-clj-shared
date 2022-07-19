@@ -1,6 +1,7 @@
 (ns leihs.core.ssr
   (:refer-clojure :exclude [str keyword])
   (:require
+    [clojure.core :refer [str]]
     [clojure.java.jdbc :as jdbc]
     [hiccup.page :refer [html5 include-js]]
     [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
@@ -53,6 +54,7 @@
     (merge {:footer {:appVersion release/version}})
     (merge (anti-csrf-props request))
     (js-engine/render-react "HomePage")
+    (str "<script>localStorage.clear(); sessionStorage.clear(); console.log('cleared browser storage')</script>")
     render-page-base))
 
 (defn render-page-by-name
