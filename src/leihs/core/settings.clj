@@ -10,7 +10,8 @@
 
 
 (def selected-rows
-  [:system_and_security_settings.external_base_url
+  [:deliver_received_order_notifications
+   :system_and_security_settings.external_base_url
    :system_and_security_settings.sessions_force_secure
    :system_and_security_settings.sessions_force_uniqueness
    :system_and_security_settings.sessions_max_lifetime_secs
