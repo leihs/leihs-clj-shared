@@ -33,8 +33,7 @@
     & {:keys [button authorizers link-disabled]
        :or {button false
             link-disabled false
-            authorizers [;all-granted
-                         ]}}]
+            authorizers [all-granted]}}]
    (let [active? (active handler-key-or-full-path)]
      (when (auth/allowed? authorizers)
        [:li.breadcrumb-item {:key handler-key-or-full-path
