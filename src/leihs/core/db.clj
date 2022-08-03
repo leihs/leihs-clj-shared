@@ -14,18 +14,18 @@
     [logbug.debug :as debug :refer [I> I>> identity-with-logging]]
     [logbug.ring :refer [wrap-handler-with-logging]]
     [logbug.thrown :as thrown]
+    [next.jdbc :as jdbc-next]
+    [next.jdbc.connection]
+    [next.jdbc.result-set]
     [pg-types.all]
     [ring.util.codec]
     [taoensso.timbre :refer [debug info warn error spy]])
   (:import
     java.net.URI
     [com.codahale.metrics MetricRegistry]
+    [com.zaxxer.hikari HikariDataSource]
     ))
 
-
-(defonce ds* (atom nil))
-
-(defn get-ds [] @ds*)
 
 
 ;;; CLI ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -77,25 +77,12 @@
     :parse-fn #(Integer/parseInt %)]])
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn wrap-tx [handler]
-  (fn [request]
-    (jdbc/with-db-transaction [tx @ds*]
-      (try
-        (let [resp (handler (assoc request :tx tx))]
-          (when-let [status (:status resp)]
-            (when (>= status 400 )
-              (logging/warn "Rolling back transaction because error status " status)
-              (jdbc/db-set-rollback-only! tx)))
-          resp)
-        (catch Throwable th
-          (logging/warn "Rolling back transaction because of " (.getMessage th))
-          (jdbc/db-set-rollback-only! tx)
-          (throw th))))))
+;;; ds ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce ds* (atom nil))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn get-ds [] @ds*)
 
 (defonce metric-registry* (atom nil))
 
@@ -115,9 +102,6 @@
    :timers (->> @metric-registry* .getTimers
                 (map (fn [[n t]] [n (Timer->map t)]))
                 (into {}))})
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn close []
   (when @ds*
@@ -152,6 +136,76 @@
         :metric-registry @metric-registry*
         :health-check-registry health-check-registry})}))
 
+
+;;; next-ds ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defonce ds-next* (atom nil))
+
+(defn get-ds-next [] @ds-next*)
+
+(defn close-next []
+  (when @ds-next*
+    (do
+      (info "Closing db pool ...")
+      (.close ^HikariDataSource @ds-next*)
+      (reset! ds-next* nil)
+      (info "Closing db pool done."))))
+
+(defn init-ds-next [db-options]
+  (try (let [params {:dbtype "postgres"
+                     :dbname (get db-options db-name-key)
+                     :username (get db-options db-user-key)
+                     :password (get db-options db-password-key)
+                     :host (get db-options db-host-key)
+                     :port (get db-options db-port-key)
+                     :maximumPoolSize  (get db-options db-max-pool-size-key)
+                     :minimumIdle (get db-options db-min-pool-size-key)
+                     :autoCommit true
+                     :connectionTimeout 30000
+                     :validationTimeout 5000
+                     :idleTimeout (* 1 60 1000) ; 1 minute
+                     :maxLifetime (* 1 60 60 1000)}
+             ds-next (next.jdbc.connection/->pool
+                       HikariDataSource params)]
+         ;; this code initializes the pool and performs a validation check:
+         (.close (jdbc-next/get-connection ds-next))
+         (reset! ds-next* ds-next)
+         @ds-next*)
+       (catch Throwable th
+         (error th)
+         (throw th))))
+
+
+;;; wrap ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def builder-fn-options
+  {:builder-fn next.jdbc.result-set/as-unqualified-lower-maps})
+
+(defn wrap-tx [handler]
+  (fn [request]
+    (jdbc/with-db-transaction [tx @ds*]
+      (jdbc-next/with-transaction [tx-next @ds-next*]
+        (try (let [tx-next-uqlm (jdbc-next/with-options tx-next
+                                  builder-fn-options)
+                   resp (-> request
+                            (assoc :tx tx)
+                            (assoc :tx-next tx-next-uqlm)
+                            handler)]
+               (when-let [status (:status resp)]
+                 (when (>= status 400 )
+                   (logging/warn "Rolling back transaction because error status " status)
+                   (jdbc/db-set-rollback-only! tx)
+                   (.rollback tx-next)))
+               resp)
+             (catch Throwable th
+               (logging/warn "Rolling back transaction because of " (.getMessage th))
+               (jdbc/db-set-rollback-only! tx)
+               (.rollback tx-next)
+               (throw th)))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn init
   ([options]
    (init options nil))
@@ -160,6 +214,6 @@
      (info "Initializing db " db-options)
      (init-ds db-options health-check-registry)
      (info "Initialized db " @ds*)
-     @ds*)))
-
-
+     (info "Initializing ds-next " db-options)
+     (init-ds-next db-options)
+     (info "Initialized ds-next " @ds-next*))))

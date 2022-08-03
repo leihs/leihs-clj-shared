@@ -1,8 +1,6 @@
 (ns leihs.core.ring-audits
-  (:refer-clojure :exclude [str keyword])
   (:require
     [clojure.java.jdbc :as jdbc]
-    [clojure.tools.logging :as logging]
     [leihs.core.constants :as constants]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.db :as db]
@@ -11,16 +9,28 @@
     [logbug.catcher :as catcher]
     [logbug.debug :as debug :refer [I>]]
     [logbug.ring :refer [wrap-handler-with-logging]]
-    [logbug.thrown :as thrown]))
+    [logbug.thrown :as thrown]
+    [next.jdbc :as jdbc-next]
+    [next.jdbc.sql :refer [query] :rename {query jdbc-next-query}]
+    [taoensso.timbre :refer [error warn info debug spy]]
+    )
+  (:refer-clojure :exclude [str keyword]))
 
 (defn txid [tx]
   (->> ["SELECT txid() AS txid"]
        (jdbc/query tx)
        first :txid))
 
-(defn persist-request [txid request]
+
+(defn tx2id [tx-next]
+  (->> ["SELECT txid() AS tx2id"]
+       (jdbc-next-query tx-next)
+       first spy :tx2id))
+
+(defn persist-request [txid tx2id request]
   (jdbc/insert! (db/get-ds) :audited_requests
                 {:txid txid
+                 :tx2id tx2id
                  :http_uid (-> request :headers (get "http-uid"))
                  :path (-> request :uri)
                  :user_id (-> request :authenticated-entity :user_id)
@@ -41,9 +51,10 @@
            sql/format)
        (jdbc/execute! tx)))
 
-(defn persist-response [txid response]
+(defn persist-response [txid tx2id response]
   (jdbc/insert! (db/get-ds) :audited_responses
                 {:txid txid
+                 :tx2id tx2id
                  :status (:status response)}))
 
 (defn wrap
@@ -52,19 +63,20 @@
      (wrap handler request)))
   ([handler {handler-key :handler-key
              method :request-method
-             tx :tx :as request}]
+             tx :tx tx-next :tx-next :as request}]
    (if-not (or (constants/HTTP_UNSAVE_METHODS method)
                (= handler-key :external-authentication-sign-in))
      (handler request)
-     (let [txid (txid (:tx request))]
-       (persist-request txid request)
+     (let [txid (txid tx)
+           tx2id (tx2id tx-next)]
+       (persist-request txid tx2id request)
        (let [response (try (handler request)
                            (catch Exception e
                              (persist-response
-                               txid
+                               txid tx2id
                                (ring-exception/exception-response e))
                              (throw e)))]
-         (persist-response txid response)
+         (persist-response txid tx2id response)
          (when (#{:external-authentication-sign-in :sign-in} handler-key)
            (update-request-user-id-from-session txid tx))
          response)))))

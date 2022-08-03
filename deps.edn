@@ -10,11 +10,13 @@
   com.cemerick/url {:mvn/version "0.1.1"}
   com.fzakaria/slf4j-timbre {:mvn/version "0.3.21"}
   com.github.mfornos/humanize-slim {:mvn/version "1.2.2"}
+  com.github.seancorfield/honeysql {:mvn/version "2.2.868"}
+  com.github.seancorfield/next.jdbc {:mvn/version "1.2.796"}
   com.taoensso/timbre {:mvn/version "5.1.2" }
   compojure/compojure {:mvn/version "1.6.2"}
   environ/environ {:mvn/version "1.2.0"}
   funcool/cuerdas {:mvn/version "2022.01.14-391"}
-  hikari-cp/hikari-cp {:mvn/version "2.13.0"}
+  hikari-cp/hikari-cp {:mvn/version "2.14.0"}
   honeysql/honeysql {:mvn/version "1.0.461"}
   http-kit/http-kit {:mvn/version "2.5.3"}
   io.dropwizard.metrics/metrics-healthchecks {:mvn/version "4.2.7"}
