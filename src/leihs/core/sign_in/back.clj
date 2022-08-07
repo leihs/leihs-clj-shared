@@ -3,7 +3,6 @@
   (:require
     [clojure.java.jdbc :as jdbc]
     [clojure.string :as str]
-    [clojure.tools.logging :as log]
     [compojure.core :as cpj]
     [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
     [leihs.core.auth.session :as session]
@@ -20,6 +19,7 @@
     [leihs.core.ssr-engine :as js-engine]
     [logbug.debug :as debug]
     [ring.util.response :refer [redirect]]
+    [taoensso.timbre :as timbre :refer [debug info warn error spy]]
     ))
 
 (defn auth-system-query [user-id]
@@ -57,7 +57,7 @@
                                            {:user user-param, :forgotPasswordLink "/forgot-password"}}
                                           (anti-csrf-props request)
                                           extra-props)]
-     (log/debug 'sign-in-page-params sign-in-page-params)
+     (debug 'sign-in-page-params sign-in-page-params)
      (ssr/render-page-base
        (js-engine/render-react "SignInPage" sign-in-page-params)))))
 
@@ -140,7 +140,7 @@
                                               true))))
         all-available-auth-systems (concat user-auth-systems sign-up-auth-systems)]
 
-    (log/debug 'user user 'user-auth-systems user-auth-systems 'sign-up-auth-systems sign-up-auth-systems)
+    (debug 'user user 'user-auth-systems user-auth-systems 'sign-up-auth-systems sign-up-auth-systems)
 
       (cond
 
@@ -152,6 +152,14 @@
         (and (not user)
              (empty? sign-up-auth-systems)) (render-sign-in-page-for-invalid-user
                                               user-unique-id request)
+
+        ; the single available auth system is external and the user can not reset the password
+        (and (= 1 (count all-available-auth-systems))
+             (= (-> all-available-auth-systems first :type) "external")
+             (not (:password_sign_in_enabled user))) (sign-in-redirect
+                                                       (first all-available-auth-systems)
+                                                       user-unique-id
+                                                       request)
 
         ; no user but at least one matching sing up system
         (and (not user)
@@ -171,14 +179,6 @@
              (empty? sign-up-auth-systems)
              (-> user :password_sign_in_enabled not)) (render-sign-in-page-for-invalid-user
                                                         user-unique-id request)
-
-        ; the single available auth system is external and the user can not reset the password
-        (and (= 1 (count all-available-auth-systems))
-             (= (-> all-available-auth-systems first :type) "external")
-             (not (:password_sign_in_enabled user))) (sign-in-redirect
-                                                       (first all-available-auth-systems)
-                                                       user-unique-id
-                                                       request)
 
         ; else continue with sign-in / sign-up
         :else (render-sign-in user-unique-id user
