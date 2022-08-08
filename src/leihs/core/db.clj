@@ -91,7 +91,6 @@
           resp)
         (catch Throwable th
           (logging/warn "Rolling back transaction because of " (.getMessage th))
-          (-> th get-cause logging/debug)
           (jdbc/db-set-rollback-only! tx)
           (throw th))))))
 

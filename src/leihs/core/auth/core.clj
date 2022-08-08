@@ -1,12 +1,14 @@
 (ns leihs.core.auth.core
   (:refer-clojure :exclude [str keyword])
   (:require
+    [clojure.java.jdbc :as jdbc]
     [leihs.core.auth.session :as session]
     [leihs.core.auth.token :as token]
     [leihs.core.core :refer [str keyword presence presence!]]
+    [leihs.core.sql :as sql]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug]
-    [taoensso.timbre :refer [error warn info debug]]
+    [taoensso.timbre :refer [error warn info debug spy]]
     ))
 
 
@@ -73,6 +75,36 @@
      :scope_admin_write false
      :scope_system_admin_read true
      :scope_system_admin_write true}))
+
+(defn admin-hierarchy-user-query [user-id]
+  (-> (sql/select :id :admin_protected :system_admin_protected)
+      (sql/from :users)
+      (sql/where [:= :users.id user-id])))
+
+(comment (admin-hierarchy-user-query "foo"))
+
+
+(defn admin-hierarchy?
+  "Checks that the aut-entity has the proper admin scope
+  with respect to the requirements :system_admin_protected
+  or :admin_protected of the user referenced by the :user-id
+  param in the request (respectively by the supplied user-id-fn function)."
+  [{auth-entity :authenticated-entity
+    tx :tx :as request}
+   & {:keys [user-id-fn]
+      :or {user-id-fn #(-> % :route-params :user-id)}}]
+  (when-let [user-id (user-id-fn request)]
+    (when-let [user (some-> user-id admin-hierarchy-user-query
+                            spy sql/format spy (->> (jdbc/query tx) first))]
+      (cond
+        (http-safe?
+          request) (if (:system_admin_protected user)
+                     (:scope_system_admin_write auth-entity)
+                     (:scope_admin_write auth-entity))
+        (http-unsafe?
+          request) (if (:system_admin_protected user)
+                     (:scope_system_admin_read auth-entity)
+                     (:scope_admin_read auth-entity))))))
 
 
 ;;; authorization ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

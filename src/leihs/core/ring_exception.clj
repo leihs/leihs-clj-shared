@@ -2,14 +2,16 @@
   (:refer-clojure :exclude [str keyword])
   (:require [leihs.core.core :refer [keyword str presence]])
   (:require
-    [clojure.tools.logging :as logging]
+    [cuerdas.core :as string]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug :refer [I>]]
     [logbug.ring :refer [wrap-handler-with-logging]]
     [logbug.thrown :as thrown]
+    [taoensso.timbre :refer [error warn info debug spy]]
   ))
 
 (defn get-cause [e]
+  "Deprecated"
   (try (if (instance? java.sql.BatchUpdateException e)
          (if-let [n (.getNextException e)]
            (get-cause n) e)
@@ -17,38 +19,40 @@
            (get-cause c) e))
        (catch Throwable _ e)))
 
-(defn log [_e]
-  (let [e (get-cause _e)]
-    (logging/warn (thrown/to-string e))
-    (logging/debug e)))
 
-(defn exception-response
-  ([_e]
-   (exception-response _e nil))
-  ([_e request]
-   (if request
-     (logging/warn (str "Exception caught for uri: " (:uri request))))
-   (log _e)
-   (let [e (get-cause _e)]
-     (cond
-       (and (instance? clojure.lang.ExceptionInfo e)
-            (contains? (ex-data e) :status))
-       {:status (:status (ex-data e))
-        :headers {"Content-Type" "text/plain"}
-        :body (.getMessage e)}
-       (instance? org.postgresql.util.PSQLException e)
-       {:status 409
-        :body (.getMessage e)}
-       :else {:status 500
-              :headers {"Content-Type" "text/plain"}
-              :body "Unclassified error, see the server logs for details."}))))
+(defn logstr [e]
+  ; TODO poosible iterate over exception when (instance? java.sql.SQLException)
+  (-> (str (.getMessage e) " "
+           (with-out-str
+             (clojure.stacktrace/print-cause-trace e)))
+      (string/replace "\n" " <<< ")
+      (string/collapse-whitespace)))
+
+
+(defn exception-response [e]
+  (cond
+    (and (instance? clojure.lang.ExceptionInfo e)
+         (contains? (ex-data e)
+                    :status)) {:status (:status (ex-data e))
+                               :headers {"Content-Type" "text/plain"}
+                               :body (.getMessage e)}
+    (instance? org.postgresql.util.PSQLException
+               e) {:status 409
+                   :body (.getMessage e)}
+    :else {:status 500
+           :headers {"Content-Type" "text/plain"}
+           :body "Unclassified error, see the server logs for details."}))
 
 (defn wrap [handler]
   (fn [request]
     (try
       (handler request)
       (catch Throwable e
-        (exception-response e)))))
+        (let [resp (exception-response e)]
+          (case (:status resp)
+            (401 403) (warn (ex-message e))
+            (error (ex-message e) (ex-data e) (logstr e) {:request request}))
+          resp)))))
 
 ;#### debug ###################################################################
 ;(debug/debug-ns *ns*)
