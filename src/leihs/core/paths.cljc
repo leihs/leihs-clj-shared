@@ -17,6 +17,7 @@
 (def core-paths
   (branch ""
           (leaf "/" :home)
+          (leaf "/reset-password" :reset-password)
           (leaf "/admin/" :admin)
           (leaf "/procure" :procurement)
           (branch "/borrow"
@@ -80,3 +81,4 @@
        (str p "#" fragment)
        p ))))
 
+;(path :reset-password {})
