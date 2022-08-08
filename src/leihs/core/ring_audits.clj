@@ -60,7 +60,10 @@
        (persist-request txid request)
        (let [response (try (handler request)
                            (catch Exception e
-                             (ring-exception/exception-response e)))]
+                             (persist-response
+                               txid
+                               (ring-exception/exception-response e))
+                             (throw e)))]
          (persist-response txid response)
          (when (#{:external-authentication-sign-in :sign-in} handler-key)
            (update-request-user-id-from-session txid tx))
