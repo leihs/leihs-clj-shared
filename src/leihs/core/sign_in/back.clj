@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [str keyword])
   (:require
     [clojure.java.jdbc :as jdbc]
-    [clojure.string :as str]
+    [clojure.string]
     [clojure.tools.logging :as log]
     [compojure.core :as cpj]
     [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
@@ -20,6 +20,7 @@
     [leihs.core.ssr-engine :as js-engine]
     [logbug.debug :as debug]
     [ring.util.response :refer [redirect]]
+    [taoensso.timbre :refer [debug info warn error spy]]
     ))
 
 (defn auth-system-query [user-id]
@@ -40,6 +41,14 @@
          auth-system-query
          (jdbc/query tx))))
 
+(defn pwd-auth-system [tx]
+  (-> (sql/select :*)
+      (sql/from :authentication_systems)
+      (sql/where [:= :type "password"])
+      sql/format
+      (->> (jdbc/query tx))
+      first))
+
 (defn user-with-unique-id [tx user-unique-id]
   (-> (sql/select :*)
       (sql/from :users)
@@ -49,14 +58,26 @@
       first))
 
 (defn render-sign-in-page
-  ([user-param request] (render-sign-in-page user-param request {}))
-  ([user-param {tx :tx :as request} extra-props]
-   (let [sign-in-page-params  (merge-with into
-                                          {:navbar (navbar-props request),
-                                           :authFlow
-                                           {:user user-param, :forgotPasswordLink "/forgot-password"}}
-                                          (anti-csrf-props request)
-                                          extra-props)]
+  ([user-param user request] (render-sign-in-page user-param user request {}))
+  ([user-param
+    user
+    {:keys [tx pwd-auth-system-enabled] :as request}
+    {auth-systems :authSystems :as extra-props}]
+   (let [user-password (some #(-> % :type (= "password")) auth-systems)
+         sign-in-page-params 
+         (merge-with into
+                     {:navbar (navbar-props request),
+                      :authFlow {:user user-param,
+                                 :showPasswordSection (-> user-password nil? not)
+                                 :passwordButtonText (when (and pwd-auth-system-enabled
+                                                                (:password_sign_in_enabled user)
+                                                                (:email user))
+                                                       (if user-password
+                                                         "password_forgot_button_text"
+                                                         "password_create_button_text"))
+                                 :passwordLink "/forgot-password"}}
+                     (anti-csrf-props request)
+                     extra-props)]
      (log/debug 'sign-in-page-params sign-in-page-params)
      (ssr/render-page-base
        (js-engine/render-react "SignInPage" sign-in-page-params)))))
@@ -77,9 +98,10 @@
        ["Falsches Passwort! "
         "Überprüfen Sie Ihr Passwort und versuchen Sie es erneut. Kontaktieren Sie den leihs-Support, falls das Problem weiterhin besteht."])})
 
-(defn render-sign-in-page-for-invalid-user [user-param request]
+(defn render-sign-in-page-for-invalid-user [user-param user request]
   (render-sign-in-page
     user-param
+    user
     request
     {:flashMessages [error-flash-invalid-user]}))
 
@@ -92,11 +114,13 @@
        (jdbc/query tx)))
 
 
-(defn render-sign-in [user-unique-id user auth-systems
-                      {tx :tx settings :settings
-                       {return-to :return-to} :params :as request}]
+(defn render-sign-in [user-unique-id
+                      user
+                      auth-systems
+                      {tx :tx settings :settings {return-to :return-to} :params :as request}]
   (let [render-sign-in-page-fn #(render-sign-in-page
                                   user-unique-id
+                                  user
                                   request
                                   {:authSystems auth-systems
                                    :authFlow {:returnTo return-to}})]
@@ -119,16 +143,15 @@
 
 
 (defn handle-first-step
-  "try to find a user account from the user param,
-  then find all the availabe auth systems.
-  if there is no user given, render initial page again.
-  if user does not exist or
-    user's account is disabled or
-    has no auth systems and his password sign in is disabled
-    => show error
-  if there is only an external auth system and
-    password sign is is disabled, redirect to it.
-  otherwise show a form with all auth systems."
+  "Try to find a user account from the user param, then find all the availabe auth systems.
+   1. If there is no user given, render initial page again.
+   2. - If user does not exist or
+      - user's account is disabled or
+      - has no auth systems and his password sign in is disabled or
+      - has no auth systems, his password sign in is enabled, but he doesn't have email nor password
+      => show error
+   3. If there is only an external auth system and password sign is is disabled, redirect to it.
+   4. Otherwise show a form with all auth systems."
   [{tx :tx, {user-param :user return-to :return-to} :params :as request}]
   (let [user-unique-id (presence user-param)
         user (user-with-unique-id tx user-unique-id)
@@ -145,32 +168,43 @@
       (cond
 
         ; there is not even an login/e-mail/org-id
-        (nil? user-unique-id) (render-sign-in-page user-unique-id request
+        (nil? user-unique-id) (render-sign-in-page user-unique-id
+                                                   user
+                                                   request
                                                    {:authFlow {:returnTo return-to}})
 
         ; no user found and no sign-up-auth-systems
         (and (not user)
              (empty? sign-up-auth-systems)) (render-sign-in-page-for-invalid-user
-                                              user-unique-id request)
+                                              user-unique-id
+                                              user
+                                              request)
 
         ; no user but at least one matching sing up system
         (and (not user)
              (not-empty sign-up-auth-systems)) (render-sign-in-page
-                                                 user-unique-id request
+                                                 user-unique-id
+                                                 user
+                                                 request
                                                  {:authSystems sign-up-auth-systems})
 
         ; we have a matching user for all the remaining cases
 
         ; the user is not enabled
         (-> user :account_enabled not) (render-sign-in-page-for-invalid-user
-                                        user-unique-id request)
+                                        user-unique-id
+                                        user
+                                        request)
 
-        ; the user is enabled but there no available sign in systems, but
-        ; he can reset his password to sing in via the new password
+        ; the user is enabled but there no available sign-in or sign-up systems and
+        ; his password sign in is not enabled or it is enabled but he doesn't have an email
         (and (empty? user-auth-systems)
              (empty? sign-up-auth-systems)
-             (-> user :password_sign_in_enabled not)) (render-sign-in-page-for-invalid-user
-                                                        user-unique-id request)
+             (or (-> user :password_sign_in_enabled not)
+                 (and (-> user :password_sign_in_enabled)
+                      (-> user :email not))))
+
+          (render-sign-in-page-for-invalid-user user-unique-id user request)
 
         ; the single available auth system is external and the user can not reset the password
         (and (= 1 (count all-available-auth-systems))
@@ -181,9 +215,12 @@
                                                        request)
 
         ; else continue with sign-in / sign-up
-        :else (render-sign-in user-unique-id user
+        :else (render-sign-in user-unique-id
+                              user
                               all-available-auth-systems
-                              request))))
+                              (assoc request
+                                     :pwd-auth-system-enabled
+                                     (:enabled (pwd-auth-system tx)))))))
 
 (defn handle-second-step
   "validate given user and password params.
@@ -204,7 +241,8 @@
     (let [user-session
           (session/create-user-session
             user
-            leihs.core.constants/PASSWORD_AUTHENTICATION_SYSTEM_ID request)
+            leihs.core.constants/PASSWORD_AUTHENTICATION_SYSTEM_ID
+            request)
           location (or (presence return-to) (redirect-target tx user))
           cookies {:cookies {leihs.core.constants/USER_SESSION_COOKIE_NAME
                              {:value (:token user-session),
@@ -223,6 +261,7 @@
        :body
        (render-sign-in-page
          user-param
+         nil
          request
          {:flashMessages [error-flash-invalid-password]})})))
 
