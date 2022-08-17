@@ -1,5 +1,5 @@
 (ns leihs.core.sign-in.back
-  (:refer-clojure :exclude [str keyword])
+  (:refer-clojure :exclude [keyword])
   (:require
     [clojure.java.jdbc :as jdbc]
     [clojure.string]
