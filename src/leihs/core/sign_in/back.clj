@@ -1,5 +1,5 @@
 (ns leihs.core.sign-in.back
-  (:refer-clojure :exclude [str keyword])
+  (:refer-clojure :exclude [keyword])
   (:require
     [clojure.java.jdbc :as jdbc]
     [clojure.string]
@@ -82,28 +82,13 @@
      (ssr/render-page-base
        (js-engine/render-react "SignInPage" sign-in-page-params)))))
 
-(def error-flash-invalid-user
-  {:level "error",
-   :message
-     (clojure.string/join
-       " \n"
-       ["Anmelden ist mit diesem Benutzerkonto nicht möglich! "
-        "Bitte prüfen Sie Ihre E-Mail-Adresse oder den Benutzernamen. Kontaktieren Sie den leihs-Support, falls das Problem weiterhin besteht."])})
-
-(def error-flash-invalid-password
-  {:level "error",
-   :message
-     (clojure.string/join
-       " \n"
-       ["Falsches Passwort! "
-        "Überprüfen Sie Ihr Passwort und versuchen Sie es erneut. Kontaktieren Sie den leihs-Support, falls das Problem weiterhin besteht."])})
-
 (defn render-sign-in-page-for-invalid-user [user-param user request]
   (render-sign-in-page
     user-param
     user
     request
-    {:flashMessages [error-flash-invalid-user]}))
+    {:flashMessages [{:messageID "sign_in_invalid_user_flash_message"
+                      :level "error"}]}))
 
 (defn sign-up-auth-systems [tx user-email]
   (->> (-> (sql/select :*)
@@ -263,7 +248,8 @@
          user-param
          nil
          request
-         {:flashMessages [error-flash-invalid-password]})})))
+         {:flashMessages [{:messageID "sign_in_wrong_password_flash_message"
+                           :level "error"}]})})))
 
 (defn sign-in-get
   [{tx :tx, {return-to :return-to} :params :as request}]
