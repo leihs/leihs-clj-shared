@@ -15,7 +15,8 @@
    :system_and_security_settings.sessions_force_secure
    :system_and_security_settings.sessions_force_uniqueness
    :system_and_security_settings.sessions_max_lifetime_secs
-   [:smtp_settings.default_from_address :smtp_default_from_address]])
+   [:smtp_settings.default_from_address :smtp_default_from_address]
+   [:smtp_settings.enabled :email_sending_enabled]])
 
 (def settings-base-query
   (-> (apply sql/select selected-rows)

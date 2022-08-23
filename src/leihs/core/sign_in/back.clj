@@ -69,12 +69,9 @@
                      {:navbar (navbar-props request),
                       :authFlow {:user user-param,
                                  :showPasswordSection (-> user-password nil? not)
-                                 :passwordButtonText (when (and pwd-auth-system-enabled
-                                                                (:password_sign_in_enabled user)
-                                                                (:email user))
-                                                       (if user-password
-                                                         "password_forgot_button_text"
-                                                         "password_create_button_text"))
+                                 :passwordButtonText (if user-password
+                                                       "password_forgot_button_text"
+                                                       "password_create_button_text")
                                  :passwordLink "/forgot-password"}}
                      (anti-csrf-props request)
                      extra-props)]
