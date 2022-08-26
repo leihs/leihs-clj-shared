@@ -51,7 +51,8 @@
         (let [resp (exception-response e)]
           (case (:status resp)
             (401 403) (warn (ex-message e))
-            (error (ex-message e) (ex-data e) (logstr e) {:request request}))
+            (do #_(error (ex-message e) (ex-data e) (logstr e) {:request request})
+                (error e) (error {:request request}))) ; much more readable
           resp)))))
 
 ;#### debug ###################################################################
