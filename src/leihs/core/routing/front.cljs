@@ -16,6 +16,7 @@
     [bidi.bidi :as bidi]
     [cljs-uuid-utils.core :as uuid]
     [cljs.core.async :refer [timeout]]
+    [clojure.core.match :refer [match]]
     [clojure.pprint :refer [pprint]]
     [clojure.string :as string]
     [reagent.core :as reagent]
@@ -244,8 +245,10 @@
                                       (map (fn [[k v]] [(str k) (str v)]))
                                       (into {}))
                   (sequential? options) (->> options
-                                             (map (fn [k] [(str k) (str k)]))
-                                             (into {}))
+                                             (map (fn [x]
+                                                    (match x
+                                                      [k v] [(str k) (str v)]
+                                                      :else [(str x) (str x)]))))
                   :else {"" ""})
         default-option (or default-option
                            (-> options first first))]
@@ -256,7 +259,7 @@
       [:select.form-control
        {:id query-params-key
         :value (let [val (get-in @state* [:query-params-raw query-params-key])]
-                 (if (some #{val} (keys options))
+                 (if (some #{val} (map first options))
                    val
                    default-option))
         :on-change (fn [e]
