@@ -193,17 +193,18 @@
           [icons/delete]]]]])))
 
 (defn form-term-filter-component
-  [& {:keys [input-options query-params-key label prepend classes]
+  [& {:keys [input-options query-params-key label placeholder prepend classes]
       :or {input-options {}
            query-params-key :term
            label "Search"
+           placeholder "fuzzy term"
            prepend nil
            classes [:col-md-3]}}]
   [delayed-query-params-input-component
    :label label
    :classes classes
    :query-params-key :term
-   :input-options {:placeholder "fuzzy term"}
+   :input-options {:placeholder placeholder}
    :prepend nil])
 
 
