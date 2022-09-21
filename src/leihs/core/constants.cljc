@@ -12,3 +12,5 @@
 (def HTTP_SAVE_METHODS #{:get :head :options :trace})
 
 (def TAB-INDEX 1)
+
+(def GENERAL_BUILDING_UUID "abae04c5-d767-425e-acc2-7ce04df645d1")
