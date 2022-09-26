@@ -7,6 +7,7 @@
     [cuerdas.core :as string :refer [snake kebab upper human]]
     [environ.core :refer [env]]
     [hikari-cp.core :as hikari]
+    [leihs.core.db.type-conversion]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.ring-exception :refer [get-cause]]
     [leihs.core.sql :as sql]
