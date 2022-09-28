@@ -24,7 +24,7 @@
       sql/format
       (->> (jdbc/query tx))))
 
-(defn- sub-apps
+(defn sub-apps
   [tx auth-entity]
   (if auth-entity
     (merge {:borrow (borrow-access? tx auth-entity)}
