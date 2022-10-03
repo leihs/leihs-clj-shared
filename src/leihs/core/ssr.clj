@@ -5,10 +5,12 @@
     [clojure.java.jdbc :as jdbc]
     [hiccup.page :refer [html5 include-js]]
     [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
+    [leihs.core.core :refer [presence]]
     [leihs.core.http-cache-buster2 :as cache-buster]
     [leihs.core.release :as release]
     [leihs.core.remote-navbar.shared :refer [navbar-props]]
     [leihs.core.shared :refer [head]]
+    [leihs.core.settings :refer [settings!]]
     [leihs.core.sql :as sql]
     [leihs.core.ssr-engine :as js-engine]
     [logbug.debug :as debug]
@@ -47,15 +49,20 @@
 
 (defn render-root-page
   [request]
-  (->>
-    request
-    navbar-props
-    (hash-map :navbar)
-    (merge {:footer {:appVersion release/version}})
-    (merge (anti-csrf-props request))
-    (js-engine/render-react "HomePage")
-    (str "<script>localStorage.clear(); sessionStorage.clear(); console.log('cleared browser storage')</script>")
-    render-page-base))
+  (->> request
+       navbar-props
+       (hash-map :navbar)
+       (merge {:footer {:appVersion release/version}})
+       (merge (anti-csrf-props request))
+       ((fn [props]
+          (if-let [home-page-image-url (-> request :tx
+                                           (settings! [:home_page_image_url])
+                                           :home_page_image_url presence spy)]
+            (assoc-in props [:splash :image] home-page-image-url)
+            props)))
+       (js-engine/render-react "HomePage")
+       (str "<script>localStorage.clear(); sessionStorage.clear(); console.log('cleared browser storage')</script>")
+       render-page-base))
 
 (defn render-page-by-name
   [request page-name page-props]

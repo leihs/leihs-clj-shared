@@ -6,10 +6,11 @@
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.sql :as sql]
     [logbug.debug :as debug]
+    [taoensso.timbre :as log :refer [error warn info debug spy]]
     ))
 
 
-(def selected-rows
+(def selected-columns
   [:deliver_received_order_notifications
    :system_and_security_settings.external_base_url
    :system_and_security_settings.sessions_force_secure
@@ -18,18 +19,24 @@
    [:smtp_settings.default_from_address :smtp_default_from_address]
    [:smtp_settings.enabled :email_sending_enabled]])
 
-(def settings-base-query
-  (-> (apply sql/select selected-rows)
-      (sql/from :settings)
-      (sql/merge-join :system_and_security_settings
-                      [:= :settings.id :system_and_security_settings.id])
-      (sql/merge-join :smtp_settings
-                      [:= :settings.id :smtp_settings.id])))
+(defn settings-base-query
+  ([] (settings-base-query selected-columns))
+  ([columns]
+   (-> (apply sql/select columns)
+       (sql/from :settings)
+       (sql/merge-join :system_and_security_settings
+                       [:= :settings.id :system_and_security_settings.id])
+       (sql/merge-join :smtp_settings
+                       [:= :settings.id :smtp_settings.id]))))
 
-(defn settings! [tx]
-  (or (->> (-> settings-base-query sql/format)
-           (jdbc/query tx) first)
-      (throw (IllegalStateException. "No settings here!"))))
+(defn settings!
+  ([tx] (settings! tx selected-columns))
+  ([tx columns]
+   (or (-> (settings-base-query columns)
+           sql/format
+           (->> (jdbc/query tx))
+           first)
+       (throw (IllegalStateException. "No settings here!")))))
 
 (defn wrap
   ([handler]
