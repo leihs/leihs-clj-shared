@@ -4,6 +4,7 @@
     [leihs.core.constants :as constants]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.db :as db]
+    [leihs.core.graphql :as graphql]
     [leihs.core.ring-exception :as ring-exception]
     [leihs.core.sql :as sql]
     [logbug.catcher :as catcher]
@@ -64,22 +65,31 @@
   ([handler {handler-key :handler-key
              method :request-method
              tx :tx tx-next :tx-next :as request}]
-   (if-not (or (constants/HTTP_UNSAVE_METHODS method)
-               (= handler-key :external-authentication-sign-in))
-     (handler request)
-     (let [txid (txid tx)
-           tx2id (tx2id tx-next)]
-       (persist-request txid tx2id request)
-       (let [response (try (handler request)
-                           (catch Exception e
-                             (persist-response
-                               txid tx2id
-                               (ring-exception/exception-response e))
-                             (throw e)))]
-         (persist-response txid tx2id response)
-         (when (#{:external-authentication-sign-in :sign-in} handler-key)
-           (update-request-user-id-from-session txid tx))
-         response)))))
+   (letfn [(audited-handler [request]
+             (let [txid (txid tx)
+                   tx2id (tx2id tx-next)]
+               (persist-request txid tx2id request)
+               (let [response (try (handler request)
+                                   (catch Exception e
+                                     (persist-response
+                                       txid tx2id
+                                       (ring-exception/exception-response e))
+                                     (throw e)))]
+                 (persist-response txid tx2id response)
+                 (when (#{:external-authentication-sign-in :sign-in} handler-key)
+                   (update-request-user-id-from-session txid tx))
+                 response)))]
+     (cond
+       (and (constants/HTTP_SAVE_METHODS method)
+            (not= handler-key :external-authentication-sign-in))
+       (handler request)
+
+       (and (= method :post) (= handler-key :graphql)
+            (or (graphql/query? request)
+                (not (graphql/mutation-to-be-audited? request))))
+       (handler request)
+
+       :else (audited-handler request)))))
 
 ;#### debug ###################################################################
 ;(debug/debug-ns *ns*)
