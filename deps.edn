@@ -1,6 +1,7 @@
 {:paths ["src"]
  :deps
  {
+  alumbra/parser {:mvn/version "0.1.7"}
   better-cond/better-cond {:mvn/version "2.1.4"}
   bidi/bidi {:mvn/version "2.1.6"}
   buddy/buddy-sign {:mvn/version "3.4.333"}

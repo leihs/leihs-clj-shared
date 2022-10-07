@@ -9,6 +9,7 @@
     [hikari-cp.core :as hikari]
     [leihs.core.db.type-conversion]
     [leihs.core.core :refer [keyword str presence]]
+    [leihs.core.graphql :refer [mutation?] :rename {mutation? graphql-mutation?}]
     [leihs.core.ring-exception :refer [get-cause]]
     [leihs.core.sql :as sql]
     [logbug.catcher :as catcher]
@@ -26,8 +27,6 @@
     [com.codahale.metrics MetricRegistry]
     [com.zaxxer.hikari HikariDataSource]
     ))
-
-
 
 ;;; CLI ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -76,8 +75,6 @@
     :default (or (some-> db-max-pool-size-key env Integer/parseInt)
                  16)
     :parse-fn #(Integer/parseInt %)]])
-
-
 
 ;;; ds ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -137,7 +134,6 @@
         :metric-registry @metric-registry*
         :health-check-registry health-check-registry})}))
 
-
 ;;; next-ds ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce ds-next* (atom nil))
@@ -176,7 +172,6 @@
          (error th)
          (throw th))))
 
-
 ;;; wrap ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def builder-fn-options
@@ -186,24 +181,25 @@
   (fn [request]
     (jdbc/with-db-transaction [tx @ds*]
       (jdbc-next/with-transaction [tx-next @ds-next*]
-        (try (let [tx-next-uqlm (jdbc-next/with-options tx-next
-                                  builder-fn-options)
-                   resp (-> request
-                            (assoc :tx tx)
-                            (assoc :tx-next tx-next-uqlm)
-                            handler)]
-               (when-let [status (:status resp)]
-                 (when (>= status 400 )
-                   (logging/warn "Rolling back transaction because error status " status)
-                   (jdbc/db-set-rollback-only! tx)
-                   (.rollback tx-next)))
-               resp)
-             (catch Throwable th
-               (logging/warn "Rolling back transaction because of " (.getMessage th))
-               (jdbc/db-set-rollback-only! tx)
-               (.rollback tx-next)
-               (throw th)))))))
-
+        (letfn [(rollback-both-tx! [] (jdbc/db-set-rollback-only! tx) (.rollback tx-next))]
+          (try (let [tx-next-uqlm (jdbc-next/with-options tx-next builder-fn-options)
+                     resp (-> request
+                              (assoc :tx tx)
+                              (assoc :tx-next tx-next-uqlm)
+                              handler)
+                     resp-body (:body resp)
+                     resp-status (:status resp)]
+                 (cond (and (graphql-mutation? request) (:graphql-error resp-body))
+                       (do (logging/warn "Rolling back transaction because of graphql error " (:errors resp-body))
+                           (rollback-both-tx!))
+                       (some-> resp-status (>= 400))
+                       (do (logging/warn "Rolling back transaction because error status " resp-status)
+                           (rollback-both-tx!)))
+                 resp)
+               (catch Throwable th
+                 (logging/warn "Rolling back transaction because of " (.getMessage th))
+                 (rollback-both-tx!)
+                 (throw th))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
