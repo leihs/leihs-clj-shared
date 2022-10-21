@@ -103,3 +103,7 @@
   returns logical true value, else nil."
   [pred coll]
   (first (filter pred coll)))
+
+(defn drop-at [i v]
+  "Removes an element from a vector at given index."
+  (concat (take i v) (drop (inc i) v)))
