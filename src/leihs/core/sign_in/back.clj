@@ -13,7 +13,7 @@
     [leihs.core.redirects :refer [redirect-target]]
     [leihs.core.remote-navbar.shared :refer [navbar-props]]
     [leihs.core.sign-in.external-authentication.back :refer [ext-auth-system-token-url]]
-    [leihs.core.sign-in.password-authentication.back :refer [password-check-query]]
+    [leihs.core.sign-in.password-authentication.core :refer [password-checked-user]]
     [leihs.core.sign-in.shared :refer [auth-system-user-base-query merge-identify-user]]
     [leihs.core.sql :as sql]
     [leihs.core.ssr :as ssr]
@@ -64,7 +64,7 @@
     {:keys [tx pwd-auth-system-enabled] :as request}
     {auth-systems :authSystems :as extra-props}]
    (let [user-password (some #(-> % :type (= "password")) auth-systems)
-         sign-in-page-params 
+         sign-in-page-params
          (merge-with into
                      {:navbar (navbar-props request),
                       :authFlow {:user user-param,
@@ -216,10 +216,7 @@
              :as form-params} :form-params-raw,
     settings :settings,
     :as request}]
-  (if-let [user (->> [user-param password]
-                     (apply password-check-query)
-                     (jdbc/query tx)
-                     first)]
+  (if-let [user (password-checked-user user-param password)]
     (let [user-session
           (session/create-user-session
             user
