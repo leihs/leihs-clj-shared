@@ -3,6 +3,7 @@
     [camel-snake-kebab.core :as csk]
     [cheshire.core :refer [generate-string] :rename {generate-string to-json}]
     [clj-time.core :as clj-time]
+    [clojure.tools.logging :as log]
     [clojure.string :as string]
     [taoensso.timbre :as timbre :refer [debug info spy warn]]
     [com.walmartlabs.lacinia [executor :as executor]]
@@ -33,13 +34,13 @@
                  m (.getMessage e)
                  n (-> e*
                        .getClass
-                       .getSimpleName)]
+                       .getSimpleName)
+                 status-code (:status (ex-data e*))]
              (warn (or m n))
              (debug e)
              (resolve-as nil
                          {:message (str m),
-                          ; if message nil
-                          ; convert to ""
+                          :code status-code
                           :exception n}))))))
 
 (defn wrap-resolver-with-camelCase
