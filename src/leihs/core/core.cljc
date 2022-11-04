@@ -37,6 +37,14 @@
     (coll? v) (if (empty? v) nil v)
     :else v))
 
+(defn presence? [v]
+  "Checks if v is not a blank string or if v is not an empty collection.
+  Otherwise checks if not nil."
+  (cond
+    (string? v) (not (clojure.string/blank? v))
+    (coll? v) (not (empty? v))
+    :else (not (nil? v))))
+
 (defn presence! [v]
   "Pipes v through presence returns the result of that iff it is not nil.
   Throws an IllegalStateException otherwise. "
