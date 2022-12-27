@@ -1,0 +1,19 @@
+jobs:
+  test:
+    name: Run clj unit tests
+    run_when:
+      any branch has been updated:
+        type: branch
+        include_match: ^.*$
+    context:
+      task_defaults:
+        traits:
+          asdf: true
+      tasks:
+        test:
+          scripts:
+            test:
+              body: |
+                #!/usr/bin/env bash
+                set -euo pipefail
+                ./bin/clj-test
