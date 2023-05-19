@@ -59,7 +59,7 @@
         body {:memory memory-status,
               :db-pool (db/status),
               :health-checks health-checks}]
-    (debug body)
+    ; (debug body)
     {:status (if (and (->> [memory-status]
                            (map :ok?)
                            (every? true?))
@@ -73,7 +73,7 @@
 
 (defn wrap [default-handler path]
   (fn [request]
-    (debug {'request request})
+    ; (debug {'request request})
     (if (= (:uri request) path)
       (status-handler request)
       (default-handler request))))
