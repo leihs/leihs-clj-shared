@@ -5,7 +5,7 @@
     [honeysql-postgres.format :as pg-format]
     [honeysql-postgres.helpers :as pg-helpers]
     [honeysql.core :as core]
-    [honeysql.format :as format]
+    [honeysql.format :as format :refer [format-clause]]
     [honeysql.helpers :as helpers :refer [build-clause]]
     [honeysql.types :as types]
     [honeysql.util :as util :refer [defalias]]
@@ -51,6 +51,13 @@
   (clojure.core/format "(%s, %s) OVERLAPS (%s, %s)"
                        (format/to-sql s1) (format/to-sql e1)
                        (format/to-sql s2) (format/to-sql e2)))
+
+; source code copied from library; fixes flatten
+(defmethod format-clause :returning [[_ fields] _]
+  (->> fields ; (flatten fields) -> flatten does not work with column aliases
+       (map format/to-sql)
+       (format/comma-join)
+       (str "RETURNING ")))
 
 (defn expand-text-search-terms [terms]
   (str "(" (string/join
