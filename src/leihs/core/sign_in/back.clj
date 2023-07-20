@@ -18,6 +18,7 @@
     [leihs.core.sql :as sql]
     [leihs.core.ssr :as ssr]
     [leihs.core.ssr-engine :as js-engine]
+    [leihs.core.sign-in.simple-login :as simple-login]
     [logbug.debug :as debug]
     [ring.util.response :refer [redirect]]
     [taoensso.timbre :refer [debug info warn error spy]]
@@ -57,6 +58,12 @@
       (->> (jdbc/query tx))
       first))
 
+(def use-simple-login?* (atom false))
+
+(defn use-simple-login []
+  (info "Simple Login is on.")
+  (reset! use-simple-login?* true))
+
 (defn render-sign-in-page
   ([user-param user request] (render-sign-in-page user-param user request {}))
   ([user-param
@@ -76,8 +83,10 @@
                      (anti-csrf-props request)
                      extra-props)]
      (log/debug 'sign-in-page-params sign-in-page-params)
-     (ssr/render-page-base
-       (js-engine/render-react "SignInPage" sign-in-page-params)))))
+     (if @use-simple-login?*
+       (simple-login/sign-in-view sign-in-page-params)
+       (ssr/render-page-base
+        (js-engine/render-react "SignInPage" sign-in-page-params))))))
 
 (defn render-sign-in-page-for-invalid-user [user-param user request]
   (render-sign-in-page
