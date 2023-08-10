@@ -58,11 +58,9 @@
       (->> (jdbc/query tx))
       first))
 
-(def use-simple-login?* (atom false))
-
-(defn use-simple-login []
-  (info "Simple Login is on.")
-  (reset! use-simple-login?* true))
+(def sign-in-page-renderer* (atom nil))
+(defn use-sign-in-page-renderer [renderer]
+  (reset! sign-in-page-renderer* renderer))
 
 (defn render-sign-in-page
   ([user-param user request] (render-sign-in-page user-param user request {}))
@@ -83,10 +81,9 @@
                      (anti-csrf-props request)
                      extra-props)]
      (log/debug 'sign-in-page-params sign-in-page-params)
-     (if @use-simple-login?*
-       (simple-login/sign-in-view sign-in-page-params)
-       (ssr/render-page-base
-        (js-engine/render-react "SignInPage" sign-in-page-params))))))
+     (if (some? @sign-in-page-renderer*)
+       (@sign-in-page-renderer* sign-in-page-params)
+       (simple-login/sign-in-view sign-in-page-params)))))
 
 (defn render-sign-in-page-for-invalid-user [user-param user request]
   (render-sign-in-page

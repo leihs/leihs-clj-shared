@@ -47,23 +47,6 @@
      (navbar-props <> subapps-override)
      (js-engine/render-react "Navbar" <>))))
 
-(defn render-root-page
-  [request]
-  (->> request
-       navbar-props
-       (hash-map :navbar)
-       (merge {:footer {:appVersion release/version}})
-       (merge (anti-csrf-props request))
-       ((fn [props]
-          (if-let [home-page-image-url (-> request :tx
-                                           (settings! [:home_page_image_url])
-                                           :home_page_image_url presence spy)]
-            (assoc-in props [:splash :image] home-page-image-url)
-            props)))
-       (js-engine/render-react "HomePage")
-       (str "<script>localStorage.clear(); sessionStorage.clear(); console.log('cleared browser storage')</script>")
-       render-page-base))
-
 (defn render-page-by-name
   [request page-name page-props]
   (as-> request <>
