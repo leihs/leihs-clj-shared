@@ -3,7 +3,6 @@
   (:require
     [clj-yaml.core :as yaml]
     [clojure.java.jdbc :as jdbc]
-    [clojure.tools.logging :as logging]
     [cuerdas.core :as string :refer [snake kebab upper human]]
     [environ.core :refer [env]]
     [hikari-cp.core :as hikari]
@@ -25,8 +24,7 @@
   (:import
     java.net.URI
     [com.codahale.metrics MetricRegistry]
-    [com.zaxxer.hikari HikariDataSource]
-    ))
+    [com.zaxxer.hikari HikariDataSource]))
 
 ;;; CLI ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -104,10 +102,10 @@
 (defn close []
   (when @ds*
     (do
-      (logging/info "Closing db pool ...")
+      (info "Closing db pool ...")
       (-> @ds* :datasource hikari/close-datasource)
       (reset! ds* nil)
-      (logging/info "Closing db pool done."))))
+      (info "Closing db pool done."))))
 
 (defn init-ds [db-options health-check-registry]
   (reset! metric-registry* (MetricRegistry.))
@@ -190,14 +188,14 @@
                      resp-body (:body resp)
                      resp-status (:status resp)]
                  (cond (and (graphql-mutation? request) (:graphql-error resp-body))
-                       (do (logging/warn "Rolling back transaction because of graphql error " (:errors resp-body))
+                       (do (warn "Rolling back transaction because of graphql error " (:errors resp-body))
                            (rollback-both-tx!))
                        (some-> resp-status (>= 400))
-                       (do (logging/warn "Rolling back transaction because error status " resp-status)
+                       (do (warn "Rolling back transaction because error status " resp-status)
                            (rollback-both-tx!)))
                  resp)
                (catch Throwable th
-                 (logging/warn "Rolling back transaction because of " (.getMessage th))
+                 (warn "Rolling back transaction because of " (.getMessage th))
                  (rollback-both-tx!)
                  (throw th))))))))
 

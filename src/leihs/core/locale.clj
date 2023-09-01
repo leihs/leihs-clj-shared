@@ -1,10 +1,10 @@
 (ns leihs.core.locale
-  (:require [clojure.java.jdbc :as jdbc]
-            [clojure.tools.logging :as log]
-            [leihs.core.paths :refer [path]]
-            [leihs.core.sql :as sql]
-            [compojure.core :as cpj]
-            [ring.util.response :refer [redirect]]))
+  (:require 
+    [clojure.java.jdbc :as jdbc]
+    [compojure.core :as cpj]
+    [leihs.core.paths :refer [path]]
+    [leihs.core.sql :as sql]
+    [ring.util.response :refer [redirect]]))
 
 (defn set-language-cookie
   ([response language]

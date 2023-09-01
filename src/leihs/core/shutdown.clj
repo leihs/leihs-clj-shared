@@ -4,10 +4,10 @@
     [clj-pid.core :as pid]
     [clj-yaml.core :as yaml]
     [clojure.java.io :as io]
-    [clojure.tools.logging :as logging]
     [leihs.core.core :refer [keyword str presence]]
     [logbug.debug :as debug]
     [signal.handler]
+    [taoensso.timbre :refer [debug error info spy warn]]
     ))
 
 (def pid-file-option
@@ -17,15 +17,15 @@
    ])
 
 (defn pid [options]
-  (logging/info "PID" (pid/current))
+  (info "PID" (pid/current))
   (when-let [pid-file (:pid-file options)]
-    (logging/info "PID-FILE" pid-file)
+    (info "PID-FILE" pid-file)
     (io/make-parents pid-file) ; ensure dirs exist before creating file!
     (pid/save pid-file)
     (pid/delete-on-shutdown! pid-file)))
 
 (defn init [options]
   (pid options)
-  (logging/info "Registering SIGTERM handler for shutdown.")
+  (info "Registering SIGTERM handler for shutdown.")
   (signal.handler/with-handler :term
     (System/exit 0)))

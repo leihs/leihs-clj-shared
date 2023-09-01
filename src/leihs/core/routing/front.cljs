@@ -1,9 +1,13 @@
 (ns leihs.core.routing.front
   (:refer-clojure :exclude [str keyword])
-  (:require-macros
-    [reagent.ratom :as ratom :refer [reaction]]
-    [cljs.core.async.macros :refer [go]])
   (:require
+    [accountant.core :as accountant]
+    [bidi.bidi :as bidi]
+    [cljs-uuid-utils.core :as uuid]
+    [cljs.core.async :refer [<! go timeout]]
+    [clojure.core.match :refer [match]]
+    [clojure.pprint :refer [pprint]]
+    [clojure.string :as string]
     [leihs.core.constants :as constants]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.defaults :as defaults]
@@ -11,16 +15,7 @@
     [leihs.core.paths :refer [path]]
     [leihs.core.url.core :as url]
     [leihs.core.url.query-params :as query-params]
-
-    [accountant.core :as accountant]
-    [bidi.bidi :as bidi]
-    [cljs-uuid-utils.core :as uuid]
-    [cljs.core.async :refer [timeout]]
-    [clojure.core.match :refer [match]]
-    [clojure.pprint :refer [pprint]]
-    [clojure.string :as string]
-    [reagent.core :as reagent]
-    [taoensso.timbre :as logging]
+    [reagent.core :as reagent :refer [reaction]]
     [timothypratley.patchin :as patchin])
   (:import goog.Uri))
 

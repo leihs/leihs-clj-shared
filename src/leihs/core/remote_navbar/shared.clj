@@ -2,8 +2,6 @@
   (:require
     [clojure.java.jdbc :as jdbc]
     [clojure.set :as set]
-    [clojure.tools.logging :as log]
-    [clojure.tools.logging :as logging]
     [leihs.core [paths :refer [path]] [sql :as sql]]
     [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
     [leihs.core.constants :as constants]
@@ -13,8 +11,7 @@
     [logbug.catcher :as catcher]
     [logbug.debug :as debug :refer [I>]]
     [logbug.ring :refer [wrap-handler-with-logging]]
-    [logbug.thrown :as thrown]
-    ))
+    [logbug.thrown :as thrown]))
 
 (defn- languages
   [tx]

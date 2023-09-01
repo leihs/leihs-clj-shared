@@ -1,13 +1,9 @@
 (ns leihs.core.auth.core
   (:refer-clojure :exclude [str keyword])
-  (:require-macros
-    [reagent.ratom :as ratom :refer [reaction]])
   (:require
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.routing.front :as routing]
-    [leihs.core.user.front :as current-user]
-
-    [taoensso.timbre :as logging]))
+    [leihs.core.user.front :as current-user]))
 
 ; this is a misnomer since "Authorization" on the frontent is per se pointless,
 ; however it "feels and looks" like authorization on the backen

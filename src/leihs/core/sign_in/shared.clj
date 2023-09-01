@@ -1,13 +1,11 @@
 (ns leihs.core.sign-in.shared
   (:refer-clojure :exclude [str keyword])
-  (:require [leihs.core.core :refer [keyword str presence]])
   (:require
     [clojure.string :as str]
-    [clojure.tools.logging :as logging]
+    [leihs.core.core :refer [keyword str presence]]
     [leihs.core.paths :refer [path]]
     [leihs.core.sql :as sql]
-    [logbug.debug :as debug]
-    ))
+    [logbug.debug :as debug]))
 
 (def authentication-systems-users-sql-expr
   [:or

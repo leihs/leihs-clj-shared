@@ -3,7 +3,6 @@
   (:require
     [clojure.java.jdbc :as jdbc]
     [clojure.string]
-    [clojure.tools.logging :as log]
     [compojure.core :as cpj]
     [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
     [leihs.core.auth.session :as session]
@@ -15,13 +14,13 @@
     [leihs.core.sign-in.external-authentication.back :refer [ext-auth-system-token-url]]
     [leihs.core.sign-in.password-authentication.core :refer [password-checked-user]]
     [leihs.core.sign-in.shared :refer [auth-system-user-base-query merge-identify-user]]
+    [leihs.core.sign-in.simple-login :as simple-login]
     [leihs.core.sql :as sql]
     [leihs.core.ssr :as ssr]
     [leihs.core.ssr-engine :as js-engine]
-    [leihs.core.sign-in.simple-login :as simple-login]
     [logbug.debug :as debug]
     [ring.util.response :refer [redirect]]
-    [taoensso.timbre :refer [debug info warn error spy]]
+    [taoensso.timbre :refer [debug error info spy warn]]
     ))
 
 (defn auth-system-query [user-id]
@@ -80,7 +79,7 @@
                                  :passwordLink "/forgot-password"}}
                      (anti-csrf-props request)
                      extra-props)]
-     (log/debug 'sign-in-page-params sign-in-page-params)
+     (debug 'sign-in-page-params sign-in-page-params)
      (if (some? @sign-in-page-renderer*)
        (@sign-in-page-renderer* sign-in-page-params)
        (simple-login/sign-in-view sign-in-page-params)))))
@@ -151,7 +150,7 @@
                                               true))))
         all-available-auth-systems (concat user-auth-systems sign-up-auth-systems)]
 
-    (log/debug 'user user 'user-auth-systems user-auth-systems 'sign-up-auth-systems sign-up-auth-systems)
+    (debug 'user user 'user-auth-systems user-auth-systems 'sign-up-auth-systems sign-up-auth-systems)
 
       (cond
 

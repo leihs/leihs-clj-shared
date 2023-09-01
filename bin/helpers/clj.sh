@@ -30,7 +30,7 @@ function clj_uberjar() {
   set_common_vars
   clj_setup_env
   cd $CLJ_DIR
-  clojure -T:build-leihs uber
+  clojure -T:build uber
   cd -
 }
 

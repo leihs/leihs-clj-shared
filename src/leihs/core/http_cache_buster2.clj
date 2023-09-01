@@ -1,6 +1,5 @@
 (ns leihs.core.http-cache-buster2
   (:require
-    [clojure.tools.logging :as logging]
     [logbug.debug :as debug :refer [I> I>> identity-with-logging]]
     [logbug.ring :refer [wrap-handler-with-logging]]
     [logbug.thrown :as thrown]
@@ -8,8 +7,7 @@
     [ring.middleware.resource :as resource]
     [ring.util.codec :as codec]
     [ring.util.request :as request]
-    [ring.util.response :as response]
-    ))
+    [ring.util.response :as response]))
 
 (defn- path-matches? [path xp]
   (boolean

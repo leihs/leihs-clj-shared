@@ -1,7 +1,7 @@
 (ns leihs.core.release
   (:require
-    [clojure.tools.logging :as log]
     [clj-yaml.core :as yaml]
+    [taoensso.timbre :refer [debug error info spy warn]]
     ))
 
 (def file-content
@@ -10,7 +10,7 @@
         (str "/../config/releases.yml")
         slurp yaml/parse-string)
     (catch Exception ex
-      (log/warn "Failed to read releases.yml, returning bogus value ")
+      (warn "Failed to read releases.yml, returning bogus value ")
       {:releases []}
       )))
 

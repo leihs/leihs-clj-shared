@@ -1,6 +1,5 @@
 (ns leihs.core.status
   (:require
-    [clojure.tools.logging :as logging]
     [compojure.core :as cpj]
     [leihs.core.db :as db]
     [logbug.debug :as debug]
@@ -46,7 +45,7 @@
                :allocated (Humanize/binaryPrefix allocated-mem),
                :used (Humanize/binaryPrefix used),
                :usage usage}]
-    (when-not ok? (logging/fatal stats))
+    (when-not ok? (error stats))
     stats))
 
 

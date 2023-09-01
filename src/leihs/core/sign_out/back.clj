@@ -1,21 +1,17 @@
 (ns leihs.core.sign-out.back
   (:refer-clojure :exclude [str keyword])
   (:require
+    [clojure.java.jdbc :as jdbc]
+    [compojure.core :as cpj]
     [leihs.core.constants :refer [USER_SESSION_COOKIE_NAME]]
     [leihs.core.core :refer [str keyword presence presence!]]
     [leihs.core.locale :refer [get-user-db-language set-language-cookie]]
     [leihs.core.paths :refer [path]]
     [leihs.core.sql :as sql]
     [leihs.core.url.query-params :as query-params]
-
-    [clojure.java.jdbc :as jdbc]
-    [compojure.core :as cpj]
-    [ring.util.response :refer [redirect]]
-
     [logbug.catcher :as catcher]
     [logbug.debug :as debug]
-    [clojure.tools.logging :as log]
-    )
+    [ring.util.response :refer [redirect]])
   (:import
    [java.util UUID]))
 

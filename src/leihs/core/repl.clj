@@ -5,12 +5,11 @@
     [clj-yaml.core :as yaml]
     [clojure.java.io :as io]
     [clojure.string :refer [upper-case]]
-    [clojure.tools.logging :as logging :refer [debug info]]
     [environ.core :refer [env]]
     [leihs.core.core :refer [presence keyword str]]
     [logbug.catcher :as catcher]
     [nrepl.server :as nrepl-server :refer [start-server stop-server]]
-    ))
+    [taoensso.timbre :refer [debug info warn error spy]]))
 
 
 ;;; cli-options ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

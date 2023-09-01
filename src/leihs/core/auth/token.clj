@@ -3,7 +3,6 @@
   (:require
     [clj-time.core :as time]
     [clojure.java.jdbc :as jdbc]
-    [clojure.tools.logging :as logging]
     [clojure.walk :refer [keywordize-keys]]
     [leihs.core.auth.shared :refer [access-rights]]
     [leihs.core.core :refer [keyword str presence]]
@@ -11,11 +10,9 @@
     [leihs.core.sql :as sql]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug]
-    [logbug.thrown :as thrown]
-    )
+    [logbug.thrown :as thrown])
   (:import
-    [java.util Base64]
-    ))
+    [java.util Base64]))
 
 (defn token-error-page [exception request]
   (-> {:status 401

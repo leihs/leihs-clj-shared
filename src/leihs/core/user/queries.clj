@@ -1,8 +1,8 @@
 (ns leihs.core.user.queries
-  (:require [clojure.java.jdbc :as jdbc]
-            [clojure.string :as clj-str]
-            [clojure.tools.logging :as log]
-            [leihs.core.sql :as sql]))
+  (:require 
+    [clojure.java.jdbc :as jdbc]
+    [clojure.string :as clj-str]
+    [leihs.core.sql :as sql]))
 
 (defn merge-search-term-where-clause [sqlmap search-term]
   (let [term-parts (map (fn [part] (str "%" part "%"))

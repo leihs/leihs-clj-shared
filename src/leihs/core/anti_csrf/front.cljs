@@ -3,11 +3,14 @@
   (:require
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.constants :as constants]
-    [goog.net.cookies]
+    [goog.net.Cookies]
     ))
 
+
+(defonce ^:dynamic *cookies* (or goog.net.cookies (.getInstance goog.net.Cookies)))
+
 (defn anti-csrf-token []
-  (.get goog.net.cookies constants/ANTI_CSRF_TOKEN_COOKIE_NAME))
+  (.get *cookies* constants/ANTI_CSRF_TOKEN_COOKIE_NAME))
 
 (defn hidden-form-group-token-component []
   [:div.form-group

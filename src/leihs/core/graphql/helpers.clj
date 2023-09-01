@@ -3,14 +3,12 @@
     [camel-snake-kebab.core :as csk]
     [cheshire.core :refer [generate-string] :rename {generate-string to-json}]
     [clj-time.core :as clj-time]
-    [clojure.tools.logging :as log]
     [clojure.string :as string]
-    [taoensso.timbre :as timbre :refer [debug info spy warn]]
     [com.walmartlabs.lacinia [executor :as executor]]
     [com.walmartlabs.lacinia.resolve :refer [resolve-as wrap-resolver-result with-extensions]]
     [leihs.core.ring-exception :refer [get-cause]]
-    [wharf.core :refer [transform-keys]]
-    ))
+    [taoensso.timbre :as timbre :refer [debug info spy warn]]
+    [wharf.core :refer [transform-keys]]))
 
 (defn error-as-graphql-object
   [code message]

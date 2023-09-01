@@ -7,7 +7,6 @@
     [clj-time.core :as time]
     [clojure.java.jdbc :as jdbc]
     [clojure.string :as str]
-    [clojure.tools.logging :as logging]
     [compojure.core :as cpj]
     [leihs.core.auth.session :as session]
     [leihs.core.core :refer [keyword str presence]]
@@ -16,7 +15,9 @@
     [leihs.core.sign-in.shared :refer [auth-system-base-query-for-unique-id user-query-for-unique-id]]
     [leihs.core.sql :as sql]
     [logbug.debug :as debug]
-    [ring.util.response :refer [redirect]]))
+    [ring.util.response :refer [redirect]]
+    [taoensso.timbre :refer [debug error info spy warn]]
+    ))
 
 (def skip-authorization-handler-keys
   "These keys needs the be added to the list of the skipped handler keys
@@ -181,8 +182,8 @@
         sign-in-request-token (jwt/unsign (:sign_in_request_token sign-in-token)
                                           internal-pub-key {:alg :es256})]
 
-    (logging/debug 'sign-in-token sign-in-token)
-    (logging/debug 'sign-in-request-token sign-in-request-token)
+    (debug 'sign-in-token sign-in-token)
+    (debug 'sign-in-request-token sign-in-request-token)
     (if-not (:success sign-in-token)
       {:status 400
        :headers {"Content-Type" "text/plain"}
@@ -210,7 +211,7 @@
         internal-pub-key (-> authentication-system :internal_public_key public-key!)
         sign-in-request-token (jwt/unsign (:sign_in_request_token sign-in-token)
                                           internal-pub-key {:alg :es256})]
-    (logging/debug 'sign-in-token sign-in-token)
+    (debug 'sign-in-token sign-in-token)
     (if-not (:success sign-in-token)
       {:status 400
        :body (:error_message sign-in-token)}

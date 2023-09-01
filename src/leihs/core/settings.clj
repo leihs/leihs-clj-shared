@@ -2,7 +2,6 @@
   (:refer-clojure :exclude [str keyword])
   (:require
     [clojure.java.jdbc :as jdbc]
-    [clojure.tools.logging :as logging]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.sql :as sql]
     [logbug.debug :as debug]

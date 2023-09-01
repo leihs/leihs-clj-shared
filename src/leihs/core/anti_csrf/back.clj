@@ -8,7 +8,6 @@
    - Then the comparison with the cookie proves the origin of the request."
   (:refer-clojure :exclude [str keyword])
   (:require
-    [clojure.tools.logging :as logging]
     [leihs.core.constants :as constants]
     [leihs.core.core :refer [keyword str presence]]
     [logbug.catcher :as catcher]

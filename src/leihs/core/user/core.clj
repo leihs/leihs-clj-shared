@@ -1,10 +1,10 @@
 (ns leihs.core.user.core
-  (:require [clojure.java.jdbc :as jdbc]
-            [clojure.tools.logging :as log]
-            [compojure.core :as cpj]
-            [leihs.core.paths :refer [path]]
-            [leihs.core.sql :as sql]
-            [ring.util.response :refer [redirect]]))
+  (:require 
+    [clojure.java.jdbc :as jdbc]
+    [compojure.core :as cpj]
+    [leihs.core.paths :refer [path]]
+    [leihs.core.sql :as sql]
+    [ring.util.response :refer [redirect]]))
 
 (defn wrap-me-id 
   ([handler]

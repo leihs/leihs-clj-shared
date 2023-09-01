@@ -3,7 +3,6 @@
   (:require
     [bidi.bidi :as bidi]
     [bidi.ring :refer [make-handler]]
-    [clojure.tools.logging :as logging]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.defaults :as defaults]
     [leihs.core.json :as json]
@@ -14,7 +13,7 @@
     [logbug.debug :as debug :refer [I>]]
     [logbug.ring :refer [wrap-handler-with-logging]]
     [logbug.thrown :as thrown]
-    ))
+    [taoensso.timbre :refer [debug error info spy warn]]))
 
 ;;; resolving by handler ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
