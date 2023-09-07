@@ -26,8 +26,12 @@
 
 (def http-host-key :http-host)
 (def http-port-key :http-port)
-(def http-threads-key :http-threads)
-(def options-keys [http-host-key http-port-key http-threads-key])
+(def http-worker-prefix :http-worker-prefix)
+(def http-min-threads-key :http-min-threads)
+(def http-max-threads-key :http-max-threads)
+(def http-thread-keep-alive-seconds :http-thread-keep-alive-seconds)
+(def http-queue-capacity :http-queue-capacity)
+
 
 (defn cli-options
   [& {:keys [default-http-port] :or {default-http-port 3200}}]
@@ -38,14 +42,41 @@
     :default (or (some-> http-port-key env presence Integer/parseInt)
                  default-http-port)
     :parse-fn #(Integer/parseInt %)]
-   [nil (long-opt-for-key http-threads-key)
-    :default (or (some-> http-threads-key env Integer/parseInt)
-                 (-> NCPUS (/ 4) Math/ceil int))
+   [nil (long-opt-for-key http-worker-prefix)
+    :default "leihs-service-http-worker-" ]
+   [nil (long-opt-for-key http-max-threads-key)
+    :default (or (some-> http-max-threads-key env Integer/parseInt)
+                 (-> NCPUS (* 3) (/ 4) Math/ceil int))
     :parse-fn #(Integer/parseInt %)
-    :validate [#(<= 1 % NCPUS) "Must be an integer <= num cpus"]]])
+    :validate [#(and (int? %)
+                     (<= 1 % )) "Must be an integer >= 1"]]
+   [nil (long-opt-for-key http-min-threads-key)
+    :default (or (some-> http-min-threads-key env Integer/parseInt)
+                 1)
+    :parse-fn #(Integer/parseInt %)
+    :validate [#(and (int? %)
+                     (<= 1 % )) "Must be an integer >= 1"]]
+   [nil (long-opt-for-key http-thread-keep-alive-seconds)
+    :default (or (some-> http-thread-keep-alive-seconds env Long/parseLong)
+                 10)
+    :parse-fn #(Long/parseLong % 10)]
+   [nil (long-opt-for-key http-queue-capacity)
+    :default (or (some-> http-queue-capacity env Integer/parseInt)
+                 (-> NCPUS (* 64) int))]])
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn connection-pool [opts]
+  (let [ptf   (org.httpkit.PrefixThreadFactory. (http-worker-prefix opts))
+        queue (java.util.concurrent.ArrayBlockingQueue. (http-queue-capacity opts))
+        pool  (java.util.concurrent.ThreadPoolExecutor.
+                (long (http-min-threads-key opts)) (long (http-max-threads-key opts))
+                (http-thread-keep-alive-seconds opts) java.util.concurrent.TimeUnit/SECONDS
+                queue ptf)]
+    {:queue queue
+     :pool  pool}))
+
 
 
 (defn stop []
@@ -61,12 +92,13 @@
   (when-not @stop-server* ; only-once, not on code reload
     (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (stop)))))
   (when @stop-server* (stop))
-  (let [server-conf (-> options
-                        (select-keys options-keys)
-                        (merge {:worker-name-prefix "http-server-worker-"})
+  (let [pool (connection-pool options)
+        server-conf (-> options
+                        (select-keys [:http-port :http-host])
                         (rename-keys {:http-port :port
-                                      :http-host :ip
-                                      :http-threads :thread}))]
+                                      :http-host :ip})
+                        (assoc :pool pool))]
     (info "starting http-server " server-conf)
-    (reset! stop-server* (http-kit/run-server main-handler server-conf))
+    (reset! stop-server* 
+            (http-kit/run-server main-handler server-conf))
     (info "started http-server ")))
