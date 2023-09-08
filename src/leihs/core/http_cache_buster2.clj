@@ -24,7 +24,7 @@
           (assoc :path-info (codec/url-encode path))
           (resource/resource-request root-path options)
           (update-in [:headers] dissoc "Last-Modified")
-          (assoc-in [:headers "Cache-Control"] "public, max-age=31536000")))
+          (assoc-in [:headers "Cache-Control"] "public, max-age=31536000, immutable")))
 
 
 ;### busted resource ##########################################################
