@@ -61,7 +61,8 @@
   (->> request get-query-str query-type?))
 
 (defn mutation? [request]
-  (->> request get-query-str mutation-type?))
+  (and (-> request :request-method (= :post))
+       (->> request get-query-str mutation-type?)))
 
 (defn mutation-to-be-audited? [request]
   (let [query-str (get-query-str request)]

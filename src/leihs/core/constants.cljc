@@ -11,6 +11,9 @@
 (def HTTP_UNSAVE_METHODS #{:delete :patch :post :put})
 (def HTTP_SAVE_METHODS #{:get :head :options :trace})
 
+(def HTTP_UNSAFE_METHODS HTTP_UNSAVE_METHODS)
+(def HTTP_SAFE_METHODS HTTP_SAVE_METHODS)
+
 (def TAB-INDEX 1)
 
 (def GENERAL_BUILDING_UUID "abae04c5-d767-425e-acc2-7ce04df645d1")
