@@ -181,7 +181,8 @@
     (let [handler-key (:handler-key request)
           tx-next-uqlm (jdbc-next/with-options @ds-next* builder-fn-options)]
       (if (or (and (= handler-key :graphql) (graphql-mutation? request))
-              (and (not= handler-key :graphql) (HTTP_UNSAFE_METHODS (:request-method request))))
+              (and (not= handler-key :graphql) (HTTP_UNSAFE_METHODS (:request-method request)))
+              (= handler-key :external-authentication-sign-in))
         (jdbc/with-db-transaction [tx @ds*]
           (jdbc-next/with-transaction [tx-next @ds-next*]
             (letfn [(rollback-both-tx! [] (jdbc/db-set-rollback-only! tx) (.rollback tx-next))]
