@@ -1,5 +1,6 @@
 (ns leihs.core.graphql
   (:require [com.walmartlabs.lacinia.parser :as lacinia-parser]
+            [clojure.set :refer [subset?]]
             [alumbra.parser :as graphql-parser]
             [leihs.core.graphql.helpers :as helpers]
             [leihs.core.ring-exception :refer [get-cause]]
@@ -50,24 +51,22 @@
        :type
        (= :mutation)))
 
-(defn operation-name [query-str]
+(defn operations-names [query-str]
   (-> query-str
-      graphql-parser/parse-document
-      :alumbra/operations
-      first
-      :alumbra/operation-name))
+      query-operations
+      :operations))
 
 (defn query? [request]
   (->> request get-query-str query-type?))
 
 (defn mutation? [request]
-  (and (-> request :request-method (= :post))
-       (->> request get-query-str mutation-type?)))
+  (->> request get-query-str mutation-type?))
 
-(defn mutation-to-be-audited? [request]
+(defn to-be-audited? [request]
   (let [query-str (get-query-str request)]
     (and (mutation-type? query-str)
-         (not (contains? @audit-exceptions* (operation-name query-str))))))
+         (not (subset? (operations-names query-str)
+                       @audit-exceptions*)))))
 
 (defn get-schema? [request]
   (->> request

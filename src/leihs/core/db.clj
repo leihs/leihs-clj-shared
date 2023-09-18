@@ -9,7 +9,7 @@
     [leihs.core.db.type-conversion]
     [leihs.core.constants :refer [HTTP_UNSAFE_METHODS]]
     [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.graphql :refer [mutation?] :rename {mutation? graphql-mutation?}]
+    [leihs.core.graphql :as graphql]
     [leihs.core.ring-exception :refer [get-cause]]
     [leihs.core.sql :as sql]
     [logbug.catcher :as catcher]
@@ -180,7 +180,7 @@
   (fn [request]
     (let [handler-key (:handler-key request)
           tx-next-uqlm (jdbc-next/with-options @ds-next* builder-fn-options)]
-      (if (or (and (= handler-key :graphql) (graphql-mutation? request))
+      (if (or (and (= handler-key :graphql) (graphql/mutation? request))
               (and (not= handler-key :graphql) (HTTP_UNSAFE_METHODS (:request-method request)))
               (= handler-key :external-authentication-sign-in))
         (jdbc/with-db-transaction [tx @ds*]
@@ -192,7 +192,7 @@
                                   handler)
                          resp-body (:body resp)
                          resp-status (:status resp)]
-                     (cond (and (graphql-mutation? request) (:graphql-error resp-body))
+                     (cond (and (graphql/mutation? request) (:graphql-error resp-body))
                            (do (warn "Rolling back transaction because of graphql error " (:errors resp-body))
                                (rollback-both-tx!))
                            (some-> resp-status (>= 400))

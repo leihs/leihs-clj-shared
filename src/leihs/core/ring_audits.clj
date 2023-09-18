@@ -84,9 +84,8 @@
             (not= handler-key :external-authentication-sign-in))
        (handler request)
 
-       (and (= method :post) (= handler-key :graphql)
-            (or (graphql/query? request)
-                (not (graphql/mutation-to-be-audited? request))))
+       (and (= handler-key :graphql)
+            (not (graphql/to-be-audited? request)))
        (handler request)
 
        :else (audited-handler request)))))
