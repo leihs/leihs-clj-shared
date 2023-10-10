@@ -12,6 +12,7 @@
     [leihs.core.graphql :as graphql]
     [leihs.core.ring-exception :refer [get-cause]]
     [leihs.core.sql :as sql]
+    [leihs.core.sql2]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug :refer [I> I>> identity-with-logging]]
     [logbug.ring :refer [wrap-handler-with-logging]]
@@ -135,6 +136,9 @@
 
 ;;; next-ds ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def builder-fn-options
+  {:builder-fn next.jdbc.result-set/as-unqualified-lower-maps})
+
 (defonce ds-next* (atom nil))
 
 (defn get-ds-next [] @ds-next*)
@@ -165,7 +169,7 @@
                        HikariDataSource params)]
          ;; this code initializes the pool and performs a validation check:
          (.close (jdbc-next/get-connection ds-next))
-         (reset! ds-next* ds-next)
+         (reset! ds-next* (jdbc-next/with-options ds-next builder-fn-options))
          @ds-next*)
        (catch Throwable th
          (error th)
@@ -173,22 +177,20 @@
 
 ;;; wrap ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def builder-fn-options
-  {:builder-fn next.jdbc.result-set/as-unqualified-lower-maps})
-
 (defn wrap-tx [handler]
   (fn [request]
-    (let [handler-key (:handler-key request)
-          tx-next-uqlm (jdbc-next/with-options @ds-next* builder-fn-options)]
+    (let [handler-key (:handler-key request)]
       (if (or (and (= handler-key :graphql) (graphql/mutation? request))
               (and (not= handler-key :graphql) (HTTP_UNSAFE_METHODS (:request-method request)))
               (= handler-key :external-authentication-sign-in))
-        (jdbc/with-db-transaction [tx @ds*]
-          (jdbc-next/with-transaction [tx-next @ds-next*]
-            (letfn [(rollback-both-tx! [] (jdbc/db-set-rollback-only! tx) (.rollback tx-next))]
+        (jdbc/with-db-transaction [tx (get-ds)]
+          (jdbc-next/with-transaction+options [tx-next (get-ds-next)]
+            (letfn [(rollback-both-tx! []
+                      (jdbc/db-set-rollback-only! tx)
+                      (.rollback (:connectable tx-next)))]
               (try (let [resp (-> request
                                   (assoc :tx tx)
-                                  (assoc :tx-next tx-next-uqlm)
+                                  (assoc :tx-next tx-next)
                                   handler)
                          resp-body (:body resp)
                          resp-status (:status resp)]
@@ -204,8 +206,8 @@
                      (rollback-both-tx!)
                      (throw th))))))
         (-> request
-            (assoc :tx @ds*)
-            (assoc :tx-next tx-next-uqlm)
+            (assoc :tx (get-ds))
+            (assoc :tx-next (get-ds-next))
             handler)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

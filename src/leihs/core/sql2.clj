@@ -26,3 +26,19 @@
                                 (expand-to-tsquery-calls terms-params))]
                           (into params-field)
                           (into terms-params)))))
+
+(sql/register-fn! :is-null
+                  (fn [op [a]]
+                    (let [[sql-a & params-a] (sql/format-expr a)]
+                      (-> [(str sql-a " " (sql/sql-kw :is-null))]
+                          (into params-a)))))
+
+(sql/register-fn! :is-not-null
+                  (fn [op [a]]
+                    (let [[sql-a & params-a] (sql/format-expr a)]
+                      (-> [(str sql-a " " (sql/sql-kw :is-not-null))]
+                          (into params-a)))))
+
+(sql/register-op! (keyword "~~*"))
+(sql/register-op! (keyword "<@"))
+(sql/register-op! (keyword "@>"))

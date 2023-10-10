@@ -1,8 +1,11 @@
 (ns leihs.core.remote-navbar.shared
   (:require
-    [clojure.java.jdbc :as jdbc]
+    [honey.sql :refer [format] :rename {format sql-format}]
+    [honey.sql.helpers :as sql]
+    [next.jdbc :as jdbc]
+    [next.jdbc.sql :refer [query] :rename {query jdbc-query}]
     [clojure.set :as set]
-    [leihs.core [paths :refer [path]] [sql :as sql]]
+    [leihs.core [paths :refer [path]]]
     [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
     [leihs.core.constants :as constants]
     [leihs.core.locale :refer [get-selected-language]]
@@ -18,8 +21,8 @@
   (-> (sql/select :*)
       (sql/from :languages)
       (sql/where [:= :active true])
-      sql/format
-      (->> (jdbc/query tx))))
+      sql-format
+      (->> (jdbc-query tx))))
 
 (defn sub-apps
   [tx auth-entity]
@@ -38,8 +41,8 @@
     (let [user (-> (sql/select :*)
                    (sql/from :users)
                    (sql/where [:= :id (:user_id auth-entity)])
-                   sql/format
-                   (->> (jdbc/query tx))
+                   sql-format
+                   (->> (jdbc-query tx))
                    first)
           default-language (first (filter :default locales))]
       {:user {:id (:id user),
@@ -51,7 +54,7 @@
 (defn navbar-props
   ([request] (navbar-props request {}))
   ([request subapps-override]
-   (let [tx (:tx request)
+   (let [tx (:tx-next request)
          auth-entity (:authenticated-entity request)
          user-language (get-selected-language request)
          locales (map #(as-> % <>

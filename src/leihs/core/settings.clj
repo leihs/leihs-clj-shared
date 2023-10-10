@@ -1,12 +1,12 @@
 (ns leihs.core.settings
   (:refer-clojure :exclude [str keyword])
-  (:require
-    [clojure.java.jdbc :as jdbc]
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.sql :as sql]
-    [logbug.debug :as debug]
-    [taoensso.timbre :as log :refer [error warn info debug spy]]
-    ))
+  (:require [honey.sql :refer [format] :rename {format sql-format}]
+            [honey.sql.helpers :as sql]
+            [next.jdbc :as jdbc]
+            [next.jdbc.sql :refer [query] :rename {query jdbc-query}]
+            [leihs.core.core :refer [keyword str presence]]
+            [logbug.debug :as debug]
+            [taoensso.timbre :as log :refer [error warn info debug spy]]))
 
 
 (def selected-columns
@@ -25,17 +25,17 @@
   ([columns]
    (-> (apply sql/select columns)
        (sql/from :settings)
-       (sql/merge-join :system_and_security_settings
-                       [:= :settings.id :system_and_security_settings.id])
-       (sql/merge-join :smtp_settings
-                       [:= :settings.id :smtp_settings.id]))))
+       (sql/join :system_and_security_settings
+                 [:= :settings.id :system_and_security_settings.id])
+       (sql/join :smtp_settings
+                 [:= :settings.id :smtp_settings.id]))))
 
 (defn settings!
   ([tx] (settings! tx selected-columns))
   ([tx columns]
    (or (-> (settings-base-query columns)
-           sql/format
-           (->> (jdbc/query tx))
+           sql-format
+           (->> (jdbc-query tx))
            first)
        (throw (IllegalStateException. "No settings here!")))))
 
@@ -44,7 +44,7 @@
    (fn [request]
      (wrap handler request)))
   ([handler request]
-   (handler (assoc request :settings (settings! (:tx request))))))
+   (handler (assoc request :settings (settings! (:tx-next request))))))
 
 ;#### debug ###################################################################
 ;(debug/debug-ns 'cider-ci.utils.shutdown)

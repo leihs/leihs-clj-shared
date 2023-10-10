@@ -6,8 +6,12 @@
   {:min-level [[#{
                   ; examples:
                   ; "leihs.core.auth.core.*"
+                  ; "leihs.core.db"
+                  ; "leihs.core.graphql*"
                   ; "leihs.admin.resources.inventory-pools.*"
                   ; "leihs.admin.routes"
+                  ; "leihs.borrow.graphql*"
+                  ; "leihs.borrow.resources.orders"
                   } :debug]
                [#{
                   #?(:clj "com.zaxxer.hikari.*")

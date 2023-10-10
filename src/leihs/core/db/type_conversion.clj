@@ -9,15 +9,22 @@
     [next.jdbc.result-set :as jdbc-rs]
     [taoensso.timbre :refer [debug info warn error spy]])
   (:import
-    [java.sql PreparedStatement]
+    [java.sql Array PreparedStatement]
     [org.postgresql.util PGobject]
     ))
 
+;;; PostgreSQL Arrays ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(extend-protocol jdbc-rs/ReadableColumn
+  Array
+  (read-column-by-label [^Array v _]    (vec (.getArray v)))
+  (read-column-by-index [^Array v _ _]  (vec (.getArray v))))
+
+;;; PostgreSQL JSON ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ->json json/write-str)
 
 (def <-json #(json/read-str % :key-fn keyword))
-
 
 (defn ->pgobject
   "Transforms Clojure data to a PGobject that contains the data as
