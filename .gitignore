@@ -1,2 +1,4 @@
 tmp/
 .cpcache/
+.Idea
+.DS_Store
