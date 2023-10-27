@@ -11,9 +11,15 @@
     [leihs.core.paths :refer [path]]
     [leihs.core.redirects :refer [redirect-target]]
     [leihs.core.remote-navbar.shared :refer [navbar-props]]
+
+    [next.jdbc :as jdbc-next]
+    [honey.sql :as sqlh]
+    [honey.sql.helpers :as h]
+    [leihs.core.db :as db]
+
     [leihs.core.sign-in.external-authentication.back :refer [ext-auth-system-token-url]]
     [leihs.core.sign-in.password-authentication.core :refer [password-checked-user]]
-    [leihs.core.sign-in.shared :refer [auth-system-user-base-query merge-identify-user]]
+    [leihs.core.sign-in.shared :refer [auth-system-user-base-query auth-system-user-base-query-new merge-identify-user]]
     [leihs.core.sign-in.simple-login :as simple-login]
     [leihs.core.sql :as sql]
     [leihs.core.ssr :as ssr]
@@ -34,12 +40,31 @@
                       :authentication_systems.external_sign_in_url)
     sql/format))
 
+(defn auth-system-query-new [user-id]
+  (->
+    ;auth-system-query-new
+    auth-system-user-base-query-new
+    (sql/merge-where [:= :users.id user-id])
+    (sql/merge-select :authentication_systems.id
+                      :authentication_systems.type
+                      :authentication_systems.name
+                      :authentication_systems.description
+                      :authentication_systems.external_sign_in_url)
+    sql/format))
+
 (defn auth-systems-for-user [tx {user-id :id}]
   (if-not user-id
     []
     (->> user-id
          auth-system-query
          (jdbc/query tx))))
+
+(defn auth-systems-for-user-new [tx {user-id :id}]
+  (if-not user-id
+    []
+    (->> user-id
+         auth-system-query
+         (jdbc-next/execute! tx))))
 
 (defn pwd-auth-system [tx]
   (-> (sql/select :*)
@@ -49,6 +74,26 @@
       (->> (jdbc/query tx))
       first))
 
+(defn pwd-auth-system-new [tx]
+  (-> (sql/select :*)
+      (sql/from :authentication_systems)
+      (sql/where [:= :type "password"])
+      sql/format
+      (->> (jdbc-next/execute-one! tx))
+
+      ;first
+      ))
+
+(defn pwd-auth-system-new [tx]
+  (-> (sql/select :*)
+      (sql/from :authentication_systems)
+      (sql/where [:= :type "password"])
+      sql/format
+      (->> (jdbc-next/execute-one! tx))
+      ;first
+       )
+  )
+
 (defn user-with-unique-id [tx user-unique-id]
   (-> (sql/select :*)
       (sql/from :users)
@@ -56,6 +101,16 @@
       sql/format
       (->> (jdbc/query tx))
       first))
+
+(defn user-with-unique-id-new [tx user-unique-id]
+  (-> (sql/select :*)
+      (sql/from :users)
+      (merge-identify-user user-unique-id)
+      sql/format
+      (->> (jdbc-next/execute-one! tx))
+
+      ;first
+      ))
 
 (def sign-in-page-renderer* (atom nil))
 (defn use-sign-in-page-renderer [renderer]
