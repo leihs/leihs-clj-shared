@@ -3,7 +3,6 @@ function set_common_vars() {
   CLJ_DIR=${CLJ_DIR:-${PROJECT_DIR}}
   CLJ_MAIN=${CLJ_MAIN:-"leihs.${PROJECT_NAME}.main"}
   ARTIFACT_NAME=${ARTIFACT_NAME:-"leihs-${PROJECT_NAME}-js"}
-  LEIHS_UI_DIR=${LEIHS_UI_DIR:-"${PROJECT_DIR}/leihs-ui"}
   JS_ASSETS_DIR=${JS_ASSETS_DIR:-"resources/public/${PROJECT_NAME}/js"}
   JS_BUILD_DIR=${JS_BUILD_DIR:-"resources/public/${PROJECT_NAME}/js/cljs-runtime"}
 }
@@ -51,24 +50,6 @@ function clj_outdated() {
   clojure -M:outdated "$@"
   cd -
 }
-
-
-### leihs-UI ##################################################################
-
-
-function ui_prepare() {
-  cd ${LEIHS_UI_DIR}
-  test -d node_modules && npm i || { npm ci || npm i ;} || exit 1
-  npm run build:theme || exit 1
-  npm run build:ssr || exit 1
-  cd -
-}
-
-function ui_setup() {
-  set_common_vars
-  ${LEIHS_UI_DIR}/bin/build || ui_prepare
-}
-
 
 ### CLJS ######################################################################
 
