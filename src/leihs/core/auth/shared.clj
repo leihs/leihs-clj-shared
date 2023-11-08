@@ -9,25 +9,23 @@
     [leihs.core.db :as db]
 
     [leihs.core.sql :as sql]
-
     ))
 
-;; TODO: cleanup
-(defn access-rights [tx user-id]
+(defn access-rights ^:deprecated [tx user-id]
   (-> (sql/select :role :inventory_pool_id)
       (sql/from :access_rights)
       (sql/merge-where [:= :user_id user-id])
       sql/format
       (->> (jdbc/query tx))))
 
-(defn access-rights-new [tx user-id]                            ;;OK
+(defn access-rights-new [tx user-id]
   (-> (h/select :role :inventory_pool_id)
       (h/from :access_rights)
       (h/where [:= :user_id user-id])
       sqlh/format
       (->> (jdbc-next/execute! tx))))
 
-(defn password-hash
+(defn password-hash ^:deprecated
   [password tx]
   (->> [(sql/call :crypt
                   (sql/call :cast password :text)
@@ -39,7 +37,7 @@
        first
        :pw_hash))
 
-(defn password-hash-new                                         ;;OK
+(defn password-hash-new
   ([password tx]
    (->> ["SELECT crypt(?,gen_salt('bf',10)) AS pw_hash" password]
         (jdbc-next/execute-one! tx)
@@ -51,12 +49,13 @@
         tx (db/get-ds)
 
         ;res1 (access-rights-old tx #uuid "02563014-d74d-5572-a8b2-3736738459ba"  )
-        res1 (access-rights tx-next #uuid "02563014-d74d-5572-a8b2-3736738459ba")
-        p (println "\n\n>res1>> " res1 "\n\n")
+        ;res1 (access-rights tx-next #uuid "02563014-d74d-5572-a8b2-3736738459ba")
+        ;p (println "\n\n>res1>> " res1 "\n\n")
 
         ;[SELECT crypt(CAST(? AS text), gen_salt('bf', 10)) AS pw_hash  password]
         ;res1 (password-hash "password" tx )
 
         res1 (password-hash-new "password" tx-next)
         p (println "\n\n>res1>> " res1 "\n\n")
-        ]))
+        ])
+  )

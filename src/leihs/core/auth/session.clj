@@ -2,10 +2,14 @@
   (:refer-clojure :exclude [str keyword])
   (:require
     [clojure.java.jdbc :as jdbc]
+    [leihs.core.sql :as sql]
+
+    [honey.sql :as sqlh]
+    [honey.sql.helpers :as h]
+
     [leihs.core.auth.shared :refer [access-rights]]
     [leihs.core.constants :refer [USER_SESSION_COOKIE_NAME]]
     [leihs.core.core :refer [str keyword presence presence!]]
-    [leihs.core.sql :as sql]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug]
     [pandect.core]
@@ -32,6 +36,26 @@
    [(-> (sql/select :%count.*)
         (sql/from :access_rights)
         (sql/merge-where [:= :access_rights.user_id :users.id]))
+    :inventory_pool_roles_count]])
+
+(def user-select-new
+  [:users.email
+   :users.firstname
+   :users.id
+   :users.is_admin
+   :users.language_locale
+   :users.lastname
+   :users.login
+   :users.org_id
+   :users.is_system_admin
+   [:users.id :user_id]
+   [(-> (h/select :%count.*)
+        (h/from :contracts)
+        (h/where [:= :contracts.user_id :users.id]))
+    :contracts_count]
+   [(-> (h/select :%count.*)
+        (h/from :access_rights)
+        (h/where [:= :access_rights.user_id :users.id]))
     :inventory_pool_roles_count]])
 
 (defn user-with-valid-session-query [session-token]
