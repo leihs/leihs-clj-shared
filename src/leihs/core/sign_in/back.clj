@@ -61,7 +61,6 @@
       (->> (jdbc/query tx))
       first))
 
-; TODO: used by admin, borrow, mail, my, procure
 (defn user-with-unique-id-new [tx user-unique-id]
   (-> (h/select :*)
       (h/from :users)

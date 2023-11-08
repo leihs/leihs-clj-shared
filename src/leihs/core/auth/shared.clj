@@ -10,7 +10,6 @@
     [logbug.debug :as debug]
     ))
 
-; TODO: used in admin, borrow, mail, my, procure
 (defn access-rights ^:deprecated [tx user-id]
   (-> (sql/select :role :inventory_pool_id)
       (sql/from :access_rights)
