@@ -2,14 +2,11 @@
   (:refer-clojure :exclude [str keyword])
   (:require
     [clojure.java.jdbc :as jdbc]
-    [leihs.core.sql :as sql]
-
-    [honey.sql :as sqlh]
     [honey.sql.helpers :as h]
-
     [leihs.core.auth.shared :refer [access-rights]]
     [leihs.core.constants :refer [USER_SESSION_COOKIE_NAME]]
     [leihs.core.core :refer [str keyword presence presence!]]
+    [leihs.core.sql :as sql]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug]
     [pandect.core]

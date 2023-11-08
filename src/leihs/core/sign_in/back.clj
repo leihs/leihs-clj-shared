@@ -10,13 +10,10 @@
     [leihs.core.locale :as locale]
     [leihs.core.paths :refer [path]]
     [leihs.core.redirects :refer [redirect-target]]
-
-
-    [honey.sql :as sqlh]
+    [honey.sql :refer [format] :rename {format sql-format}]
     [honey.sql.helpers :as h]
     [next.jdbc :as jdbc-next]
-    [leihs.core.db :as db]
-
+    [next.jdbc :as jdbc-next]
     [leihs.core.remote-navbar.shared :refer [navbar-props]]
     [leihs.core.sign-in.external-authentication.back :refer [ext-auth-system-token-url]]
     [leihs.core.sign-in.password-authentication.core :refer [password-checked-user]]
@@ -26,7 +23,6 @@
     [leihs.core.ssr :as ssr]
     [leihs.core.ssr-engine :as js-engine]
     [logbug.debug :as debug]
-    [next.jdbc :as jdbc-next]
     [ring.util.response :refer [redirect]]
     [taoensso.timbre :refer [debug error info spy warn]]
     ))
@@ -69,10 +65,8 @@
   (-> (h/select :*)
       (h/from :users)
       (merge-identify-user user-unique-id)
-      sqlh/format
-      (->> (jdbc-next/execute-one! tx))
-      ;first
-      ))
+      sql-format
+      (->> (jdbc-next/execute-one! tx))))
 
 (def sign-in-page-renderer* (atom nil))
 (defn use-sign-in-page-renderer [renderer]
