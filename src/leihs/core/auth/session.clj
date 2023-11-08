@@ -35,6 +35,7 @@
         (sql/merge-where [:= :access_rights.user_id :users.id]))
     :inventory_pool_roles_count]])
 
+; TODO: used by admin, borrow, mail, my, procure
 (def user-select-new
   [:users.email
    :users.firstname
