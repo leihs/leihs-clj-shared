@@ -1,5 +1,4 @@
 SHARED_CLJ_DIR="${PROJECT_DIR}/shared-clj"
-UI_DIR="${PROJECT_DIR}/leihs-ui"
 ARTEFACT_PATH="$PROJECT_DIR/target/$PROJECT_NAME.jar"
 DIGEST="$(git -C "$PROJECT_DIR" log -n 1 HEAD --pretty=%T)"
 LOCAL_CACHE_DIR="${LOCAL_CACHE_DIR:-"${TMPDIR:-/tmp/}/leihs-build-cache"}"
