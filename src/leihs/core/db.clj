@@ -147,7 +147,7 @@
   (when @ds-next*
     (do
       (info "Closing db pool ...")
-      (.close ^HikariDataSource @ds-next*)
+      (.close ^HikariDataSource (:connectable @ds-next*))
       (reset! ds-next* nil)
       (info "Closing db pool done."))))
 
