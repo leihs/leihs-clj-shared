@@ -52,11 +52,16 @@
     [:= (sql/raw "lower(users.email)") (-> unique-id (or "") str/lower-case)]]))
 
 (defn merge-identify-user-new [sqlmap unique-id]
+
+  {:where sqlmap :or []}
+
   (h/where sqlmap
    [:or
     [:= :users.org_id unique-id]
     [:= :users.login unique-id]
-    [:= [[[:lower "users.email"]]] (-> unique-id (or "") str/lower-case)]]))
+    [:= [[[:lower "users.email"]]] (-> unique-id (or "") str/lower-case)]])
+
+  )
     ;[:= (sql/raw "lower(users.email)") (-> unique-id (or "") str/lower-case)]]))
 
 (defn user-query-for-unique-id [user-unique-id]

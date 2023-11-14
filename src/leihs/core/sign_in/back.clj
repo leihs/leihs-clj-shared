@@ -53,6 +53,7 @@
       first))
 
 (defn user-with-unique-id [tx user-unique-id]
+      (spy "user-unique-id")
   (-> (sql/select :*)
       (sql/from :users)
       (merge-identify-user user-unique-id)
@@ -61,11 +62,41 @@
       first))
 
 (defn user-with-unique-id-new [tx user-unique-id]
-      (-> (h/select :*)
-          (h/from :users)
-          (merge-identify-user-new user-unique-id)
-          sql-format
-          (->> (jdbc-next/execute-one! tx))))
+      (spy "user-unique-id-new")
+      (spy "user-unique-id-new")
+
+      (let [sql {:select :* :from :users :where [:or [:= :users.org_id user-unique-id]
+                                                 [:= :users.login user-unique-id]
+                                                 ;[:= [[[:lower "users.email"]]] (-> unique-id (or "") str/lower-case)]
+                                                 [:= [[[:lower :users/email]]] [:lower (-> user-unique-id (or ""))] ]
+                                                 ] }
+
+            query (sql-format sql)
+
+
+
+            ]
+           (jdbc-next/execute-one! tx (spy query))
+           )
+
+
+      ;(-> (h/select :*)
+      ;    (h/from :users)
+      ;    ;(merge-identify-user-new (spy user-unique-id))
+      ;
+      ;    ;(h/where sqlmap
+      ;    (h/where [:or
+      ;              [:= :users.org_id user-unique-id]
+      ;              [:= :users.login user-unique-id]
+      ;              ;[:= [[[:lower "users.email"]]] (-> unique-id (or "") str/lower-case)]
+      ;              ])
+      ;
+      ;
+      ;    ;(spy user-unique-id)
+      ;    (spy sql-format)
+      ;    (->> (jdbc-next/execute-one! tx)))
+
+      )
 
 (def sign-in-page-renderer* (atom nil))
 (defn use-sign-in-page-renderer [renderer]
