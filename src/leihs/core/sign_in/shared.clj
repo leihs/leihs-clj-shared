@@ -4,6 +4,8 @@
     [clojure.string :as str]
     [leihs.core.core :refer [keyword str presence]]
     [leihs.core.paths :refer [path]]
+    [honey.sql :refer [format] :rename {format sql-format}]
+    [honey.sql.helpers :as h]
     [leihs.core.sql :as sql]
     [logbug.debug :as debug]))
 
@@ -48,6 +50,14 @@
     [:= :users.org_id unique-id]
     [:= :users.login unique-id]
     [:= (sql/raw "lower(users.email)") (-> unique-id (or "") str/lower-case)]]))
+
+(defn merge-identify-user-new [sqlmap unique-id]
+  (h/where sqlmap
+   [:or
+    [:= :users.org_id unique-id]
+    [:= :users.login unique-id]
+    [:= [[[:lower "users.email"]]] (-> unique-id (or "") str/lower-case)]]))
+    ;[:= (sql/raw "lower(users.email)") (-> unique-id (or "") str/lower-case)]]))
 
 (defn user-query-for-unique-id [user-unique-id]
   (-> (sql/select :*)

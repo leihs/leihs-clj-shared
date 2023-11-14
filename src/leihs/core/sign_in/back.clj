@@ -10,10 +10,13 @@
     [leihs.core.locale :as locale]
     [leihs.core.paths :refer [path]]
     [leihs.core.redirects :refer [redirect-target]]
+    [honey.sql :refer [format] :rename {format sql-format}]
+    [honey.sql.helpers :as h]
+    [next.jdbc :as jdbc-next]
     [leihs.core.remote-navbar.shared :refer [navbar-props]]
     [leihs.core.sign-in.external-authentication.back :refer [ext-auth-system-token-url]]
     [leihs.core.sign-in.password-authentication.core :refer [password-checked-user]]
-    [leihs.core.sign-in.shared :refer [auth-system-user-base-query merge-identify-user]]
+    [leihs.core.sign-in.shared :refer [auth-system-user-base-query merge-identify-user merge-identify-user-new]]
     [leihs.core.sign-in.simple-login :as simple-login]
     [leihs.core.sql :as sql]
     [leihs.core.ssr :as ssr]
@@ -56,6 +59,13 @@
       sql/format
       (->> (jdbc/query tx))
       first))
+
+(defn user-with-unique-id-new [tx user-unique-id]
+      (-> (h/select :*)
+          (h/from :users)
+          (merge-identify-user-new user-unique-id)
+          sql-format
+          (->> (jdbc-next/execute-one! tx))))
 
 (def sign-in-page-renderer* (atom nil))
 (defn use-sign-in-page-renderer [renderer]
