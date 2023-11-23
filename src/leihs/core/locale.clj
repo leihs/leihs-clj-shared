@@ -1,9 +1,16 @@
 (ns leihs.core.locale
   (:require 
-    [clojure.java.jdbc :as jdbc]
+    ;[clojure.java.jdbc :as jdbc]
+    ;[leihs.core.sql :as sql]
+    
+          ;; all needed imports
+                [honey.sql :refer [format] :rename {format sql-format}]
+                [leihs.core.db :as db]
+                [next.jdbc :as jdbc]
+                [honey.sql.helpers :as sql]
+    
     [compojure.core :as cpj]
     [leihs.core.paths :refer [path]]
-    [leihs.core.sql :as sql]
     [ring.util.response :refer [redirect]]))
 
 (defn set-language-cookie
@@ -17,12 +24,24 @@
               :max-age max-age})))
 
 (defn redirect-back-with-language-cookie
-  [{tx :tx
+  [{tx :tx-next
     {locale :locale} :form-params
     {referer :referer} :headers
     :as request}]
   (-> (redirect referer)
-      (set-language-cookie (jdbc/get-by-id tx :languages locale :locale))))
+      
+      ;(set-language-cookie (jdbc/get-by-id tx :languages locale :locale))
+      ;(set-language-cookie (jdbc/execute-one! tx (-> (sql/select :*)
+      (set-language-cookie  (-> (sql/select :*)
+                                                     (sql/from :languages)
+                                                     (sql/where [:= locale :locale])
+                                                     sql-format
+                                                     (->> jdbc/execute-one! tx)
+                                                     ))
+      
+      
+      
+      ))
 
 (defn delete-language-cookie [response]
   (set-language-cookie response nil 0))
@@ -34,18 +53,18 @@
 
 (defn get-active-languages [tx]
   (-> get-active-languages-sqlmap
-      sql/format
-      (->> (jdbc/query tx))))
+      sql-format
+      (->> (jdbc/execute! tx))))
 
 (defn get-active-lang [tx locale]
   (-> get-active-languages-sqlmap
-      (sql/merge-where [:= :locale locale])
-      sql/format
-      (->> (jdbc/query tx))
-      first))
+      (sql/where [:= :locale locale])
+      sql-format
+      (->> (jdbc/execute-one! tx))
+      ))
 
 (defn get-user-db-language [request]
-  (let [tx (:tx request)
+  (let [tx (:tx-next request)
         auth-entity (:authenticated-entity request)
         languages (get-active-languages tx)]
     (->> languages
@@ -53,7 +72,7 @@
          first)))
 
 (defn get-selected-language [request]
-  (let [tx (:tx request)
+  (let [tx (:tx-next request)
         languages (get-active-languages tx)
         default-language (->> languages
                               (filter :default)
@@ -73,25 +92,47 @@
     (assoc request :leihs-user-language language)))
 
 (defn setup-language-after-sign-in
-  [{:keys [tx] :as request} response user]
+  [{:keys [tx tx-next] :as request} response user]
   (let [cookie-locale (-> request
                           :cookies
                           (get "leihs-user-locale")
                           :value)
-        cookie-language (get-active-lang tx cookie-locale)]
+        cookie-language (get-active-lang tx-next cookie-locale)]
     (cond cookie-language
-          (jdbc/update!
-            tx
-            :users
-            {:language_locale (:locale cookie-language)}
-            ["id = ?" (:id user)])
+
+          ;(jdbc/update!
+          ;  tx-next
+          ;  :users
+          ;  {:language_locale (:locale cookie-language)}
+          ;  ["id = ?" (:id user)])
+
+          (jdbc/execute! tx-next (-> (sql/update :users)
+                                     (sql/set {:language_locale (:locale cookie-language)})
+                                     (sql/where [:= :id [:cast (:id user) :uuid]])
+                                     sql-format
+                                     ))
+
+
           (when-let [user-locale (user :language_locale)]
-            (not (get-active-lang tx user-locale)))
-          (jdbc/update!
-            tx
-            :users
-            {:language_locale nil}
-            ["id = ?" (:id user)]))
+            (not (get-active-lang tx-next user-locale)))
+
+
+
+          ;(jdbc/update!
+          ;  tx-next
+          ;  :users
+          ;  {:language_locale nil}
+          ;  ["id = ?" (:id user)])
+
+
+          (jdbc/execute! tx-next (-> (sql/update :users)
+                                     (sql/set {:language_locale nil})
+                                     (sql/where [:= :id [:cast (:id user) :uuid]])
+                                     sql-format
+                                     ))
+
+
+          )
     (delete-language-cookie response)))
 
 (defn wrap [handler]
