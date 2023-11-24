@@ -9,6 +9,10 @@
   (:refer-clojure :exclude [str keyword])
   (:require
     [leihs.core.constants :as constants]
+
+        [taoensso.timbre :refer [debug info warn error spy]]
+
+
     [leihs.core.core :refer [keyword str presence]]
     [logbug.catcher :as catcher]
     [logbug.debug :as debug :refer [I>]]
@@ -57,18 +61,45 @@
         (when-not (= anti-csrf-token (x-csrf-token! request))
           (throw (ex-info (str "The x-csrf-token is not equal to the "
                                "anti-csrf cookie value.") {:status 403}))))
-      (let [anti-csrf-token-new (when-not (presence anti-csrf-token)
-                                  (str (UUID/randomUUID)))]
+      ;(let [
+      ;
+      ;      p (println "\n> 1 anti-csrf-token > " anti-csrf-token)
+      ;      p (println "\n> 1 anti-csrf-token class > " (class anti-csrf-token))
+      ;      (let [anti-csrf-token-new (when-not (presence anti-csrf-token)
+      ;                            (str (UUID/randomUUID)))
+      ;
+      ;      p (println "\n> 2 anti-csrf-token-new > " anti-csrf-token-new)
+      ;
+      ;      ]]
+
+
+        (let [
+
+
+                    p (println "\n> 1 anti-csrf-token > " anti-csrf-token)
+                    p (println "\n> 1 anti-csrf-token class > " (class anti-csrf-token))
+
+              anti-csrf-token-new (when-not (presence anti-csrf-token)
+                                    (str (UUID/randomUUID)))
+
+
+                    p (println "\n> 2 anti-csrf-token-new > " anti-csrf-token-new)
+
+              ]
+
+
         (-> request
-            (cond-> anti-csrf-token-new
+            (cond-> (spy anti-csrf-token-new)
               (assoc :anti-csrf-token anti-csrf-token-new))
             handler
-            (cond-> anti-csrf-token-new
+            (cond-> (spy anti-csrf-token-new)
               (assoc-in [:cookies constants/ANTI_CSRF_TOKEN_COOKIE_NAME]
                         {:value anti-csrf-token-new
                          :http-only false
                          :path "/"
-                         :secure false})))))))
+                         :secure false})))
+
+        ))))
 
 ;#### debug ###################################################################
 ;(debug/debug-ns 'cider-ci.utils.shutdown)

@@ -20,6 +20,7 @@
 
                   "leihs.procurement.authorization"
                   "leihs.procurement.permissions.*"
+                  "leihs.procurement.resources.*"
 
                   } :debug]
                [#{
