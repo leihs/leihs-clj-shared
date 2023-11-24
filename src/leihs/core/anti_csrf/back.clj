@@ -50,7 +50,6 @@
 
 (defn wrap [handler]
   (fn [request]
-    (println "wrap")
     (let [anti-csrf-token (anti-csrf-token request)]
       (when (and (http-unsafe? request) (not (token? request)))
         (when-not (presence anti-csrf-token)

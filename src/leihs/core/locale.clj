@@ -137,7 +137,6 @@
 
 (defn wrap [handler]
   (fn [request]
-    (println "locale-wrap")
     (-> request
         set-user-language
         handler)))

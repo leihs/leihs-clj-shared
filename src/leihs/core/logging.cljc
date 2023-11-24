@@ -17,6 +17,10 @@
                   ;"leihs.procurement.*"                    ;fails
                   ;"leihs.procurement*"                     ;fails
                   "leihs.procurement"                       ;ok
+
+                  "leihs.procurement.authorization"
+                  "leihs.procurement.permissions.*"
+
                   } :debug]
                [#{
                   #?(:clj "com.zaxxer.hikari.*")
