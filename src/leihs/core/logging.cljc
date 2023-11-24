@@ -12,7 +12,11 @@
                   ; "leihs.admin.routes"
                   ; "leihs.borrow.graphql*"
                   ; "leihs.borrow.resources.orders"
-                  "leihs.procurement.*"
+
+                  ;"leihs.procurement.authorization"        ;ok
+                  ;"leihs.procurement.*"                    ;fails
+                  ;"leihs.procurement*"                     ;fails
+                  "leihs.procurement"                       ;ok
                   } :debug]
                [#{
                   #?(:clj "com.zaxxer.hikari.*")
