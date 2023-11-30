@@ -21,13 +21,14 @@
                   "leihs.procurement.authorization"
                   "leihs.procurement.permissions.*"
                   "leihs.procurement.resources.*"
+                  "leihs.procurement.*"
 
                   } :debug]
                [#{
                   #?(:clj "com.zaxxer.hikari.*")
-                  "leihs.*"} :info]
-               [#{"*"} :warn]]
-   :log-level nil})
+                  "leihs.*"} :debug]
+               [#{"*"} :debug]]
+   :log-level :debug})
 
 
 (defn init
