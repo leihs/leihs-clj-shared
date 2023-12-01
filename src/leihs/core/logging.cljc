@@ -26,9 +26,9 @@
                   } :debug]
                [#{
                   #?(:clj "com.zaxxer.hikari.*")
-                  "leihs.*"} :debug]
-               [#{"*"} :debug]]
-   :log-level :debug})
+                  "leihs.*"} :info]
+               [#{"*"} :warn]]
+   :log-level nil})
 
 
 (defn init
