@@ -1,17 +1,14 @@
 (ns leihs.core.global
   (:refer-clojure :exclude [str keyword])
   (:require-macros
-    [reagent.ratom :as ratom :refer [reaction]]
-    [cljs.core.async.macros :refer [go]]
-    )
+   [cljs.core.async.macros :refer [go]]
+   [reagent.ratom :as ratom :refer [reaction]])
   (:require
-    [leihs.core.core :refer [keyword str presence]]
+   [cljs.core.async :as async]
 
-    [cljs.core.async :as async]
-    [clojure.pprint :refer [pprint]]
-    [reagent.core :as reagent]
-    ))
-
+   [clojure.pprint :refer [pprint]]
+   [leihs.core.core :refer [keyword str presence]]
+   [reagent.core :as reagent]))
 
 (def timestamp* (reagent/atom (js/Date.)))
 

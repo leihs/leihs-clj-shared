@@ -1,21 +1,21 @@
 (ns leihs.core.user.core
-  (:require 
-    [clojure.java.jdbc :as jdbc]
-    [compojure.core :as cpj]
-    [leihs.core.paths :refer [path]]
-    [leihs.core.sql :as sql]
-    [ring.util.response :refer [redirect]]))
+  (:require
+   [clojure.java.jdbc :as jdbc]
+   [compojure.core :as cpj]
+   [leihs.core.paths :refer [path]]
+   [leihs.core.sql :as sql]
+   [ring.util.response :refer [redirect]]))
 
-(defn wrap-me-id 
+(defn wrap-me-id
   ([handler]
    (fn [request]
      (wrap-me-id handler request)))
   ([handler request]
    (handler
-     (if (= "me" (-> request :route-params :user-id))
-       (assoc-in request [:route-params :user-id]
-                 (-> request :authenticated-entity :user_id))
-       request))))
+    (if (= "me" (-> request :route-params :user-id))
+      (assoc-in request [:route-params :user-id]
+                (-> request :authenticated-entity :user_id))
+      request))))
 
 (defn update-user
   [{tx :tx
@@ -40,4 +40,4 @@
 
 (def routes
   (cpj/routes
-    (cpj/POST (path :my-user) [] (-> update-user wrap-me-id))))
+   (cpj/POST (path :my-user) [] (-> update-user wrap-me-id))))

@@ -1,26 +1,23 @@
 (ns leihs.core.user.front
   (:refer-clojure :exclude [str keyword])
   (:require-macros
-    [reagent.ratom :as ratom :refer [reaction]]
-    [cljs.core.async.macros :refer [go]]
-    )
+   [cljs.core.async.macros :refer [go]]
+   [reagent.ratom :as ratom :refer [reaction]])
   (:require
-    [leihs.core.constants]
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.digest]
-    [leihs.core.dom :as dom]
-    [leihs.core.paths :refer [path]]
-    [leihs.core.requests.core :as requests]
-    [leihs.core.routing.front :as routing]
-    [leihs.core.sign-in.front :as sign-in]
-    [leihs.core.sign-out.front :as sign-out]
-    [leihs.core.user.shared :as shared]
-    [cljs.core.async :as async]
-    [clojure.pprint :refer [pprint]]
-    [goog.string :as gstring]
-    [reagent.core :as reagent]
-    ))
-
+   [cljs.core.async :as async]
+   [clojure.pprint :refer [pprint]]
+   [goog.string :as gstring]
+   [leihs.core.constants]
+   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.digest]
+   [leihs.core.dom :as dom]
+   [leihs.core.paths :refer [path]]
+   [leihs.core.requests.core :as requests]
+   [leihs.core.routing.front :as routing]
+   [leihs.core.sign-in.front :as sign-in]
+   [leihs.core.sign-out.front :as sign-out]
+   [leihs.core.user.shared :as shared]
+   [reagent.core :as reagent]))
 
 (def state* shared/state*)
 
@@ -39,11 +36,11 @@
   ([email size]
    (if-not (presence email)
      (gstring/format
-       "https://www.gravatar.com/avatar/?s=%d&d=blank" size)
+      "https://www.gravatar.com/avatar/?s=%d&d=blank" size)
      (let [md5 (->> email
                     clojure.string/trim
                     clojure.string/lower-case
                     leihs.core.digest/md5-hex)]
        (gstring/format
-         "https://www.gravatar.com/avatar/%s?s=%d&d=retro"
-         md5 size)))))
+        "https://www.gravatar.com/avatar/%s?s=%d&d=retro"
+        md5 size)))))

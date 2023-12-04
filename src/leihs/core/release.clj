@@ -1,8 +1,7 @@
 (ns leihs.core.release
   (:require
-    [clj-yaml.core :as yaml]
-    [taoensso.timbre :refer [debug error info spy warn]]
-    ))
+   [clj-yaml.core :as yaml]
+   [taoensso.timbre :refer [debug error info spy warn]]))
 
 (def file-content
   (try
@@ -11,8 +10,7 @@
         slurp yaml/parse-string)
     (catch Exception ex
       (warn "Failed to read releases.yml, returning bogus value ")
-      {:releases []}
-      )))
+      {:releases []})))
 
 (def latest
   (-> file-content

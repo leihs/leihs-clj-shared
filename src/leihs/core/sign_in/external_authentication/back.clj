@@ -1,23 +1,22 @@
 (ns leihs.core.sign-in.external-authentication.back
   (:refer-clojure :exclude [str keyword cond])
   (:require
-    [better-cond.core :refer [cond]]
-    [buddy.core.keys :as keys]
-    [buddy.sign.jwt :as jwt]
-    [clj-time.core :as time]
-    [clojure.java.jdbc :as jdbc]
-    [clojure.string :as str]
-    [compojure.core :as cpj]
-    [leihs.core.auth.session :as session]
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.paths :refer [path]]
-    [leihs.core.redirects :refer [redirect-target]]
-    [leihs.core.sign-in.shared :refer [auth-system-base-query-for-unique-id user-query-for-unique-id]]
-    [leihs.core.sql :as sql]
-    [logbug.debug :as debug]
-    [ring.util.response :refer [redirect]]
-    [taoensso.timbre :refer [debug error info spy warn]]
-    ))
+   [better-cond.core :refer [cond]]
+   [buddy.core.keys :as keys]
+   [buddy.sign.jwt :as jwt]
+   [clj-time.core :as time]
+   [clojure.java.jdbc :as jdbc]
+   [clojure.string :as str]
+   [compojure.core :as cpj]
+   [leihs.core.auth.session :as session]
+   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.paths :refer [path]]
+   [leihs.core.redirects :refer [redirect-target]]
+   [leihs.core.sign-in.shared :refer [auth-system-base-query-for-unique-id user-query-for-unique-id]]
+   [leihs.core.sql :as sql]
+   [logbug.debug :as debug]
+   [ring.util.response :refer [redirect]]
+   [taoensso.timbre :refer [debug error info spy warn]]))
 
 (def skip-authorization-handler-keys
   "These keys needs the be added to the list of the skipped handler keys
@@ -28,15 +27,15 @@
 (defn auth-system-user-query [user-unique-id authentication-system-id]
   (-> (auth-system-base-query-for-unique-id user-unique-id authentication-system-id)
       (sql/merge-select
-        [(sql/call :row_to_json :authentication_systems) :authentication_system]
-        [(sql/call :row_to_json :users) :user])
+       [(sql/call :row_to_json :authentication_systems) :authentication_system]
+       [(sql/call :row_to_json :users) :user])
       sql/format))
 
 (defn authentication-system-user-data
   [user-unique-id authentication-system-id tx]
   (when-let [authentication-system-and-user
              (->> (auth-system-user-query
-                    user-unique-id authentication-system-id)
+                   user-unique-id authentication-system-id)
                   (jdbc/query tx) first)]
     (merge authentication-system-and-user
            (->> (-> (sql/select :*)
@@ -51,11 +50,11 @@
 (defn authentication-system-user-data!
   [user-unique-id authentication-system-id tx]
   (or (authentication-system-user-data
-        user-unique-id authentication-system-id tx)
+       user-unique-id authentication-system-id tx)
       (throw (ex-info
-               (str "External authentication system for existing user "
-                    user-unique-id " not found or not enabled")
-               {:status 500}))))
+              (str "External authentication system for existing user "
+                   user-unique-id " not found or not enabled")
+              {:status 500}))))
 
 (defn prepare-key-str [s]
   (->> (-> s (clojure.string/split #"\n"))
@@ -67,14 +66,14 @@
 (defn private-key! [s]
   (-> s prepare-key-str keys/str->private-key
       (or (throw
-            (ex-info "Private key error!"
-                     {:status 500})))))
+           (ex-info "Private key error!"
+                    {:status 500})))))
 
 (defn public-key! [s]
   (-> s prepare-key-str keys/str->public-key
       (or (throw
-            (ex-info "Public key error!"
-                     {:status 500})))))
+           (ex-info "Public key error!"
+                    {:status 500})))))
 
 (defn claims! [user authentication-system settings return-to]
   {:email (when (:send_email authentication-system) (:email user))
@@ -86,7 +85,6 @@
    :return_to (presence return-to)
    :path (path :external-authentication-sign-in
                {:authentication-system-id (:id authentication-system)})})
-
 
 (defn authentication-system [tx authentication-system-id]
   (->> (-> (sql/select :*)
@@ -125,7 +123,6 @@
                                        settings
                                        return-to)))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn authentication-system! [id tx]
@@ -142,8 +139,8 @@
         base-query (auth-system-base-query-for-unique-id unique-id authentication-system-id)]
     (when-not unique-id
       (throw (ex-info
-               "The sign-in token must at least submit one of email, org_id or login"
-               {:status 400})))
+              "The sign-in token must at least submit one of email, org_id or login"
+              {:status 400})))
     ; extending the base-query with the actual unique id(s) submitted makes this more stringent
     (as-> base-query query
       (if-let [email (:email sign-in-token)]
@@ -163,12 +160,12 @@
         resultset (jdbc/query tx query)]
     (when (> (count resultset) 1)
       (throw (ex-info
-               "More than one user matched the sign-in request."
-               {:status 400})))
+              "More than one user matched the sign-in request."
+              {:status 400})))
     (or (first resultset)
         (throw (ex-info
-                 "No valid user account could be identified for this sign-in request."
-                 {:status 400})))))
+                "No valid user account could be identified for this sign-in request."
+                {:status 400})))))
 
 (defn authentication-sign-in-get
   [{{authentication-system-id :authentication-system-id} :route-params
@@ -229,16 +226,15 @@
 
 (def routes
   (cpj/routes
-    (cpj/POST (path :external-authentication-request
-                    {:authentication-system-id ":authentication-system-id"})
-              [] #'authentication-request)
-    (cpj/POST (path :external-authentication-sign-in
-                    {:authentication-system-id ":authentication-system-id"})
-              [] #'authentication-sign-in-post)
-    (cpj/GET (path :external-authentication-sign-in
+   (cpj/POST (path :external-authentication-request
                    {:authentication-system-id ":authentication-system-id"})
-             [] #'authentication-sign-in-get)))
-
+     [] #'authentication-request)
+   (cpj/POST (path :external-authentication-sign-in
+                   {:authentication-system-id ":authentication-system-id"})
+     [] #'authentication-sign-in-post)
+   (cpj/GET (path :external-authentication-sign-in
+                  {:authentication-system-id ":authentication-system-id"})
+     [] #'authentication-sign-in-get)))
 
 ;#### debug ###################################################################
 ;(debug/debug-ns *ns*)

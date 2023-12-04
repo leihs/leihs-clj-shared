@@ -1,10 +1,9 @@
 (ns leihs.core.logging
   (:require
-    [taoensso.timbre :as timbre :refer [debug info]]))
+   [taoensso.timbre :as timbre :refer [debug info]]))
 
 (def LOGGING_CONFIG
-  {:min-level [[#{
-                  ; examples:
+  {:min-level [[#{; examples:
                   ; "leihs.core.auth.core.*"
                   ; "leihs.core.db"
                   ; "leihs.core.graphql*"
@@ -12,13 +11,11 @@
                   ; "leihs.admin.routes"
                   ; "leihs.borrow.graphql*"
                   ; "leihs.borrow.resources.orders"
-                  } :debug]
-               [#{
-                  #?(:clj "com.zaxxer.hikari.*")
+                  }:debug]
+               [#{#?(:clj "com.zaxxer.hikari.*")
                   "leihs.*"} :info]
                [#{"*"} :warn]]
    :log-level nil})
-
 
 (defn init
   ([] (init LOGGING_CONFIG))

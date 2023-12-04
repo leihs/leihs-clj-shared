@@ -1,22 +1,19 @@
 (ns leihs.core.routing.dispatch-content-type
   (:refer-clojure :exclude [str keyword])
   (:require
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.json :as json]
-    [leihs.core.json-protocol]
-    [ring.middleware.accept]
-    ))
-
+   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.json :as json]
+   [leihs.core.json-protocol]
+   [ring.middleware.accept]))
 
 (defn wrap-accept [handler]
   (ring.middleware.accept/wrap-accept
-    handler
-    {:mime
-     ["application/json" :qs 1 :as :json
-      "image/apng" :qs 0.8 :as :apng
-      "text/css" :qs 1 :as :css
-      "text/html" :qs 1 :as :html]}))
-
+   handler
+   {:mime
+    ["application/json" :qs 1 :as :json
+     "image/apng" :qs 0.8 :as :apng
+     "text/css" :qs 1 :as :css
+     "text/html" :qs 1 :as :html]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -42,8 +39,7 @@
      (and (= (-> request :accept :mime) :html)
           (#{:get :head} (:request-method request))
           (not (no-html-handler-keys (:handler-key request)))
-          (not (browser-request-matches-javascript? request))
-          ) (html-handler request)
+          (not (browser-request-matches-javascript? request))) (html-handler request)
      ; other request might need to go the backend and return frontend notheless
      :else (let [response (handler request)]
              (if (and (nil? response)

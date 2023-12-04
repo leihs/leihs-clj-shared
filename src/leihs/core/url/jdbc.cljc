@@ -4,15 +4,12 @@
 
 (ns leihs.core.url.jdbc
   (:require
-    [leihs.core.url.shared :refer [host-port-dissect path-dissect auth-dissect parse-int]]
-    #?(:clj [ring.util.codec])
-    [clojure.walk]
-    ))
-
+   #?(:clj [ring.util.codec])
+   [clojure.walk]
+   [leihs.core.url.shared :refer [host-port-dissect path-dissect auth-dissect parse-int]]))
 
 (defn jdbc-url? [url]
   (boolean (re-matches #"(?i)^jdbc:.+" url)))
-
 
 (defn replace-str [s match replacement]
   (when s (clojure.string/replace s match replacement)))
@@ -20,7 +17,7 @@
 ;(jdbc-url? "jdbc:postgresql://cider-ci:cider-ci@localhost:5432/cider-ci_v4")
 
 (def pattern
-  #"(?i)(jdbc):([^/]+)+//([^@]+?@)?([^/]+)([^\?|#]+)(\?[^#]+)?(#.*)?" )
+  #"(?i)(jdbc):([^/]+)+//([^@]+?@)?([^/]+)([^\?|#]+)(\?[^#]+)?(#.*)?")
 
 (defn canonicalize-dissected [params]
   (->> params
@@ -34,11 +31,11 @@
 
 (defn query-params [query-string]
   #?(:clj
-      (if query-string
-        (-> query-string
-            ring.util.codec/form-decode
-            clojure.walk/keywordize-keys))
-      :cljs (throw (ex-info "Not implemented" {}))))
+     (if query-string
+       (-> query-string
+           ring.util.codec/form-decode
+           clojure.walk/keywordize-keys))
+     :cljs (throw (ex-info "Not implemented" {}))))
 
 (defn dissect [url]
   (let [matches (re-matches pattern url)

@@ -1,6 +1,6 @@
 (ns leihs.core.uuid
   (:import
-    [java.util UUID]))
+   [java.util UUID]))
 
 (defprotocol Uuid
   (uuid [x]))

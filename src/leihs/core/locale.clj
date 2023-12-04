@@ -1,10 +1,10 @@
 (ns leihs.core.locale
-  (:require 
-    [clojure.java.jdbc :as jdbc]
-    [compojure.core :as cpj]
-    [leihs.core.paths :refer [path]]
-    [leihs.core.sql :as sql]
-    [ring.util.response :refer [redirect]]))
+  (:require
+   [clojure.java.jdbc :as jdbc]
+   [compojure.core :as cpj]
+   [leihs.core.paths :refer [path]]
+   [leihs.core.sql :as sql]
+   [ring.util.response :refer [redirect]]))
 
 (defn set-language-cookie
   ([response language]
@@ -81,17 +81,17 @@
         cookie-language (get-active-lang tx cookie-locale)]
     (cond cookie-language
           (jdbc/update!
-            tx
-            :users
-            {:language_locale (:locale cookie-language)}
-            ["id = ?" (:id user)])
+           tx
+           :users
+           {:language_locale (:locale cookie-language)}
+           ["id = ?" (:id user)])
           (when-let [user-locale (user :language_locale)]
             (not (get-active-lang tx user-locale)))
           (jdbc/update!
-            tx
-            :users
-            {:language_locale nil}
-            ["id = ?" (:id user)]))
+           tx
+           :users
+           {:language_locale nil}
+           ["id = ?" (:id user)]))
     (delete-language-cookie response)))
 
 (defn wrap [handler]
@@ -102,4 +102,4 @@
 
 (def routes
   (cpj/routes
-    (cpj/POST (path :language) [] #'redirect-back-with-language-cookie)))
+   (cpj/POST (path :language) [] #'redirect-back-with-language-cookie)))

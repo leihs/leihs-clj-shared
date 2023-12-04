@@ -1,15 +1,13 @@
 (ns leihs.core.sign-in.password-authentication.core
   (:refer-clojure :exclude [str keyword])
   (:require
-    [honey.sql :refer [format] :rename {format sql-format}]
-    [honey.sql.helpers :as sql]
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.db :as db]
-    [next.jdbc :as jdbc]
-    [next.jdbc.sql :refer [query] :rename {query jdbc-query}]
-    [taoensso.timbre :refer [error warn info debug spy]]
-    ))
-
+   [honey.sql :refer [format] :rename {format sql-format}]
+   [honey.sql.helpers :as sql]
+   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.db :as db]
+   [next.jdbc :as jdbc]
+   [next.jdbc.sql :refer [query] :rename {query jdbc-query}]
+   [taoensso.timbre :refer [error warn info debug spy]]))
 
 ; for honey2 some similar methods as in leihs.core.sign-in.shared
 ; TODO clean up and consilidate when removing honey1
@@ -28,16 +26,15 @@
               :users.organization
               :users.secondary_email
               :users.system_admin_protected
-              [:users.id :user_id]
-              ))
+              [:users.id :user_id]))
 
 (defn where-unique-user [query user-uid]
   (sql/where
-    query
-    [:or
-     [:= [:lower [:concat :users.org_id "|" :users.organization]] [:lower user-uid]]
-     [:= [:lower :users.login] [:lower user-uid]]
-     [:= [:lower :users.email] [:lower user-uid]]]))
+   query
+   [:or
+    [:= [:lower [:concat :users.org_id "|" :users.organization]] [:lower user-uid]]
+    [:= [:lower :users.login] [:lower user-uid]]
+    [:= [:lower :users.email] [:lower user-uid]]]))
 
 (defn join-password-auth [query]
   (-> query
@@ -58,16 +55,14 @@
       (where-unique-user user-uid)
       (join-password-auth)))
 
-
 (defn check-password
-  [password password-hash &{:keys [tx]
-                            :or {tx (db/get-ds-next)}}]
+  [password password-hash & {:keys [tx]
+                             :or {tx (db/get-ds-next)}}]
   (-> (sql/select [[:= password-hash [:crypt password password-hash]]
                    :password_is_ok])
       (sql-format)
       (#(jdbc/execute-one! tx % db/builder-fn-options))
       :password_is_ok))
-
 
 (defn password-checked-user
   "Returns the user iff the account exists, is allowed to sign in

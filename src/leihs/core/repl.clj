@@ -1,16 +1,15 @@
 (ns leihs.core.repl
   (:refer-clojure :exclude [str keyword])
   (:require
-    [camel-snake-kebab.core :refer [->snake_case]]
-    [clj-yaml.core :as yaml]
-    [clojure.java.io :as io]
-    [clojure.string :refer [upper-case]]
-    [environ.core :refer [env]]
-    [leihs.core.core :refer [presence keyword str]]
-    [logbug.catcher :as catcher]
-    [nrepl.server :as nrepl-server :refer [start-server stop-server]]
-    [taoensso.timbre :refer [debug info warn error spy]]))
-
+   [camel-snake-kebab.core :refer [->snake_case]]
+   [clj-yaml.core :as yaml]
+   [clojure.java.io :as io]
+   [clojure.string :refer [upper-case]]
+   [environ.core :refer [env]]
+   [leihs.core.core :refer [presence keyword str]]
+   [logbug.catcher :as catcher]
+   [nrepl.server :as nrepl-server :refer [start-server stop-server]]
+   [taoensso.timbre :refer [debug info warn error spy]]))
 
 ;;; cli-options ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -39,11 +38,9 @@
     :default (or (some-> repl-bind-key env) "localhost")
     :validate [presence "Must not be present"]]
 
-   [nil (long-opt-for-key repl-port-file-key ) "write port to this file; NO (or any YAML falsy) disables this"
+   [nil (long-opt-for-key repl-port-file-key) "write port to this file; NO (or any YAML falsy) disables this"
     :default (or (some-> repl-port-file-key env yaml/parse-string) ".nrepl-port")
     :validate [#(or (false? %) (presence %)) "Must be false or present"]]])
-
-
 
 ;;; server ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

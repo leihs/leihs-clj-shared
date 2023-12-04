@@ -1,20 +1,18 @@
 (ns leihs.core.shutdown
   (:refer-clojure :exclude [str keyword])
   (:require
-    [clj-pid.core :as pid]
-    [clj-yaml.core :as yaml]
-    [clojure.java.io :as io]
-    [leihs.core.core :refer [keyword str presence]]
-    [logbug.debug :as debug]
-    [signal.handler]
-    [taoensso.timbre :refer [debug error info spy warn]]
-    ))
+   [clj-pid.core :as pid]
+   [clj-yaml.core :as yaml]
+   [clojure.java.io :as io]
+   [leihs.core.core :refer [keyword str presence]]
+   [logbug.debug :as debug]
+   [signal.handler]
+   [taoensso.timbre :refer [debug error info spy warn]]))
 
 (def pid-file-option
   [nil "--pid-file PIDFILE"
    :default nil ; "./tmp/service.pid"
-   :parse-fn yaml/parse-string
-   ])
+   :parse-fn yaml/parse-string])
 
 (defn pid [options]
   (info "PID" (pid/current))

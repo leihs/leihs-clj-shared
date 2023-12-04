@@ -1,7 +1,7 @@
 (ns leihs.core.graphql
-  (:require [com.walmartlabs.lacinia.parser :as lacinia-parser]
+  (:require [alumbra.parser :as graphql-parser]
             [clojure.set :refer [subset?]]
-            [alumbra.parser :as graphql-parser]
+            [com.walmartlabs.lacinia.parser :as lacinia-parser]
             [leihs.core.graphql.helpers :as helpers]
             [leihs.core.ring-exception :refer [get-cause]]
             [taoensso.timbre :refer [debug info warn error spy]]))

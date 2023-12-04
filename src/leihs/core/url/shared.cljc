@@ -4,21 +4,18 @@
 
 (ns leihs.core.url.shared
   (:require
-    #?(:clj [ring.util.codec])
-    ))
+   #?(:clj [ring.util.codec])))
 
 (def decode
-  #?(
-     :cljs js/decodeURIComponent
+  #?(:cljs js/decodeURIComponent
      :clj ring.util.codec/url-decode))
 
 (def encode
-  #?(
-     :cljs js/encodeURIComponent
+  #?(:cljs js/encodeURIComponent
      :clj ring.util.codec/url-encode))
 
 (defn parse-int [si]
-  ( #?(:clj Integer/parseInt :cljs js/parseInt) si))
+  (#?(:clj Integer/parseInt :cljs js/parseInt) si))
 
 (defn host-port-dissect [host-port]
   (if-not (string? host-port)

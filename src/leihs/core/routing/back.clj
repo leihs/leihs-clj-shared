@@ -1,19 +1,19 @@
 (ns leihs.core.routing.back
   (:refer-clojure :exclude [str keyword])
   (:require
-    [bidi.bidi :as bidi]
-    [bidi.ring :refer [make-handler]]
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.defaults :as defaults]
-    [leihs.core.json :as json]
-    [leihs.core.json-protocol]
-    [leihs.core.sql :as sql]
-    [leihs.core.url.core :as url]
-    [logbug.catcher :as catcher]
-    [logbug.debug :as debug :refer [I>]]
-    [logbug.ring :refer [wrap-handler-with-logging]]
-    [logbug.thrown :as thrown]
-    [taoensso.timbre :refer [debug error info spy warn]]))
+   [bidi.bidi :as bidi]
+   [bidi.ring :refer [make-handler]]
+   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.defaults :as defaults]
+   [leihs.core.json :as json]
+   [leihs.core.json-protocol]
+   [leihs.core.sql :as sql]
+   [leihs.core.url.core :as url]
+   [logbug.catcher :as catcher]
+   [logbug.debug :as debug :refer [I>]]
+   [logbug.ring :refer [wrap-handler-with-logging]]
+   [logbug.thrown :as thrown]
+   [taoensso.timbre :refer [debug error info spy warn]]))
 
 ;;; resolving by handler ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -25,9 +25,9 @@
   (if-let [handler (:handler request)]
     (handler request)
     (throw
-      (ex-info
-        "There is no handler for this resource and the accepted content type."
-        {:status 404}))))
+     (ex-info
+      "There is no handler for this resource and the accepted content type."
+      {:status 404}))))
 
 (defn wrap-resolve-handler
   ([handler]
@@ -39,7 +39,7 @@
            paths @paths*
            {route-params :route-params
             handler-key :handler} (bidi/match-pair
-                                    paths {:remainder path :route paths})
+                                   paths {:remainder path :route paths})
            handler-fn (-> @resolve-table*
                           (get handler-key)
                           (#(cond (map? %) (:handler %)
@@ -53,7 +53,6 @@
          (assoc resp :status 404)
          resp)))))
 
-
 ;;; canonicalize request map ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- canonicalize-params-map
@@ -66,8 +65,6 @@
                 [(keyword k)
                  (if parse-json? (json/try-parse-json v) v)]))
          (into {}))))
-
-
 
 (defn wrap-canonicalize-params-maps [handler]
   (fn [request]
@@ -88,7 +85,6 @@
                                                  (canonicalize-params-map :parse-json? false)
                                                  url/decode-keys))))))
 
-
 ;;; misc helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn wrap-add-vary-header [handler]
@@ -101,7 +97,6 @@
   (fn [request]
     (or (handler request)
         {:status 404})))
-
 
 ;;; pagination ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -127,7 +122,6 @@
        (sql/limit per-page)
        (sql/offset (* per-page (- page 1))))))
 
-
 ;;; default-query-params-mixin ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn mixin-default-query-params [request default-query-params]
@@ -146,7 +140,6 @@
 (defn init [paths resolve-table]
   (reset! paths* paths)
   (reset! resolve-table* resolve-table))
-
 
 ;#### debug ###################################################################
 ;(debug/debug-ns *ns*)

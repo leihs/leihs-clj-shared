@@ -2,13 +2,12 @@
   (:refer-clojure :exclude [str keyword])
   (:require [leihs.core.core :refer [keyword str presence]])
   (:require
-    [cuerdas.core :as string]
-    [logbug.catcher :as catcher]
-    [logbug.debug :as debug :refer [I>]]
-    [logbug.ring :refer [wrap-handler-with-logging]]
-    [logbug.thrown :as thrown]
-    [taoensso.timbre :refer [error warn info debug spy]]
-  ))
+   [cuerdas.core :as string]
+   [logbug.catcher :as catcher]
+   [logbug.debug :as debug :refer [I>]]
+   [logbug.ring :refer [wrap-handler-with-logging]]
+   [logbug.thrown :as thrown]
+   [taoensso.timbre :refer [error warn info debug spy]]))
 
 (defn get-cause [e]
   "Deprecated"
@@ -19,7 +18,6 @@
            (get-cause c) e))
        (catch Throwable _ e)))
 
-
 (defn logstr [e]
   ; TODO poosible iterate over exception when (instance? java.sql.SQLException)
   (-> (str (.getMessage e) " "
@@ -27,7 +25,6 @@
              (clojure.stacktrace/print-cause-trace e)))
       (string/replace "\n" " <<< ")
       (string/collapse-whitespace)))
-
 
 (defn exception-response [e]
   (cond
@@ -52,7 +49,7 @@
           (case (:status resp)
             (401 403) (warn (ex-message e))
             (do #_(error (ex-message e) (ex-data e) (logstr e) {:request request})
-                (error e) (error {:request request}))) ; much more readable
+             (error e) (error {:request request}))) ; much more readable
           resp)))))
 
 ;#### debug ###################################################################

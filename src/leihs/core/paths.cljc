@@ -1,11 +1,11 @@
 (ns leihs.core.paths
   (:refer-clojure :exclude [str keyword])
   (:require
-    [leihs.core.url.query-params :as query-params]
-    [leihs.core.core :refer [keyword str presence]]
+   [bidi.bidi :refer [path-for match-route]]
+   [bidi.verbose :refer [branch param leaf]]
 
-    [bidi.verbose :refer [branch param leaf]]
-    [bidi.bidi :refer [path-for match-route]]))
+   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.url.query-params :as query-params]))
 
 (def core-user-paths
   (branch "/my/user/"
@@ -38,11 +38,9 @@
           (leaf "/sign-out" :sign-out)
           core-user-paths))
 
-
 (def paths* (atom core-paths))
 
 ;(bidi.bidi/route-seq @paths*)
-
 
 (defn encode-route-param [param]
   "Encode route-param but keep the first : because we use this
@@ -53,7 +51,6 @@
               first-letter
               (query-params/encode-primitive first-letter))
          (query-params/encode-primitive rest-letters))))
-
 
 (defn encode-route-params [m]
   (zipmap (keys m)
@@ -78,6 +75,6 @@
    (let [p (path kw route-params query-params)]
      (if (presence fragment)
        (str p "#" fragment)
-       p ))))
+       p))))
 
 ;(path :reset-password {})

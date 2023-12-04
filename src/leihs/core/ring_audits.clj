@@ -1,27 +1,25 @@
 (ns leihs.core.ring-audits
   (:require
-    [clojure.java.jdbc :as jdbc]
-    [leihs.core.constants :as constants]
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.db :as db]
-    [leihs.core.graphql :as graphql]
-    [leihs.core.ring-exception :as ring-exception]
-    [leihs.core.sql :as sql]
-    [logbug.catcher :as catcher]
-    [logbug.debug :as debug :refer [I>]]
-    [logbug.ring :refer [wrap-handler-with-logging]]
-    [logbug.thrown :as thrown]
-    [next.jdbc :as jdbc-next]
-    [next.jdbc.sql :refer [query] :rename {query jdbc-next-query}]
-    [taoensso.timbre :refer [error warn info debug spy]]
-    )
+   [clojure.java.jdbc :as jdbc]
+   [leihs.core.constants :as constants]
+   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.db :as db]
+   [leihs.core.graphql :as graphql]
+   [leihs.core.ring-exception :as ring-exception]
+   [leihs.core.sql :as sql]
+   [logbug.catcher :as catcher]
+   [logbug.debug :as debug :refer [I>]]
+   [logbug.ring :refer [wrap-handler-with-logging]]
+   [logbug.thrown :as thrown]
+   [next.jdbc :as jdbc-next]
+   [next.jdbc.sql :refer [query] :rename {query jdbc-next-query}]
+   [taoensso.timbre :refer [error warn info debug spy]])
   (:refer-clojure :exclude [str keyword]))
 
 (defn txid [tx]
   (->> ["SELECT txid() AS txid"]
        (jdbc/query tx)
        first :txid))
-
 
 (defn tx2id [tx-next]
   (->> ["SELECT txid() AS tx2id"]
@@ -72,8 +70,8 @@
                (let [response (try (handler request)
                                    (catch Exception e
                                      (persist-response
-                                       txid tx2id
-                                       (ring-exception/exception-response e))
+                                      txid tx2id
+                                      (ring-exception/exception-response e))
                                      (throw e)))]
                  (persist-response txid tx2id response)
                  (when (#{:external-authentication-sign-in :sign-in} handler-key)

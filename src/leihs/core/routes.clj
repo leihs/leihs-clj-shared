@@ -2,11 +2,9 @@
   (:refer-clojure :exclude [str keyword])
   (:require [leihs.core.core :refer [keyword str presence]])
   (:require
-    [leihs.core.sign-in.external-authentication.back :as external-authentication]
-    [leihs.core.sign-in.back :as sign-in]
-    [leihs.core.sign-out.back :as sign-out]
-    ))
-
+   [leihs.core.sign-in.back :as sign-in]
+   [leihs.core.sign-in.external-authentication.back :as external-authentication]
+   [leihs.core.sign-out.back :as sign-out]))
 
 (def skip-authorization-handler-keys
   #{:external-authentication-request

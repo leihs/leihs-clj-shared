@@ -1,20 +1,17 @@
 (ns leihs.core.sign-out.front
   (:refer-clojure :exclude [str keyword])
   (:require-macros
-    [reagent.ratom :as ratom :refer [reaction]]
-    [cljs.core.async.macros :refer [go]]
-    )
+   [cljs.core.async.macros :refer [go]]
+   [reagent.ratom :as ratom :refer [reaction]])
   (:require
-    [leihs.core.constants]
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.paths :refer [path]]
-    [leihs.core.requests.core :as requests]
-    [leihs.core.user.shared :refer [state*]]
-    [leihs.core.routing.front :as routing]
+   [cljs.core.async :as async]
+   [leihs.core.constants]
+   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.paths :refer [path]]
+   [leihs.core.requests.core :as requests]
+   [leihs.core.routing.front :as routing]
 
-    [cljs.core.async :as async]
-    ))
-
+   [leihs.core.user.shared :refer [state*]]))
 
 (defn sign-out [& args]
   (defonce sign-out-id* (atom nil))
@@ -32,7 +29,6 @@
             (case (:status resp)
               200 (do (reset! state* nil)
                       (routing/navigate! (path :home)))))))))
-
 
 (defn component []
   [:form.form-inline.ml-2

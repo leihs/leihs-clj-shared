@@ -1,12 +1,11 @@
 (ns leihs.core.auth.shared
   (:refer-clojure :exclude [str keyword])
   (:require
-    [clojure.java.jdbc :as jdbc]
-    [leihs.core.core :refer [str keyword presence presence!]]
-    [leihs.core.sql :as sql]
-    [logbug.catcher :as catcher]
-    [logbug.debug :as debug]
-    ))
+   [clojure.java.jdbc :as jdbc]
+   [leihs.core.core :refer [str keyword presence presence!]]
+   [leihs.core.sql :as sql]
+   [logbug.catcher :as catcher]
+   [logbug.debug :as debug]))
 
 (defn access-rights [tx user-id]
   (-> (sql/select :role :inventory_pool_id)
