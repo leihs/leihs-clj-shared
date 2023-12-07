@@ -1,4 +1,4 @@
-(ns leihs.core.sign-in.shared
+(ns leihs.core.sign-in-sign-out.shared
   (:refer-clojure :exclude [str keyword])
   (:require
    [clojure.string :as str]
@@ -61,6 +61,12 @@
   ([user-unique-id authentication-system-id]
    (-> (auth-system-base-query-for-unique-id user-unique-id)
        (sql/merge-where [:= :authentication_systems.id authentication-system-id]))))
+
+(defn auth-system-user-query [user-unique-id authentication-system-id]
+  (-> (auth-system-base-query-for-unique-id user-unique-id authentication-system-id)
+      (sql/merge-select
+       [(sql/call :row_to_json :authentication_systems) :authentication_system]
+       [(sql/call :row_to_json :users) :user])))
 
 (comment
   (-> (auth-system-base-query-for-unique-id "mkmit")

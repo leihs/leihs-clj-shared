@@ -35,7 +35,11 @@
                           (leaf "" :external-authentication)
                           (leaf "/request" :external-authentication-request)
                           (leaf "/sign-in" :external-authentication-sign-in)))
-          (leaf "/sign-out" :sign-out)
+          (branch "/sign-out"
+                  (leaf "" :sign-out)
+                  (branch "/external-authentication/"
+                          (param :authentication-system-id)
+                          (leaf "/sso-sign-out" :external-authentication-sso-sign-out)))
           core-user-paths))
 
 (def paths* (atom core-paths))

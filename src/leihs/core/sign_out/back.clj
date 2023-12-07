@@ -7,16 +7,42 @@
    [leihs.core.core :refer [str keyword presence presence!]]
    [leihs.core.locale :refer [get-user-db-language set-language-cookie]]
    [leihs.core.paths :refer [path]]
+   [leihs.core.sign-in-sign-out.external-authentication
+    :refer [create-signed-token]]
    [leihs.core.sql :as sql]
    [leihs.core.url.query-params :as query-params]
    [logbug.catcher :as catcher]
    [logbug.debug :as debug]
-   [ring.util.response :refer [redirect]])
+   [ring.util.response :refer [redirect]]
+   [taoensso.timbre :refer [debug error info spy warn]])
   (:import
    [java.util UUID]))
 
 (defn- delete-user-session [tx id]
   (jdbc/delete! tx :user_sessions ["id = ?" id]))
+
+(defn auth-system-query [user-session-id]
+  (-> (sql/select :authentication_systems.*)
+      (sql/from :authentication_systems)
+      (sql/merge-join :user_sessions [:= :authentication-systems.id
+                                      :user_sessions.authentication_system_id])
+      (sql/merge-where [:= :user_sessions.id user-session-id])))
+
+(defn prepare-sso-sign-out-token
+  [home-url {tx :tx
+             {user-session-id :user_session_id
+              :as authenticated-entity} :authenticated-entity
+             :as request}]
+  (if-let [authentication-system (some-> user-session-id
+                                         auth-system-query
+                                         sql/format
+                                         (->> (jdbc/query tx) first))]
+    (create-signed-token
+     (merge
+      {:back_to home-url}
+      (select-keys authenticated-entity [:email :external_session_id]))
+     authentication-system)
+    (throw (ex-info "authentication-system not found" {:user_session_id user-session-id}))))
 
 (defn redirect-sign-out-response
   [{tx :tx
@@ -26,7 +52,9 @@
         home-url (str (-> request :settings :external_base_url) (path :home))
         redirect-resp (redirect
                        (if-let [sign-out-url (:external_sign_out_url authenticated-entity)]
-                         (str sign-out-url "?" (query-params/encode {:back_to home-url}))
+                         (str sign-out-url "?"
+                              (query-params/encode
+                               {:token (prepare-sso-sign-out-token home-url request)}))
                          home-url))]
     (when-let [user-session-id (:user_session_id authenticated-entity)]
       (delete-user-session tx user-session-id))

@@ -36,9 +36,10 @@
 (defn user-with-valid-session-query [session-token]
   (-> (apply sql/select user-select)
       (sql/merge-select
-       [:user_sessions.id :user_session_id]
+       [:authentication_systems.external_sign_out_url :external_sign_out_url]
        [:user_sessions.created_at :user_session_created_at]
-       [:authentication_systems.external_sign_out_url :external_sign_out_url])
+       [:user_sessions.external_session_id :external_session_id]
+       [:user_sessions.id :user_session_id])
       (sql/from :users)
       (sql/merge-join :user_sessions [:= :users.id :user_id])
       (sql/merge-join :authentication_systems
@@ -92,19 +93,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn create-user-session
-  [user authentication_system_id {:as request tx :tx settings :settings}]
+  [user authentication_system_id
+   {:as request tx :tx settings :settings}
+   & {:keys [user-session]
+      :or {user-session {}}}]
   "Create and returns the user_session. The map includes additionally
   the original token to be used as the value of the session cookie."
-  (warn request)
   (when (:sessions_force_uniqueness settings)
     (jdbc/delete! tx :user_sessions ["user_id = ?" (:id user)]))
   (let [token (str (UUID/randomUUID))
         token-hash (pandect.core/sha256 token)
-        user-session (->> {:user_id (:id user)
-                           :token_hash token-hash
-                           :authentication_system_id authentication_system_id
-                           :meta_data  {:user_agent (get-in request [:headers "user-agent"])
-                                        :remote_addr (get-in request [:remote-addr])}}
+        user-session (->> (merge
+                           user-session
+                           {:user_id (:id user)
+                            :token_hash token-hash
+                            :authentication_system_id authentication_system_id
+                            :meta_data  {:user_agent (get-in request [:headers "user-agent"])
+                                         :remote_addr (get-in request [:remote-addr])}})
                           (jdbc/insert! tx :user_sessions)
                           first)]
     (assoc user-session :token token)))
