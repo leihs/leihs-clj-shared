@@ -26,8 +26,9 @@
       (jdbc/delete!
        tx :user_sessions
        ["authentication_system_id = ? AND external_session_id = ?"
-        authentication-system-id external-session-id])
-      {:status 204})))
+        authentication-system-id external-session-id])))
+  {:status 200
+   :body ""})
 
 (def routes
   (cpj/routes
