@@ -79,7 +79,8 @@
                  response)))]
      (cond
        (and (constants/HTTP_SAVE_METHODS method)
-            (not= handler-key :external-authentication-sign-in))
+            (not= handler-key :external-authentication-sign-in)
+            (not= handler-key :external-authentication-sso-sign-out))
        (handler request)
 
        (and (= handler-key :graphql)
