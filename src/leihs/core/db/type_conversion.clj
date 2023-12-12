@@ -44,7 +44,8 @@
         value (.getValue v)]
     (if (#{"jsonb" "json"} type)
       (when value
-        (with-meta (<-json value) {:pgtype type}))
+        ;(with-meta (<-json value) {:pgtype type}))
+        (<-json value))
       value)))
 
 
