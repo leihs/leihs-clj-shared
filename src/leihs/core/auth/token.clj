@@ -76,7 +76,7 @@
                  (map presence) (filter identity)
                  last))))
 
-(defn authenticate [{tx :tx :as request}
+(defn authenticate [{tx :tx-next :as request}
                     _handler]
   (catcher/snatch
     {:level :warn
