@@ -152,6 +152,7 @@
       (info "Closing db pool done."))))
 
 (defn init-ds-next [db-options]
+  (println ">o> init-ds-next")
   (try (let [params {:dbtype "postgres"
                      :dbname (get db-options db-name-key)
                      :username (get db-options db-user-key)
@@ -178,6 +179,7 @@
 ;;; wrap ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn wrap-tx [handler]
+  (println ">o> wrap-tx")
   (fn [request]
     (let [handler-key (:handler-key request)]
       (if (or (and (= handler-key :graphql) (graphql/mutation? request))

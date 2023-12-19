@@ -18,7 +18,7 @@
        request))))
 
 (defn update-user
-  [{tx :tx
+  [{tx :tx-next
     {user-id :user-id} :route-params
     {locale :locale} :form-params
     {referer "referer"} :headers
@@ -34,7 +34,7 @@
                             (sql/from :users)
                             (sql/where [:= :id user-id])
                             sql/format
-                            (->> (jdbc/query tx))
+                            (->> (jdbc/query tx))           ;;TODO
                             first)}
     (redirect referer)))
 
