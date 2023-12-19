@@ -4,7 +4,7 @@
     [clj-time.core :as time]
 
 
-    [clojure.java.jdbc :as jdbco]
+    ;[clojure.java.jdbc :as jdbco]
 
     ;; all needed imports
     [honey.sql :refer [format] :rename {format sql-format}]
@@ -49,12 +49,12 @@
       (sql/where (token-matches-clause token-secret))
       (sql/where [:= :account_enabled true])
       (sql/where [:raw (str "now() < api_tokens.expires_at")])
-      sql/format))
+      sql-format))
 
 
 
 (defn user-auth-entity! [token-secret tx]
-  p (println ">o> user-auth-entity!" token-secret)
+  (println ">o> user-auth-entity!" token-secret)
 
   (if-let [
            ;uae (spy (->> (user-with-valid-token-query token-secret)

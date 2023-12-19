@@ -18,8 +18,6 @@
     [logbug.debug :as debug]
     ))
 
-;; TODO
-
 (defn access-rights [tx user-id]
   (spy (-> (sql/select :role :inventory_pool_id)
            (sql/from :access_rights)
@@ -43,10 +41,10 @@
 
   (let [
         tx (db/get-ds-next)
-        ;query (password-hash "abc" tx )
-        query (access-rights tx "726a9fb9-8016-4efd-9cd8-6ed4da37c026"  )
+        ;query (password-hash "abc" tx )                                        ;; ok
+        query (access-rights tx "0c2d0b46-63de-5e7e-ba39-ae13a6e7b52a"  )       ;; ok
 
-        p (println "\nquery" query)
+        p (println "\result: " query)
         ]
 
        )
