@@ -16,12 +16,12 @@
                   ;"leihs.procurement.authorization"        ;ok
                   ;"leihs.procurement.*"                    ;fails
                   ;"leihs.procurement*"                     ;fails
-                  "leihs.procurement"                       ;ok
-
-                  "leihs.procurement.authorization"
-                  "leihs.procurement.permissions.*"
-                  "leihs.procurement.resources.*"
-                  "leihs.procurement.*"
+                  ;"leihs.procurement"                       ;ok
+                  ;
+                  ;"leihs.procurement.authorization"
+                  ;"leihs.procurement.permissions.*"
+                  ;"leihs.procurement.resources.*"
+                  ;"leihs.procurement.*"
 
                   } :debug]
                [#{
