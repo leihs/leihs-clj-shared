@@ -1,27 +1,16 @@
 (ns leihs.core.auth.token
-  (:refer-clojure :exclude [str keyword])
+  (:refer-clojure :exclude [keyword str])
   (:require
-    [clj-time.core :as time]
-
-
-    ;[clojure.java.jdbc :as jdbco]
-
     ;; all needed imports
     [honey.sql :refer [format] :rename {format sql-format}]
-    [leihs.core.db :as db]
-    [next.jdbc :as jdbc]
     [honey.sql.helpers :as sql]
-
-    [clojure.walk :refer [keywordize-keys]]
     [leihs.core.auth.shared :refer [access-rights]]
-    [leihs.core.core :refer [keyword str presence]]
+    [leihs.core.core :refer [presence str]]
     [leihs.core.ring-exception :as ring-exception]
-    [leihs.core.sql :as sqlo]
     [logbug.catcher :as catcher]
-    [logbug.debug :as debug]
-    [logbug.thrown :as thrown])
+    [next.jdbc :as jdbc])
   (:import
-    [java.util Base64]))
+    (java.util Base64)))
 
 (defn token-error-page [exception request]
   (-> {:status 401
@@ -29,7 +18,7 @@
                   (.getMessage exception))}))
 
 (defn token-matches-clause [token-secret]
-  ([:= :api_tokens.token_hash [:crypt token-secret :api_tokens.token_hash]] ))
+  ([:= :api_tokens.token_hash [:crypt token-secret :api_tokens.token_hash]]))
 
 (defn user-with-valid-token-query [token-secret]
   (-> (sql/select
@@ -51,28 +40,9 @@
       (sql/where [:raw (str "now() < api_tokens.expires_at")])
       sql-format))
 
-
-
 (defn user-auth-entity! [token-secret tx]
-  (println ">o> user-auth-entity!" token-secret)
-
-  (if-let [
-           ;uae (spy (->> (user-with-valid-token-query token-secret)
-           ;              ;(jdbc/query tx) first))]
-           ;
-           ;
-           ;              (jdbc/execute-one! tx)))
-
-
-           uae (let [
-                     query (user-with-valid-token-query token-secret)
-                     p (println ">o> query" query)
-
-                     result (jdbc/execute-one! tx query)
-                     p (println ">o> result" result)
-                     ]result )
-
-           ]
+  (if-let [uae (let [query (user-with-valid-token-query token-secret)]
+                 (jdbc/execute-one! tx query))]
     (assoc uae
       :authentication-method :token
       :access-rights (access-rights tx (:user_id uae))

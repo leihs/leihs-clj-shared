@@ -29,9 +29,106 @@
                               (not (= (first form) 'fn*)))
                        (with-meta `(~(first form) ~@(next form) ~x)
                                   (meta form))
-              (list form x))]
+                       (list form x))]
         (recur threaded (next forms)))
       x)))
 
 (comment
   (-> 1 #(+ % 1) dec))
+
+;(defn my-cast [data]
+;  (let [update-cast (fn [data key cast-type]
+;                      (if (contains? data key)
+;                        (assoc data key [[:cast (get data key) cast-type]])
+;                        data))]
+;    (-> data
+;        (update-cast :id :uuid)
+;        (update-cast :category_id :uuid)
+;        (update-cast :template_id :uuid)
+;        (update-cast :room_id :uuid)
+;        (update-cast :order_status :order_status_enum)
+;        (update-cast :budget_period_id :uuid)
+;        (update-cast :user_id :uuid)
+;        (update-cast :request_id :uuid)
+;        (update-cast :main_category_id :uuid)
+;        (update-cast :inspection_start_date :timestamptz)
+;        (update-cast :end_date :timestamptz)
+;        (update-cast :metadata :jsonb)
+;        (update-cast :meta_data :jsonb))))
+
+
+; [leihs.core.utils :refer [my-cast]]
+(defn my-cast [data]
+  (let [
+        data (if (contains? data :id)
+               (assoc data :id [[:cast (:id data) :uuid]])
+               data
+               )
+
+        data (if (contains? data :category_id)
+               (assoc data :category_id [[:cast (:category_id data) :uuid]])
+               data
+               )
+        data (if (contains? data :template_id)
+               (assoc data :template_id [[:cast (:template_id data) :uuid]])
+               data
+               )
+
+        data (if (contains? data :room_id)
+               (assoc data :room_id [[:cast (:room_id data) :uuid]])
+               data
+               )
+
+        data (if (contains? data :order_status)
+               (assoc data :order_status [[:cast (:order_status data) :order_status_enum]])
+               data
+               )
+
+        data (if (contains? data :budget_period_id)
+               (assoc data :budget_period_id [[:cast (:budget_period_id data) :uuid]])
+               data
+               )
+
+        data (if (contains? data :user_id)
+               (assoc data :user_id [[:cast (:user_id data) :uuid]])
+               data
+               )
+
+        data (if (contains? data :request_id)
+               (assoc data :request_id [[:cast (:request_id data) :uuid]])
+               data
+               )
+
+        data (if (contains? data :main_category_id)
+               (assoc data :main_category_id [[:cast (:main_category_id data) :uuid]])
+               data
+               )
+
+        data (if (contains? data :inspection_start_date)
+               (assoc data :inspection_start_date [[:cast (:inspection_start_date data) :timestamptz]])
+               data
+               )
+
+        data (if (contains? data :end_date)
+               (assoc data :end_date [[:cast (:end_date data) :timestamptz]])
+               data
+               )
+
+        data (if (contains? data :metadata)
+               (do
+                 (println ">o> upload::metadata")
+                 (assoc data :metadata [[:cast (:metadata data) :jsonb]]) ;; works as local-test
+                 )
+               data
+               )
+
+        data (if (contains? data :meta_data)
+               (do
+                 (println ">o> upload::metadata")
+                 (assoc data :meta_data [[:cast (:meta_data data) :jsonb]]) ;; works as local-test
+                 )
+               data
+               )
+        ]
+    data
+    ))

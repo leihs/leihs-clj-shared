@@ -1,22 +1,13 @@
 (ns leihs.core.auth.core
-  (:refer-clojure :exclude [str keyword])
+  (:refer-clojure :exclude [keyword str])
   (:require
-    ;[clojure.java.jdbc :as jdbc]
-    [leihs.core.sql :as sqlo]
-
-
-          ;; all needed imports
-                [honey.sql :refer [format] :rename {format sql-format}]
-                [leihs.core.db :as db]
-                [next.jdbc :as jdbc]
-                [honey.sql.helpers :as sql]
-
+    [honey.sql :refer [format] :rename {format sql-format}]
+    [honey.sql.helpers :as sql]
     [leihs.core.auth.session :as session]
     [leihs.core.auth.token :as token]
-    [leihs.core.core :refer [str keyword presence presence!]]
-    [logbug.catcher :as catcher]
-    [logbug.debug :as debug]
-    [taoensso.timbre :refer [error warn info debug spy]]
+    [leihs.core.core :refer [str]]
+    [next.jdbc :as jdbc]
+    [taoensso.timbre :refer [debug error info spy warn]]
     ))
 
 
@@ -26,7 +17,6 @@
   (-> handler
       token/wrap-authenticate
       session/wrap-authenticate))
-
 
 ;;; authorization helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -47,14 +37,13 @@
             required-scopes)
     required-scopes))
 
-
 ;;; authorizers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn scope-authorizer [required-scopes request]
   (let [required-scope-keys (->> required-scopes
                                  (filter (fn [[k v]] v))
                                  (filter-required-scopes-wrt-safe-or-unsafe
-                                   request)
+                                  request)
                                  (map first)
                                  set)]
     (if (every? (fn [scope-key]
@@ -72,17 +61,17 @@
 
 (def admin-scopes?
   (build-scope-authorizer
-    {:scope_admin_read true
-     :scope_admin_write true
-     :scope_system_admin_read false
-     :scope_system_admin_write false}))
+   {:scope_admin_read true
+    :scope_admin_write true
+    :scope_system_admin_read false
+    :scope_system_admin_write false}))
 
 (def system-admin-scopes?
   (build-scope-authorizer
-    {:scope_admin_read false
-     :scope_admin_write false
-     :scope_system_admin_read true
-     :scope_system_admin_write true}))
+   {:scope_admin_read false
+    :scope_admin_write false
+    :scope_system_admin_read true
+    :scope_system_admin_write true}))
 
 (defn admin-hierarchy-user-query [user-id]
   (-> (sql/select :id :admin_protected :system_admin_protected)
@@ -90,7 +79,6 @@
       (sql/where [:= :users.id user-id])))
 
 (comment (admin-hierarchy-user-query "foo"))
-
 
 (defn admin-hierarchy?
   "Checks that the aut-entity has the proper admin scope
@@ -102,24 +90,17 @@
    & {:keys [user-id-fn]
       :or {user-id-fn #(-> % :route-params :user-id)}}]
   (when-let [user-id (user-id-fn request)]
-    (when-let [
-               ;user (some-> user-id admin-hierarchy-user-query
-               ;             spy sql/format spy (->> (jdbc/exe tx) first))
-
-               user (some-> user-id admin-hierarchy-user-query
-                            spy sql-format spy (->> (jdbc/execute-one! tx)))
-
-               ]
+    (when-let [user (some-> user-id admin-hierarchy-user-query
+                            spy sql-format spy (->> (jdbc/execute-one! tx)))]
       (cond
         (http-safe?
-          request) (if (:system_admin_protected user)
-                     (:scope_system_admin_write auth-entity)
-                     (:scope_admin_write auth-entity))
+         request) (if (:system_admin_protected user)
+                    (:scope_system_admin_write auth-entity)
+                    (:scope_admin_write auth-entity))
         (http-unsafe?
-          request) (if (:system_admin_protected user)
-                     (:scope_system_admin_read auth-entity)
-                     (:scope_admin_read auth-entity))))))
-
+         request) (if (:system_admin_protected user)
+                    (:scope_system_admin_read auth-entity)
+                    (:scope_admin_read auth-entity))))))
 
 ;;; authorization ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -138,8 +119,8 @@
                            "This is most likely a programming error.")
                       {:status 555})))
     (if (some
-          (fn [authorizer] (-> request authorizer))
-          authorizers)
+         (fn [authorizer] (-> request authorizer))
+         authorizers)
       (handler request)
       (throw (ex-info "Not authorized" {:status 403})))))
 
@@ -147,7 +128,6 @@
   (fn [request]
     (debug 'wrap {'request request})
     (authorize! request handler resolve-table)))
-
 
 ;#### debug ###################################################################
 ;(debug/debug-ns *ns*)
