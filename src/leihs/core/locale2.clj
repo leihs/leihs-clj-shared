@@ -1,4 +1,4 @@
-(ns leihs.core.locale
+(ns leihs.core.locale2
   (:require
     ;; all needed imports
     [compojure.core :as cpj]

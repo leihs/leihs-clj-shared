@@ -1,11 +1,11 @@
-(ns leihs.core.auth.session
+(ns leihs.core.auth.session2
   (:refer-clojure :exclude [keyword str])
   (:require
     [cheshire.core :refer [generate-string] :rename
      {generate-string to-json}]
     [honey.sql :refer [format] :rename {format sql-format}]
     [honey.sql.helpers :as sql]
-    [leihs.core.auth.shared :refer [access-rights]]
+    [leihs.core.auth.shared2 :refer [access-rights]]
     [leihs.core.constants :refer [USER_SESSION_COOKIE_NAME]]
     [leihs.core.core :refer [str]]
     [leihs.core.utils :refer [my-cast]]

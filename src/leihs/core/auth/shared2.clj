@@ -1,4 +1,4 @@
-(ns leihs.core.auth.shared
+(ns leihs.core.auth.shared2
   (:refer-clojure :exclude [keyword str])
   (:require
     ;; all needed imports

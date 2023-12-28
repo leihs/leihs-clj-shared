@@ -1,6 +1,7 @@
 (ns leihs.core.dependencies-test
   (:require
     [clojure.test :refer :all]
+    [leihs.core.auth.core2]
     [leihs.core.auth.core]
     [leihs.core.core]
     [leihs.core.db :as db]

@@ -1,10 +1,10 @@
-(ns leihs.core.auth.token
+(ns leihs.core.auth.token2
   (:refer-clojure :exclude [keyword str])
   (:require
     ;; all needed imports
     [honey.sql :refer [format] :rename {format sql-format}]
     [honey.sql.helpers :as sql]
-    [leihs.core.auth.shared :refer [access-rights]]
+    [leihs.core.auth.shared2 :refer [access-rights]]
     [leihs.core.core :refer [presence str]]
     [leihs.core.ring-exception :as ring-exception]
     [logbug.catcher :as catcher]

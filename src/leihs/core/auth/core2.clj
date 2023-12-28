@@ -1,10 +1,10 @@
-(ns leihs.core.auth.core
+(ns leihs.core.auth.core2
   (:refer-clojure :exclude [keyword str])
   (:require
     [honey.sql :refer [format] :rename {format sql-format}]
     [honey.sql.helpers :as sql]
-    [leihs.core.auth.session :as session]
-    [leihs.core.auth.token :as token]
+    [leihs.core.auth.session2 :as session]
+    [leihs.core.auth.token2 :as token]
     [leihs.core.core :refer [str]]
     [next.jdbc :as jdbc]
     [taoensso.timbre :refer [debug error info spy warn]]
