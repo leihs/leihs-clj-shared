@@ -1,17 +1,16 @@
 (ns leihs.core.db.type-conversion
   (:require
-    [clojure.data.json :as json]
-    [honey.sql :refer [format] :rename {format sql-format}]
-    [honey.sql.helpers :as sql]
-    [next.jdbc :as jdbc]
-    [next.jdbc.connection :as connection]
-    [next.jdbc.prepare :as prepare]
-    [next.jdbc.result-set :as jdbc-rs]
-    [taoensso.timbre :refer [debug info warn error spy]])
+   [clojure.data.json :as json]
+   [honey.sql :refer [format] :rename {format sql-format}]
+   [honey.sql.helpers :as sql]
+   [next.jdbc :as jdbc]
+   [next.jdbc.connection :as connection]
+   [next.jdbc.prepare :as prepare]
+   [next.jdbc.result-set :as jdbc-rs]
+   [taoensso.timbre :refer [debug info warn error spy]])
   (:import
-    [java.sql Array PreparedStatement]
-    [org.postgresql.util PGobject]
-    ))
+   [java.sql Array PreparedStatement]
+   [org.postgresql.util PGobject]))
 
 ;;; PostgreSQL Arrays ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -47,7 +46,6 @@
         ;(with-meta (<-json value) {:pgtype type}))      ;; FIXME: before
         (<-json value))
       value)))
-
 
 ;; if a SQL parameter is a Clojure hash map or vector, it'll be transformed
 ;; to a PGobject for JSON/JSONB:

@@ -1,11 +1,11 @@
 (ns leihs.core.sql2
   (:require
-    [clojure.string :as string]
-    [leihs.core.core :refer [presence]]
-    [honey.sql :refer [format format-expr] :rename {format sql-format} :as sql]
-    [honey.sql.helpers :as sql-help]
-    [next.jdbc :as jdbc]
-    [next.jdbc.sql :refer [query] :rename {query jdbc-query}]))
+   [clojure.string :as string]
+   [honey.sql :refer [format format-expr] :rename {format sql-format} :as sql]
+   [honey.sql.helpers :as sql-help]
+   [leihs.core.core :refer [presence]]
+   [next.jdbc :as jdbc]
+   [next.jdbc.sql :refer [query] :rename {query jdbc-query}]))
 
 (defn expand-to-tsquery-calls [terms]
   (let [tsquery-calls (->> terms

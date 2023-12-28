@@ -1,30 +1,26 @@
 (ns leihs.core.requests.core
   (:refer-clojure :exclude [str keyword send-off])
   (:require-macros
-    [reagent.ratom :as ratom :refer [reaction]]
-    [cljs.core.async.macros :refer [go]]
-    )
+   [cljs.core.async.macros :refer [go]]
+   [reagent.ratom :as ratom :refer [reaction]])
   (:require
-    [leihs.core.anti-csrf.front :as anti-csrf]
-    [leihs.core.core :refer [str keyword deep-merge presence]]
-    [leihs.core.constants :as constants]
+   [cljs-http.client :as http-client]
+   [cljs-uuid-utils.core :as uuid]
+   [cljs.core.async :as async]
 
-    [leihs.core.requests.modal]
-    [leihs.core.requests.shared :as shared]
+   [cljs.core.async :refer [timeout]]
+   [clojure.pprint :refer [pprint]]
 
-    [cljs-http.client :as http-client]
-    [cljs-uuid-utils.core :as uuid]
-    [cljs.core.async :as async]
-    [cljs.core.async :refer [timeout]]
-    [clojure.pprint :refer [pprint]]
-    [goog.string :as gstring]
-    [goog.string.format]
-    [reagent.core :as reagent]))
-
-
+   [goog.string :as gstring]
+   [goog.string.format]
+   [leihs.core.anti-csrf.front :as anti-csrf]
+   [leihs.core.constants :as constants]
+   [leihs.core.core :refer [str keyword deep-merge presence]]
+   [leihs.core.requests.modal]
+   [leihs.core.requests.shared :as shared]
+   [reagent.core :as reagent]))
 
 (defonce request-delay* (atom 0))
-
 
 ;;; request per se ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -48,7 +44,6 @@
                    state
                    (assoc-in state [:requests id :progress] progress)))
                id progress))))
-
 
 (defn request [id req meta chan callback]
   (go (<! (timeout @request-delay*))
@@ -85,8 +80,7 @@
             :meta meta
             :id id
             :key id
-            :requested_at (js/Date.)
-            })
+            :requested_at (js/Date.)})
     (update-progress id progress-chan)
     (request id req meta chan callback)
     id))

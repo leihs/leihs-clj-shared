@@ -1,32 +1,32 @@
 (ns leihs.core.db
   (:refer-clojure :exclude [str keyword])
   (:require
-    [clj-yaml.core :as yaml]
-    [clojure.java.jdbc :as jdbc]
-    [cuerdas.core :as string :refer [snake kebab upper human]]
-    [environ.core :refer [env]]
-    [hikari-cp.core :as hikari]
-    [leihs.core.db.type-conversion]
-    [leihs.core.constants :refer [HTTP_UNSAFE_METHODS]]
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.graphql :as graphql]
-    [leihs.core.ring-exception :refer [get-cause]]
-    [leihs.core.sql :as sql]
-    [leihs.core.sql2]
-    [logbug.catcher :as catcher]
-    [logbug.debug :as debug :refer [I> I>> identity-with-logging]]
-    [logbug.ring :refer [wrap-handler-with-logging]]
-    [logbug.thrown :as thrown]
-    [next.jdbc :as jdbc-next]
-    [next.jdbc.connection]
-    [next.jdbc.result-set]
-    [pg-types.all]
-    [ring.util.codec]
-    [taoensso.timbre :refer [debug info warn error spy]])
+   [clj-yaml.core :as yaml]
+   [clojure.java.jdbc :as jdbc]
+   [cuerdas.core :as string :refer [snake kebab upper human]]
+   [environ.core :refer [env]]
+   [hikari-cp.core :as hikari]
+   [leihs.core.constants :refer [HTTP_UNSAFE_METHODS]]
+   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.db.type-conversion]
+   [leihs.core.graphql :as graphql]
+   [leihs.core.ring-exception :refer [get-cause]]
+   [leihs.core.sql :as sql]
+   [leihs.core.sql2]
+   [logbug.catcher :as catcher]
+   [logbug.debug :as debug :refer [I> I>> identity-with-logging]]
+   [logbug.ring :refer [wrap-handler-with-logging]]
+   [logbug.thrown :as thrown]
+   [next.jdbc :as jdbc-next]
+   [next.jdbc.connection]
+   [next.jdbc.result-set]
+   [pg-types.all]
+   [ring.util.codec]
+   [taoensso.timbre :refer [debug info warn error spy]])
   (:import
-    java.net.URI
-    [com.codahale.metrics MetricRegistry]
-    [com.zaxxer.hikari HikariDataSource]))
+   [com.codahale.metrics MetricRegistry]
+   [com.zaxxer.hikari HikariDataSource]
+   java.net.URI))
 
 ;;; CLI ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -89,14 +89,13 @@
    :mean-reate (.getMeanRate t)
    :one-minute-rate (.getOneMinuteRate t)
    :five-minute-rate (.getFiveMinuteRate t)
-   :fifteen-minute-rate (.getFifteenMinuteRate t)
-   })
+   :fifteen-minute-rate (.getFifteenMinuteRate t)})
 
 (defn status []
   {:gauges (->>
-             @metric-registry* .getGauges
-             (map (fn [[n g]] [n (.getValue g)]))
-             (into {}))
+            @metric-registry* .getGauges
+            (map (fn [[n g]] [n (.getValue g)]))
+            (into {}))
    :timers (->> @metric-registry* .getTimers
                 (map (fn [[n t]] [n (Timer->map t)]))
                 (into {}))})
@@ -112,27 +111,27 @@
 (defn init-ds [db-options health-check-registry]
   (reset! metric-registry* (MetricRegistry.))
   (reset!
-    ds*
-    {:datasource
-     (hikari/make-datasource
-       {:auto-commit        true
-        :read-only          false
-        :connection-timeout 30000
-        :validation-timeout 5000
-        :idle-timeout       (* 1 60 1000) ; 1 minute
-        :max-lifetime       (* 1 60 60 1000) ; 1 hour
-        :minimum-idle       (get db-options db-min-pool-size-key)
-        :maximum-pool-size  (get db-options db-max-pool-size-key)
-        :pool-name          "db-pool"
-        :adapter            "postgresql"
-        :username           (get db-options db-user-key)
-        :password           (get db-options db-password-key)
-        :database-name      (get db-options db-name-key)
-        :server-name        (get db-options db-host-key)
-        :port-number        (get db-options db-port-key)
-        :register-mbeans    false
-        :metric-registry @metric-registry*
-        :health-check-registry health-check-registry})}))
+   ds*
+   {:datasource
+    (hikari/make-datasource
+     {:auto-commit        true
+      :read-only          false
+      :connection-timeout 30000
+      :validation-timeout 5000
+      :idle-timeout       (* 1 60 1000) ; 1 minute
+      :max-lifetime       (* 1 60 60 1000) ; 1 hour
+      :minimum-idle       (get db-options db-min-pool-size-key)
+      :maximum-pool-size  (get db-options db-max-pool-size-key)
+      :pool-name          "db-pool"
+      :adapter            "postgresql"
+      :username           (get db-options db-user-key)
+      :password           (get db-options db-password-key)
+      :database-name      (get db-options db-name-key)
+      :server-name        (get db-options db-host-key)
+      :port-number        (get db-options db-port-key)
+      :register-mbeans    false
+      :metric-registry @metric-registry*
+      :health-check-registry health-check-registry})}))
 
 ;;; next-ds ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -166,7 +165,7 @@
                      :idleTimeout (* 1 60 1000) ; 1 minute
                      :maxLifetime (* 1 60 60 1000)}
              ds-next (next.jdbc.connection/->pool
-                       HikariDataSource params)]
+                      HikariDataSource params)]
          ;; this code initializes the pool and performs a validation check:
          (.close (jdbc-next/get-connection ds-next))
          (reset! ds-next* (jdbc-next/with-options ds-next builder-fn-options))

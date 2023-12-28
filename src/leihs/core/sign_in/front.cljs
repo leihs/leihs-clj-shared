@@ -1,20 +1,17 @@
 (ns leihs.core.sign-in.front
   (:refer-clojure :exclude [str keyword])
   (:require-macros
-    [reagent.ratom :as ratom :refer [reaction]]
-    )
+   [reagent.ratom :as ratom :refer [reaction]])
   (:require
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.constants]
-    [leihs.core.paths :refer [path]]
-    [leihs.core.routing.front :as routing]
-    [leihs.core.global :as global]
+   [accountant.core :as accountant]
+   [clojure.pprint :refer [pprint]]
+   [leihs.core.constants]
+   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.global :as global]
 
-    [clojure.pprint :refer [pprint]]
-    [accountant.core :as accountant]
-    [reagent.core :as reagent]
-    ))
-
+   [leihs.core.paths :refer [path]]
+   [leihs.core.routing.front :as routing]
+   [reagent.core :as reagent]))
 
 (defn nav-email-continue-component []
   (let [email* (reagent/atom (or (-> @routing/state* :query-params-raw :email presence)
@@ -40,5 +37,5 @@
          :href (path :sign-in {} {:email @email* :timestamp (.format @global/timestamp*)})
          :type :submit}
         [:i.fas.fa-sign-in]
-        " Continue to sign in" ]])))
+        " Continue to sign in"]])))
 

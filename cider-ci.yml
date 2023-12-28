@@ -17,3 +17,10 @@ jobs:
                 #!/usr/bin/env bash
                 set -euo pipefail
                 ./bin/clj-test
+        cljc-lint:
+          scripts:
+            test:
+              body: |
+                #!/usr/bin/env bash
+                set -euo pipefail
+                ./bin/cljfmt check

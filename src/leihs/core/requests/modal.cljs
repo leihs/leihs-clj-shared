@@ -1,21 +1,20 @@
 (ns leihs.core.requests.modal
-  (:refer-clojure :exclude [str keyword ])
+  (:refer-clojure :exclude [str keyword])
   (:require-macros
-    [reagent.ratom :as ratom :refer [reaction]]
-    )
+   [reagent.ratom :as ratom :refer [reaction]])
   (:require
-    [leihs.core.requests.shared :as shared]
-    [leihs.core.core :refer [str keyword deep-merge presence]]))
+   [leihs.core.core :refer [str keyword deep-merge presence]]
+   [leihs.core.requests.shared :as shared]))
 
 (def current-modal-request
   (reaction
-    (when-let [[id r] (->> @shared/state* :requests
-                           (filter (fn [[_ r]]
-                                     (or (-> r :meta :modal)
-                                         (and (-> r :response)
-                                              (-> r :response :success not)))))
-                           first)]
-      (assoc r :id id))))
+   (when-let [[id r] (->> @shared/state* :requests
+                          (filter (fn [[_ r]]
+                                    (or (-> r :meta :modal)
+                                        (and (-> r :response)
+                                             (-> r :response :success not)))))
+                          first)]
+     (assoc r :id id))))
 
 (defn progress-bar-component [status bootstrap-status request]
   (let [progress-part (if-let [progress (-> request :progress)]
@@ -70,8 +69,7 @@
                                    update-in [:requests]
                                    (fn [rx] (dissoc rx (:id request))))
                             (retry-fn))}
-              [:i.fa.fa-recycle] " Resend request "])]
-          ]]]
+              [:i.fa.fa-recycle] " Resend request "])]]]]
        [:div.modal-backdrop {:style {:opacity "0.5"}}]])))
 
 

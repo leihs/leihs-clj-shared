@@ -4,9 +4,8 @@
 
 (ns leihs.core.url.http
   (:require
-    [leihs.core.url.shared :refer [host-port-dissect path-dissect auth-dissect parse-int]]
-    #?(:clj [clj-yaml.core :as yaml])
-    ))
+   #?(:clj [clj-yaml.core :as yaml])
+   [leihs.core.url.shared :refer [host-port-dissect path-dissect auth-dissect parse-int]]))
 
 (def pattern
   #"(?i)(https?)://([^@]+@)?([^/^\?]+)(/[^\?^#]*)?(\?[^#]+)?(#.*)?"
@@ -37,11 +36,11 @@
 
 (defn parse-query [query-string]
   #?(:clj
-      (->> (clojure.string/replace query-string #"^\?" "")
-           ring.util.codec/form-decode
-           clojure.walk/keywordize-keys
-           (map (fn [[qk qv]] [qk (yaml/parse-string qv)]))
-           (into {}))))
+     (->> (clojure.string/replace query-string #"^\?" "")
+          ring.util.codec/form-decode
+          clojure.walk/keywordize-keys
+          (map (fn [[qk qv]] [qk (yaml/parse-string qv)]))
+          (into {}))))
 
 (defn parse-base-url [url]
   (as-> url params

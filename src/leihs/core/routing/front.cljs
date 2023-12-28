@@ -1,24 +1,23 @@
 (ns leihs.core.routing.front
   (:refer-clojure :exclude [str keyword])
   (:require
-    [accountant.core :as accountant]
-    [bidi.bidi :as bidi]
-    [cljs-uuid-utils.core :as uuid]
-    [cljs.core.async :refer [<! go timeout]]
-    [clojure.core.match :refer [match]]
-    [clojure.pprint :refer [pprint]]
-    [clojure.string :as string]
-    [leihs.core.constants :as constants]
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.defaults :as defaults]
-    [leihs.core.icons :as icons]
-    [leihs.core.paths :refer [path]]
-    [leihs.core.url.core :as url]
-    [leihs.core.url.query-params :as query-params]
-    [reagent.core :as reagent :refer [reaction]]
-    [timothypratley.patchin :as patchin])
+   [accountant.core :as accountant]
+   [bidi.bidi :as bidi]
+   [cljs-uuid-utils.core :as uuid]
+   [cljs.core.async :refer [<! go timeout]]
+   [clojure.core.match :refer [match]]
+   [clojure.pprint :refer [pprint]]
+   [clojure.string :as string]
+   [leihs.core.constants :as constants]
+   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.defaults :as defaults]
+   [leihs.core.icons :as icons]
+   [leihs.core.paths :refer [path]]
+   [leihs.core.url.core :as url]
+   [leihs.core.url.query-params :as query-params]
+   [reagent.core :as reagent :refer [reaction]]
+   [timothypratley.patchin :as patchin])
   (:import goog.Uri))
-
 
 (def paths* (reagent/atom nil))
 
@@ -42,26 +41,26 @@
                             (when (not= old-state new-state)
                               (reset! old-state* new-state)
                               (apply handler (concat
-                                               [old-state (patchin/diff old-state new-state) new-state]
-                                               args)))))]
+                                              [old-state (patchin/diff old-state new-state) new-state]
+                                              args)))))]
     (reagent/create-class
-      {:component-will-unmount (fn [& args] (when-let [handler (:will-unmount handlers)]
-                                            (apply handler args)))
-       :component-did-mount (fn [& args]
-                              (when-let [handler (:did-mount handlers)]
+     {:component-will-unmount (fn [& args] (when-let [handler (:will-unmount handlers)]
+                                             (apply handler args)))
+      :component-did-mount (fn [& args]
+                             (when-let [handler (:did-mount handlers)]
+                               (apply handler args))
+                             (when-let [handler (:did-change handlers)]
+                               (eval-did-change handler args)))
+      :component-did-update (fn [& args]
+                              (when-let [handler (:did-update handlers)]
                                 (apply handler args))
                               (when-let [handler (:did-change handlers)]
                                 (eval-did-change handler args)))
-       :component-did-update (fn [& args]
-                               (when-let [handler (:did-update handlers)]
-                                 (apply handler args))
-                               (when-let [handler (:did-change handlers)]
-                                 (eval-did-change handler args)))
-       :reagent-render
-       (fn [_]
-         [:div.hidden-routing-state-component
-          {:style {:display :none}}
-          [:pre (with-out-str (pprint @state*))]])})))
+      :reagent-render
+      (fn [_]
+        [:div.hidden-routing-state-component
+         {:style {:display :none}}
+         [:pre (with-out-str (pprint @state*))]])})))
 
 (defn resolve-page [k]
   (get @resolve-table* k nil))
@@ -88,33 +87,32 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (defn init-navigation []
   (accountant/configure-navigation!
-    {:nav-handler (fn [path]
-                    (let [{route-params :route-params
-                           handler-key :handler} (match-path path)
-                          location-href (-> js/window .-location .-href)
-                          location-url (goog.Uri. location-href)]
-                      (swap! state* assoc
-                             :id (uuid/uuid-string (uuid/make-random-uuid))
-                             :route-params (url/decode-keys route-params)
-                             :handler-key handler-key
-                             :page (resolve-page handler-key)
-                             :url location-href
-                             :path (.getPath location-url)
-                             :route (str (.getPath location-url)
-                                         (when-let [query (-> location-url .getQuery presence)]
-                                           (str "?" query)))
-                             :query-params-raw (-> location-url .getQuery
-                                                   (query-params/decode :parse-json? false))
-                             :query-params (-> location-url .getQuery
-                                               query-params/decode))))
-     :path-exists? (fn [path]
+   {:nav-handler (fn [path]
+                   (let [{route-params :route-params
+                          handler-key :handler} (match-path path)
+                         location-href (-> js/window .-location .-href)
+                         location-url (goog.Uri. location-href)]
+                     (swap! state* assoc
+                            :id (uuid/uuid-string (uuid/make-random-uuid))
+                            :route-params (url/decode-keys route-params)
+                            :handler-key handler-key
+                            :page (resolve-page handler-key)
+                            :url location-href
+                            :path (.getPath location-url)
+                            :route (str (.getPath location-url)
+                                        (when-let [query (-> location-url .getQuery presence)]
+                                          (str "?" query)))
+                            :query-params-raw (-> location-url .getQuery
+                                                  (query-params/decode :parse-json? false))
+                            :query-params (-> location-url .getQuery
+                                              query-params/decode))))
+    :path-exists? (fn [path]
                      ;(js/console.log (with-out-str (pprint (match-path path))))
-                     (boolean (when-let [handler-key (:handler (match-path path))]
-                                (when-not (handler-key @external-handlers*)
-                                  handler-key))))}))
+                    (boolean (when-let [handler-key (:handler (match-path path))]
+                               (when-not (handler-key @external-handlers*)
+                                 handler-key))))}))
 
 (defn current-path-for-query-params
   [default-query-params new-query-params]
@@ -134,7 +132,6 @@
   (reset! external-handlers* external-handlers)
   (init-navigation)
   (accountant/dispatch-current!))
-
 
 ;;; Filter Components ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -157,34 +154,34 @@
         (when prepend [apply prepend prepend-args])
         [:input.form-control
          (merge
-           {:id query-params-key
-            :value @value*
-            :tab-index 1
-            :placeholder query-params-key
-            :on-change (fn [e]
-                         (let [newval (or (some-> e .-target .-value presence) "")]
-                           (reset! value* newval)
-                           (go (<! (timeout 500))
-                               (when (= @value* newval)
-                                 (accountant/navigate!
-                                   (path (:handler-key @state*)
-                                         (:route-params @state*)
-                                         (merge {}
-                                                (:query-params-raw @state*)
-                                                {:page 1
-                                                 query-params-key newval})))))))}
-           input-options)]
+          {:id query-params-key
+           :value @value*
+           :tab-index 1
+           :placeholder query-params-key
+           :on-change (fn [e]
+                        (let [newval (or (some-> e .-target .-value presence) "")]
+                          (reset! value* newval)
+                          (go (<! (timeout 500))
+                              (when (= @value* newval)
+                                (accountant/navigate!
+                                 (path (:handler-key @state*)
+                                       (:route-params @state*)
+                                       (merge {}
+                                              (:query-params-raw @state*)
+                                              {:page 1
+                                               query-params-key newval})))))))}
+          input-options)]
         [:div.input-group-append
          [:button.btn.btn-outline-warning
           {:on-click (fn [_]
                        (reset! value* "")
                        (accountant/navigate!
-                         (path (:handler-key @state*)
-                               (:route-params @state*)
-                               (merge {}
-                                      (:query-params-raw @state*)
-                                      {:page 1
-                                       query-params-key ""}))))}
+                        (path (:handler-key @state*)
+                              (:route-params @state*)
+                              (merge {}
+                                     (:query-params-raw @state*)
+                                     {:page 1
+                                      query-params-key ""}))))}
           [icons/delete]]]]])))
 
 (defn form-term-filter-component
@@ -201,7 +198,6 @@
    :query-params-key :term
    :input-options {:placeholder placeholder}
    :prepend nil])
-
 
 (defn user-choose-prepend-component
   [& {:keys [text query-params-key] :or {text "Choose"}}]
@@ -261,26 +257,25 @@
         :on-change (fn [e]
                      (let [val (or (-> e .-target .-value presence) "")]
                        (accountant/navigate!
-                         (path (:handler-key @state*)
-                               (:route-params @state*)
-                               (merge {}
-                                      (:query-params-raw @state*)
-                                      {:page 1
-                                       query-params-key val})))))}
+                        (path (:handler-key @state*)
+                              (:route-params @state*)
+                              (merge {}
+                                     (:query-params-raw @state*)
+                                     {:page 1
+                                      query-params-key val})))))}
        (for [[k n] options]
          [:option {:key k :value k} n])]
       [:div.input-group-append
        [:button.btn.btn-outline-warning
         {:on-click (fn [_]
                      (accountant/navigate!
-                       (path (:handler-key @state*)
-                             (:route-params @state*)
-                             (merge {}
-                                    (:query-params-raw @state*)
-                                    {:page 1
-                                     query-params-key default-option}))))}
+                      (path (:handler-key @state*)
+                            (:route-params @state*)
+                            (merge {}
+                                   (:query-params-raw @state*)
+                                   {:page 1
+                                    query-params-key default-option}))))}
         [icons/delete]]]]]))
-
 
 ;;; pagination ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -307,7 +302,7 @@
           [:a.btn.btn-outline-primary.btn-sm
            {:class (when (< ppage 1) "disabled")
             :href ppagepath}
-           [:i.fas.fa-arrow-circle-left] " previous " ]])
+           [:i.fas.fa-arrow-circle-left] " previous "]])
        (let [npage (inc current-page)
              npagepath (path hk route-params
                              (assoc query-parameters :page npage))]
@@ -315,7 +310,6 @@
           [:a.btn.btn-outline-primary.btn-sm
            {:href npagepath}
            " next " [:i.fas.fa-arrow-circle-right]]])])))
-
 
 ;;; form reset component ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -327,12 +321,12 @@
     [:button#reset-query-params.btn.btn-outline-warning
      {:tab-index 1
       :on-click #(do (accountant/navigate!
-                       (path (:handler-key @state*)
-                             (:route-params @state*)
-                             (if default-query-params
-                               (merge (:query-params-raw @state*)
-                                      default-query-params)
-                               {}))))}
+                      (path (:handler-key @state*)
+                            (:route-params @state*)
+                            (if default-query-params
+                              (merge (:query-params-raw @state*)
+                                     default-query-params)
+                              {}))))}
      [:i.fas.fa-times]
      " Reset "]]])
 

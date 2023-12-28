@@ -1,11 +1,11 @@
-(ns leihs.core.sign-in.shared
+(ns leihs.core.sign-in-sign-out.shared
   (:refer-clojure :exclude [str keyword])
   (:require
-    [clojure.string :as str]
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.paths :refer [path]]
-    [leihs.core.sql :as sql]
-    [logbug.debug :as debug]))
+   [clojure.string :as str]
+   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.paths :refer [path]]
+   [leihs.core.sql :as sql]
+   [logbug.debug :as debug]))
 
 (def authentication-systems-users-sql-expr
   [:or
@@ -44,10 +44,10 @@
 
 (defn merge-identify-user [sqlmap unique-id]
   (sql/merge-where sqlmap
-   [:or
-    [:= :users.org_id unique-id]
-    [:= :users.login unique-id]
-    [:= (sql/raw "lower(users.email)") (-> unique-id (or "") str/lower-case)]]))
+                   [:or
+                    [:= :users.org_id unique-id]
+                    [:= :users.login unique-id]
+                    [:= (sql/raw "lower(users.email)") (-> unique-id (or "") str/lower-case)]]))
 
 (defn user-query-for-unique-id [user-unique-id]
   (-> (sql/select :*)
@@ -61,6 +61,12 @@
   ([user-unique-id authentication-system-id]
    (-> (auth-system-base-query-for-unique-id user-unique-id)
        (sql/merge-where [:= :authentication_systems.id authentication-system-id]))))
+
+(defn auth-system-user-query [user-unique-id authentication-system-id]
+  (-> (auth-system-base-query-for-unique-id user-unique-id authentication-system-id)
+      (sql/merge-select
+       [(sql/call :row_to_json :authentication_systems) :authentication_system]
+       [(sql/call :row_to_json :users) :user])))
 
 (comment
   (-> (auth-system-base-query-for-unique-id "mkmit")

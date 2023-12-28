@@ -1,15 +1,14 @@
 (ns leihs.core.breadcrumbs
   (:refer-clojure :exclude [str keyword])
   (:require
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.auth.core :as auth]
-    [leihs.core.icons :as icons]
-    [leihs.core.paths :as paths :refer [path]]
-    [leihs.core.routing.front :as routing]
-    [leihs.core.user.front :as current-user]
+   [leihs.core.auth.core :as auth]
+   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.icons :as icons]
+   [leihs.core.paths :as paths :refer [path]]
+   [leihs.core.routing.front :as routing]
+   [leihs.core.user.front :as current-user]
 
-    [reagent.core :as reagent]
-    ))
+   [reagent.core :as reagent]))
 
 (defn active [handler-key]
   (= (-> @routing/state* :handler-key) handler-key))
@@ -20,11 +19,11 @@
 
 (def enabled-button-classes
   (clojure.string/join
-    " " [base-button-classes "btn-outline-primary"]))
+   " " [base-button-classes "btn-outline-primary"]))
 
 (def disabled-button-classes
   (clojure.string/join
-    " " [base-button-classes "btn-outline-dark disabled"]))
+   " " [base-button-classes "btn-outline-dark disabled"]))
 
 (defn li
   ([k n]
@@ -56,7 +55,7 @@
    [:nav.col-lg {:aria-label :breadcrumb :role :navigation}
     (when (seq left)
       [:ol.breadcrumb
-       (for [li left] li) ])]
+       (for [li left] li)])]
    [:nav.col-lg {:role :navigation}
     (when (seq right)
       [:ol.breadcrumb.leihs-nav-right
@@ -65,7 +64,6 @@
 (defn admin-li []
   [li :admin [:span [icons/admin] " Admin "] {} {}
    :authorizers [auth/all-granted]])
-
 
 (defn borrow-li [] (li :borrow "Borrow"))
 

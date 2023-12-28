@@ -1,9 +1,9 @@
 (ns leihs.core.digest
   (:refer-clojure :exclude [hash])
   (:require
-     [goog.crypt     :as gcrypt]
-     [goog.crypt.Md5 :as Md5]
-     [goog.crypt.Sha1 :as Sha1]))
+   [goog.crypt     :as gcrypt]
+   [goog.crypt.Md5 :as Md5]
+   [goog.crypt.Sha1 :as Sha1]))
 
 (defn string->bytes [s]
   (gcrypt/stringToUtf8ByteArray s))  ;; must be utf8 byte array
@@ -18,7 +18,6 @@
     (.update digester bytes-in)
     (.digest digester)))
 
-
 (defn md5-
   "convert bytes to md5 bytes"
   [bytes-in]
@@ -32,7 +31,6 @@
 (defn md5-hex [string]
   "convert utf8 string to md5 hex string"
   (bytes->hex (md5-bytes string)))
-
 
 (defn sha1-
   "convert bytes to sha1 bytes"

@@ -1,16 +1,15 @@
 (ns leihs.core.sql
   (:refer-clojure :exclude [format update set])
   (:require
-    [clojure.string :as string]
-    [honeysql-postgres.format :as pg-format]
-    [honeysql-postgres.helpers :as pg-helpers]
-    [honeysql.core :as core]
-    [honeysql.format :as format :refer [format-clause]]
-    [honeysql.helpers :as helpers :refer [build-clause]]
-    [honeysql.types :as types]
-    [honeysql.util :as util :refer [defalias]]
-    [leihs.core.core :refer [presence]]
-    ))
+   [clojure.string :as string]
+   [honeysql-postgres.format :as pg-format]
+   [honeysql-postgres.helpers :as pg-helpers]
+   [honeysql.core :as core]
+   [honeysql.format :as format :refer [format-clause]]
+   [honeysql.helpers :as helpers :refer [build-clause]]
+   [honeysql.types :as types]
+   [honeysql.util :as util :refer [defalias]]
+   [leihs.core.core :refer [presence]]))
 
 ; regex
 (defmethod format/fn-handler "~*" [_ field value]
@@ -61,10 +60,10 @@
 
 (defn expand-text-search-terms [terms]
   (str "(" (string/join
-             " && "
-             (map (fn [term]
-                    (format/to-sql (types/call :to_tsquery term)))
-                  terms)) ")"))
+            " && "
+            (map (fn [term]
+                   (format/to-sql (types/call :to_tsquery term)))
+                 terms)) ")"))
 
 (defmethod format/fn-handler "@@" [_ field term]
   (let [terms (->> (-> term (string/split #"\s+"))
@@ -72,7 +71,6 @@
                    (filter identity))]
     (str (format/to-sql (types/call :to_tsvector field))
          " @@ " (expand-text-search-terms terms))))
-
 
 (defn dedup-join [honeymap]
   (assoc honeymap :join

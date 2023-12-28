@@ -2,12 +2,11 @@
   (:refer-clojure :exclude [str keyword])
   (:require [honey.sql :refer [format] :rename {format sql-format}]
             [honey.sql.helpers :as sql]
-            [next.jdbc :as jdbc]
-            [next.jdbc.sql :refer [query] :rename {query jdbc-query}]
             [leihs.core.core :refer [keyword str presence]]
             [logbug.debug :as debug]
+            [next.jdbc :as jdbc]
+            [next.jdbc.sql :refer [query] :rename {query jdbc-query}]
             [taoensso.timbre :as log :refer [error warn info debug spy]]))
-
 
 (def selected-columns
   [:email_signature

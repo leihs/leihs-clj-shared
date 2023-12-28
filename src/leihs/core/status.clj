@@ -1,12 +1,12 @@
 (ns leihs.core.status
   (:require
-    [compojure.core :as cpj]
-    [leihs.core.db :as db]
-    [logbug.debug :as debug]
-    [taoensso.timbre :refer [debug info warn error]])
+   [compojure.core :as cpj]
+   [leihs.core.db :as db]
+   [logbug.debug :as debug]
+   [taoensso.timbre :refer [debug info warn error]])
   (:import
-    [com.codahale.metrics.health HealthCheckRegistry]
-    [humanize Humanize]))
+   [com.codahale.metrics.health HealthCheckRegistry]
+   [humanize Humanize]))
 
 ;;; health checks ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -27,7 +27,6 @@
                                  HealthCheckResult->m)]))
            (into {})))
 
-
 ;;; memory ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn check-memory-usage
@@ -47,7 +46,6 @@
                :usage usage}]
     (when-not ok? (error stats))
     stats))
-
 
 ;;; main ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -81,7 +79,6 @@
   []
   (reset! health-check-registry* (HealthCheckRegistry.))
   {:health-check-registry @health-check-registry*})
-
 
 ;#### debug ###################################################################
 ;(debug/debug-ns *ns*)

@@ -1,20 +1,20 @@
 (ns leihs.core.remote-navbar.shared
   (:require
-    [honey.sql :refer [format] :rename {format sql-format}]
-    [honey.sql.helpers :as sql]
-    [next.jdbc :as jdbc]
-    [next.jdbc.sql :refer [query] :rename {query jdbc-query}]
-    [clojure.set :as set]
-    [leihs.core [paths :refer [path]]]
-    [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
-    [leihs.core.constants :as constants]
-    [leihs.core.locale :refer [get-selected-language]]
-    [leihs.core.user.permissions :refer [borrow-access? managed-inventory-pools]]
-    [leihs.core.user.permissions.procure :as procure]
-    [logbug.catcher :as catcher]
-    [logbug.debug :as debug :refer [I>]]
-    [logbug.ring :refer [wrap-handler-with-logging]]
-    [logbug.thrown :as thrown]))
+   [clojure.set :as set]
+   [honey.sql :refer [format] :rename {format sql-format}]
+   [honey.sql.helpers :as sql]
+   [leihs.core [paths :refer [path]]]
+   [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
+   [leihs.core.constants :as constants]
+   [leihs.core.locale :refer [get-selected-language]]
+   [leihs.core.user.permissions :refer [borrow-access? managed-inventory-pools]]
+   [leihs.core.user.permissions.procure :as procure]
+   [logbug.catcher :as catcher]
+   [logbug.debug :as debug :refer [I>]]
+   [logbug.ring :refer [wrap-handler-with-logging]]
+   [logbug.thrown :as thrown]
+   [next.jdbc :as jdbc]
+   [next.jdbc.sql :refer [query] :rename {query jdbc-query}]))
 
 (defn- languages
   [tx]
@@ -33,7 +33,7 @@
            {:manage (map #(hash-map :name (:name %)
                                     :href (path :daily
                                                 {:inventory_pool_id (:id %)}))
-                      (managed-inventory-pools tx auth-entity))})))
+                         (managed-inventory-pools tx auth-entity))})))
 
 (defn- user-info
   [tx auth-entity locales]
@@ -58,19 +58,18 @@
          auth-entity (:authenticated-entity request)
          user-language (get-selected-language request)
          locales (map #(as-> % <>
-                        (dissoc <> [:active])
-                        (set/rename-keys <> {:default :isDefault})
-                        (assoc <> :isSelected (= (:locale %) (:locale user-language))))
-                   (languages tx))]
+                         (dissoc <> [:active])
+                         (set/rename-keys <> {:default :isDefault})
+                         (assoc <> :isSelected (= (:locale %) (:locale user-language))))
+                      (languages tx))]
      (merge
       (anti-csrf-props request)
       {:config {:appTitle "leihs",
-               :appColor "gray",
-               :me (user-info tx auth-entity locales),
-               :subApps (-> (sub-apps tx auth-entity)
-                            (merge subapps-override)),
-               :locales locales}}))))
-
+                :appColor "gray",
+                :me (user-info tx auth-entity locales),
+                :subApps (-> (sub-apps tx auth-entity)
+                             (merge subapps-override)),
+                :locales locales}}))))
 
 ;#### debug ###################################################################
 ;(debug/debug-ns *ns*)

@@ -25,4 +25,4 @@
     ))
 
 (deftest requiring-core-namespaces-with-dependencies-works []
- (is true))
+  (is true))

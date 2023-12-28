@@ -1,11 +1,9 @@
 (ns leihs.core.anti-csrf.front
   (:refer-clojure :exclude [str keyword])
   (:require
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.constants :as constants]
-    [goog.net.Cookies]
-    ))
-
+   [goog.net.Cookies]
+   [leihs.core.constants :as constants]
+   [leihs.core.core :refer [keyword str presence]]))
 
 (defonce ^:dynamic *cookies* (or goog.net.cookies (.getInstance goog.net.Cookies)))
 

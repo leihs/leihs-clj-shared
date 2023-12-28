@@ -1,11 +1,10 @@
 (ns leihs.core.user.permissions
   (:require
-    [honey.sql :refer [format] :rename {format sql-format}]
-    [honey.sql.helpers :as sql]
-    [next.jdbc :as jdbc]
-    [next.jdbc.sql :refer [query] :rename {query jdbc-query}]
-    [logbug.debug :as debug]
-    ))
+   [honey.sql :refer [format] :rename {format sql-format}]
+   [honey.sql.helpers :as sql]
+   [logbug.debug :as debug]
+   [next.jdbc :as jdbc]
+   [next.jdbc.sql :refer [query] :rename {query jdbc-query}]))
 
 (def MANAGER-ROLES ["group_manager"
                     "lending_manager"
@@ -37,9 +36,9 @@
   (-> inventory-access-base-query
       (sql/select :1)
       (sql/where
-        [:or
-         [:exists (user-direct-access-right-subquery user-id CUSTOMER-ROLES)]
-         [:exists (user-group-access-right-subquery user-id CUSTOMER-ROLES)]])
+       [:or
+        [:exists (user-direct-access-right-subquery user-id CUSTOMER-ROLES)]
+        [:exists (user-group-access-right-subquery user-id CUSTOMER-ROLES)]])
       sql-format
       (->> (jdbc-query tx))
       seq boolean))
@@ -48,9 +47,9 @@
   (-> inventory-access-base-query
       (sql/select :inventory_pools.*)
       (sql/where
-        [:or
-         [:exists (user-direct-access-right-subquery user-id MANAGER-ROLES)]
-         [:exists (user-group-access-right-subquery user-id MANAGER-ROLES)]])
+       [:or
+        [:exists (user-direct-access-right-subquery user-id MANAGER-ROLES)]
+        [:exists (user-group-access-right-subquery user-id MANAGER-ROLES)]])
       (sql/order-by :inventory_pools.name)))
 
 (defn managed-inventory-pools [tx {user-id :id}]
@@ -62,9 +61,9 @@
   (-> inventory-access-base-query
       (sql/select :1)
       (sql/where
-        [:or
-         [:exists (user-direct-access-right-subquery user-id MANAGER-ROLES)]
-         [:exists (user-group-access-right-subquery user-id MANAGER-ROLES)]])
+       [:or
+        [:exists (user-direct-access-right-subquery user-id MANAGER-ROLES)]
+        [:exists (user-group-access-right-subquery user-id MANAGER-ROLES)]])
       sql-format
       (->> (jdbc-query tx))
       seq boolean))
@@ -78,7 +77,6 @@
       (->> (jdbc-query tx))
       empty?
       not))
-
 
 ;#### debug ###################################################################
 ;(debug/debug-ns *ns*)

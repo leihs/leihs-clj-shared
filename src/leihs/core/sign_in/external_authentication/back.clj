@@ -1,23 +1,26 @@
 (ns leihs.core.sign-in.external-authentication.back
   (:refer-clojure :exclude [str keyword cond])
   (:require
-    [better-cond.core :refer [cond]]
-    [buddy.core.keys :as keys]
-    [buddy.sign.jwt :as jwt]
-    [clj-time.core :as time]
-    [clojure.java.jdbc :as jdbc]
-    [clojure.string :as str]
-    [compojure.core :as cpj]
-    [leihs.core.auth.session :as session]
-    [leihs.core.core :refer [keyword str presence]]
-    [leihs.core.paths :refer [path]]
-    [leihs.core.redirects :refer [redirect-target]]
-    [leihs.core.sign-in.shared :refer [auth-system-base-query-for-unique-id user-query-for-unique-id]]
-    [leihs.core.sql :as sql]
-    [logbug.debug :as debug]
-    [ring.util.response :refer [redirect]]
-    [taoensso.timbre :refer [debug error info spy warn]]
-    ))
+   [better-cond.core :refer [cond]]
+   [clojure.java.jdbc :as jdbc]
+   [clojure.string :as str]
+   [compojure.core :as cpj]
+   [leihs.core.auth.session :as session]
+   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.paths :refer [path]]
+   [leihs.core.redirects :refer [redirect-target]]
+   [leihs.core.sign-in-sign-out.external-authentication
+    :refer [create-signed-token
+            unsign-external-token
+            unsign-internal-token]]
+   [leihs.core.sign-in-sign-out.shared
+    :refer [auth-system-base-query-for-unique-id
+            auth-system-user-query
+            user-query-for-unique-id]]
+   [leihs.core.sql :as sql]
+   [logbug.debug :as debug]
+   [ring.util.response :refer [redirect]]
+   [taoensso.timbre :refer [debug error info spy warn]]))
 
 (def skip-authorization-handler-keys
   "These keys needs the be added to the list of the skipped handler keys
@@ -25,18 +28,12 @@
   #{:external-authentication-request
     :external-authentication-sign-in})
 
-(defn auth-system-user-query [user-unique-id authentication-system-id]
-  (-> (auth-system-base-query-for-unique-id user-unique-id authentication-system-id)
-      (sql/merge-select
-        [(sql/call :row_to_json :authentication_systems) :authentication_system]
-        [(sql/call :row_to_json :users) :user])
-      sql/format))
-
 (defn authentication-system-user-data
   [user-unique-id authentication-system-id tx]
   (when-let [authentication-system-and-user
              (->> (auth-system-user-query
-                    user-unique-id authentication-system-id)
+                   user-unique-id authentication-system-id)
+                  sql/format
                   (jdbc/query tx) first)]
     (merge authentication-system-and-user
            (->> (-> (sql/select :*)
@@ -51,42 +48,20 @@
 (defn authentication-system-user-data!
   [user-unique-id authentication-system-id tx]
   (or (authentication-system-user-data
-        user-unique-id authentication-system-id tx)
+       user-unique-id authentication-system-id tx)
       (throw (ex-info
-               (str "External authentication system for existing user "
-                    user-unique-id " not found or not enabled")
-               {:status 500}))))
-
-(defn prepare-key-str [s]
-  (->> (-> s (clojure.string/split #"\n"))
-       (map clojure.string/trim)
-       (map presence)
-       (filter identity)
-       (clojure.string/join "\n")))
-
-(defn private-key! [s]
-  (-> s prepare-key-str keys/str->private-key
-      (or (throw
-            (ex-info "Private key error!"
-                     {:status 500})))))
-
-(defn public-key! [s]
-  (-> s prepare-key-str keys/str->public-key
-      (or (throw
-            (ex-info "Public key error!"
-                     {:status 500})))))
+              (str "External authentication system for existing user "
+                   user-unique-id " not found or not enabled")
+              {:status 500}))))
 
 (defn claims! [user authentication-system settings return-to]
   {:email (when (:send_email authentication-system) (:email user))
    :login (when (:send_login authentication-system) (:login user))
    :org_id (when (:send_org_id authentication-system) (:org_id user))
-   :exp (time/plus (time/now) (time/seconds 90))
-   :iat (time/now)
    :server_base_url (:external_base_url settings)
    :return_to (presence return-to)
    :path (path :external-authentication-sign-in
                {:authentication-system-id (:id authentication-system)})})
-
 
 (defn authentication-system [tx authentication-system-id]
   (->> (-> (sql/select :*)
@@ -109,9 +84,8 @@
      :let [authentication-system (authentication-system tx authentication-system-id)
            user (or (user tx user-unique-id)
                     {:email user-unique-id})
-           priv-key (-> authentication-system :internal_private_key private-key!)
            claims (claims! user authentication-system settings return-to)
-           token (jwt/sign claims priv-key {:alg :es256})]
+           token (create-signed-token claims authentication-system)]
      (str (:external_sign_in_url authentication-system) "?token=" token))))
 
 (defn authentication-request
@@ -124,7 +98,6 @@
                                        authentication-system-id
                                        settings
                                        return-to)))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -142,8 +115,8 @@
         base-query (auth-system-base-query-for-unique-id unique-id authentication-system-id)]
     (when-not unique-id
       (throw (ex-info
-               "The sign-in token must at least submit one of email, org_id or login"
-               {:status 400})))
+              "The sign-in token must at least submit one of email, org_id or login"
+              {:status 400})))
     ; extending the base-query with the actual unique id(s) submitted makes this more stringent
     (as-> base-query query
       (if-let [email (:email sign-in-token)]
@@ -163,62 +136,41 @@
         resultset (jdbc/query tx query)]
     (when (> (count resultset) 1)
       (throw (ex-info
-               "More than one user matched the sign-in request."
-               {:status 400})))
+              "More than one user matched the sign-in request."
+              {:status 400})))
     (or (first resultset)
         (throw (ex-info
-                 "No valid user account could be identified for this sign-in request."
-                 {:status 400})))))
+                "No valid user account could be identified for this sign-in request."
+                {:status 400})))))
 
-(defn authentication-sign-in-get
+(defn authentication-sign-in
   [{{authentication-system-id :authentication-system-id} :route-params
     {token :token} :query-params-raw
-    tx :tx
+    tx :tx request-method :request-method
     :as request}]
   (let [authentication-system (authentication-system! authentication-system-id tx)
-        external-pub-key (-> authentication-system :external_public_key public-key!)
-        sign-in-token (jwt/unsign token external-pub-key {:alg :es256})
-        internal-pub-key (-> authentication-system :internal_public_key public-key!)
-        sign-in-request-token (jwt/unsign (:sign_in_request_token sign-in-token)
-                                          internal-pub-key {:alg :es256})]
-
-    (debug 'sign-in-token sign-in-token)
-    (debug 'sign-in-request-token sign-in-request-token)
-    (if-not (:success sign-in-token)
-      {:status 400
-       :headers {"Content-Type" "text/plain"}
-       :body (:error_message sign-in-token)}
-      (if-let [user (user-for-sign-in-token sign-in-token authentication-system-id tx)]
-        (let [user-session (session/create-user-session user authentication-system-id request)]
-          {:status 302
-           :headers {"Location" (or (:return_to sign-in-request-token) (redirect-target tx user))}
-           :cookies {leihs.core.constants/USER_SESSION_COOKIE_NAME
-                     {:value (:token user-session)
-                      :http-only true
-                      :max-age (* 10 356 24 60 60)
-                      :path "/"
-                      :secure (:sessions_force_secure (:settings request))}}})
-        {:status 404}))))
-
-(defn authentication-sign-in-post
-  [{{authentication-system-id :authentication-system-id} :route-params
-    {token :token} :query-params-raw
-    tx :tx
-    :as request}]
-  (let [authentication-system (authentication-system! authentication-system-id tx)
-        external-pub-key (-> authentication-system :external_public_key public-key!)
-        sign-in-token (jwt/unsign token external-pub-key {:alg :es256})
-        internal-pub-key (-> authentication-system :internal_public_key public-key!)
-        sign-in-request-token (jwt/unsign (:sign_in_request_token sign-in-token)
-                                          internal-pub-key {:alg :es256})]
+        sign-in-token (unsign-external-token token authentication-system)
+        sign-in-request-token (unsign-internal-token
+                               (:sign_in_request_token sign-in-token)
+                               authentication-system)]
     (debug 'sign-in-token sign-in-token)
     (if-not (:success sign-in-token)
       {:status 400
+       :headers (case request-method
+                  :get  {"Content-Type" "text/plain"}
+                  :post {})
        :body (:error_message sign-in-token)}
       (if-let [user (user-for-sign-in-token sign-in-token authentication-system-id tx)]
-        (let [user-session (session/create-user-session user authentication-system-id request)]
+        (let [user-session (session/create-user-session
+                            user authentication-system-id request
+                            :user-session (select-keys sign-in-token [:external_session_id]))]
           {:body user
-           :status 200
+           :status (case request-method
+                     :post 200
+                     :get 302)
+           :headers  (case request-method
+                       :post {}
+                       :get {"Location" (or (:return_to sign-in-request-token) (redirect-target tx user))})
            :cookies {leihs.core.constants/USER_SESSION_COOKIE_NAME
                      {:value (:token user-session)
                       :http-only true
@@ -229,16 +181,12 @@
 
 (def routes
   (cpj/routes
-    (cpj/POST (path :external-authentication-request
-                    {:authentication-system-id ":authentication-system-id"})
-              [] #'authentication-request)
-    (cpj/POST (path :external-authentication-sign-in
-                    {:authentication-system-id ":authentication-system-id"})
-              [] #'authentication-sign-in-post)
-    (cpj/GET (path :external-authentication-sign-in
+   (cpj/POST (path :external-authentication-request
                    {:authentication-system-id ":authentication-system-id"})
-             [] #'authentication-sign-in-get)))
-
+     [] #'authentication-request)
+   (cpj/ANY (path :external-authentication-sign-in
+                  {:authentication-system-id ":authentication-system-id"})
+     [] #'authentication-sign-in)))
 
 ;#### debug ###################################################################
 ;(debug/debug-ns *ns*)

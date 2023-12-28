@@ -8,17 +8,17 @@
    - Then the comparison with the cookie proves the origin of the request."
   (:refer-clojure :exclude [str keyword])
   (:require
-    [leihs.core.constants :as constants]
-    [leihs.core.core :refer [keyword str presence]]
-    [logbug.catcher :as catcher]
-    [logbug.debug :as debug :refer [I>]]
-    [logbug.thrown :as thrown])
+   [leihs.core.constants :as constants]
+   [leihs.core.core :refer [keyword str presence]]
+   [logbug.catcher :as catcher]
+   [logbug.debug :as debug :refer [I>]]
+   [logbug.thrown :as thrown])
   (:import
-    [java.util UUID]))
+   [java.util UUID]))
 
 (defn http-safe? [request]
   (boolean (constants/HTTP_SAVE_METHODS
-             (-> request :request-method))))
+            (-> request :request-method))))
 
 (def http-unsafe? (complement http-safe?))
 

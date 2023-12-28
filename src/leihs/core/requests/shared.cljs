@@ -1,15 +1,13 @@
 (ns leihs.core.requests.shared
   (:refer-clojure :exclude [str keyword send-off])
-(:require-macros
-    [reagent.ratom :as ratom :refer [reaction]]
-    [cljs.core.async.macros :refer [go]]
-    )
+  (:require-macros
+   [cljs.core.async.macros :refer [go]]
+   [reagent.ratom :as ratom :refer [reaction]])
   (:require
-    [cljs.core.async :refer [timeout]]
-    [leihs.core.core :refer [str keyword deep-merge presence]]
+   [cljs.core.async :refer [timeout]]
+   [leihs.core.core :refer [str keyword deep-merge presence]]
 
-    [reagent.core :as reagent]
-    ))
+   [reagent.core :as reagent]))
 
 (defonce state* (reagent/atom {}))
 
@@ -29,14 +27,14 @@
 
 (def fetching?*
   (reaction
-    (->> @state*
-         :requests
-         (map (fn [[id r]] r))
-         (map :response)
-         (map map?)
-         (map not)
-         (filter identity)
-         first)))
+   (->> @state*
+        :requests
+        (map (fn [[id r]] r))
+        (map :response)
+        (map map?)
+        (map not)
+        (filter identity)
+        first)))
 
 (defn dismiss [request-id]
   (swap! state*

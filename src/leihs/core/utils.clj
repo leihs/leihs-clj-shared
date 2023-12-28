@@ -12,7 +12,7 @@
             threaded (if (and (seq? form)
                               (not (= (first form) 'fn*)))
                        (with-meta `(~(first form) ~x ~@(next form))
-                                  (meta form))
+                         (meta form))
                        (list form x))]
         (recur threaded (next forms)))
       x)))
@@ -28,8 +28,8 @@
             threaded (if (and (seq? form)
                               (not (= (first form) 'fn*)))
                        (with-meta `(~(first form) ~@(next form) ~x)
-                                  (meta form))
-              (list form x))]
+                         (meta form))
+                       (list form x))]
         (recur threaded (next forms)))
       x)))
 

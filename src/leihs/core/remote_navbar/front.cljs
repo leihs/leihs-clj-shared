@@ -1,11 +1,11 @@
 (ns leihs.core.remote-navbar.front
   (:require-macros
-    [reagent.ratom :as ratom]
-    [cljs.core.async.macros :refer [go]])
+   [cljs.core.async.macros :refer [go]]
+   [reagent.ratom :as ratom])
   (:require
-    [leihs.core.paths :refer [path]]
-    [cljs-http.client :as http-client]
-    [reagent.core :as reagent]))
+   [cljs-http.client :as http-client]
+   [leihs.core.paths :refer [path]]
+   [reagent.core :as reagent]))
 
 (def navbar* (reagent/atom nil))
 
