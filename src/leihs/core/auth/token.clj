@@ -10,7 +10,7 @@
     [logbug.catcher :as catcher]
     [next.jdbc :as jdbc])
   (:import
-    (java.util Base64)))
+    [java.util Base64]))
 
 (defn token-error-page [exception request]
   (-> {:status 401
@@ -40,16 +40,18 @@
       (sql/where [:raw (str "now() < api_tokens.expires_at")])
       sql-format))
 
+
+
 (defn user-auth-entity! [token-secret tx]
   (if-let [uae (let [query (user-with-valid-token-query token-secret)]
                  (jdbc/execute-one! tx query))]
     (assoc uae
-      :authentication-method :token
-      :access-rights (access-rights tx (:user_id uae))
-      :scope_admin_read (and (:scope_admin_read uae) (:is_admin uae))
-      :scope_admin_write (and (:scope_admin_write uae) (:is_admin uae))
-      :scope_system_admin_read (and (:scope_system_admin_read uae) (:is_system_admin uae))
-      :scope_system_admin_write (and (:scope_system_admin_write uae) (:is_system_admin uae)))
+           :authentication-method :token
+           :access-rights (access-rights tx (:user_id uae))
+           :scope_admin_read (and (:scope_admin_read uae) (:is_admin uae))
+           :scope_admin_write (and (:scope_admin_write uae) (:is_admin uae))
+           :scope_system_admin_read (and (:scope_system_admin_read uae) (:is_system_admin uae))
+           :scope_system_admin_write (and (:scope_system_admin_write uae) (:is_system_admin uae)))
     (throw (ex-info
              (str "No valid API-Token / User combination found! "
                   "Is the token present, not expired, and the user permitted to sign-in?") {}))))
@@ -61,14 +63,14 @@
 (defn extract-token-value [request]
   (when-let [auth-header (get-in request [:headers "authorization"])]
     (or (some->> auth-header
-          (re-find #"(?i)^token\s+(.*)$")
-          last presence)
+                (re-find #"(?i)^token\s+(.*)$")
+                last presence)
         (some->> auth-header
-          (re-find #"(?i)^basic\s+(.*)$")
-          last presence decode-base64
-          (#(clojure.string/split % #":" 2))
-          (map presence) (filter identity)
-          last))))
+                 (re-find #"(?i)^basic\s+(.*)$")
+                 last presence decode-base64
+                 (#(clojure.string/split % #":" 2))
+                 (map presence) (filter identity)
+                 last))))
 
 (defn authenticate [{tx :tx-next :as request}
                     _handler]

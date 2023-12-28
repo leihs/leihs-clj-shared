@@ -20,7 +20,7 @@
 
 
 (defn redirect-sign-out-response
-  [{tx :tx-next
+  [{tx :tx
     authenticated-entity :authenticated-entity
     :as request}]
   (let [user-db-language (get-user-db-language request)

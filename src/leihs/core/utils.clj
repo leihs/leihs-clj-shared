@@ -29,7 +29,7 @@
                               (not (= (first form) 'fn*)))
                        (with-meta `(~(first form) ~@(next form) ~x)
                                   (meta form))
-                       (list form x))]
+              (list form x))]
         (recur threaded (next forms)))
       x)))
 

@@ -13,13 +13,10 @@
     [logbug.catcher :as catcher]
     [next.jdbc :as jdbc-next]
     [pandect.core]
-    [taoensso.timbre :refer [debug error info spy warn]]
     )
   (:import
-    (java.util UUID)
+    [java.util UUID]
     ))
-
-
 
 (def user-select
   [:users.email
@@ -47,53 +44,53 @@
         [:user_sessions.id :user_session_id]
         [:user_sessions.created_at :user_session_created_at]
         [:authentication_systems.external_sign_out_url :external_sign_out_url])
-
       (sql/from :users)
       (sql/join :user_sessions [:= :users.id :user_id])
       (sql/join :authentication_systems
                 [:= :authentication_systems.id :user_sessions.authentication_system_id])
       (sql/join :system_and_security_settings [:= :system_and_security_settings.id 0])
       (sql/where [:= :user_sessions.token_hash [[:encode [[:digest session-token "sha256"]] "hex"]]])
-
       (sql/where [:raw (str "now() < user_sessions.created_at + "
                             "system_and_security_settings.sessions_max_lifetime_secs * interval '1 second'")])
       (sql/where [:= :account_enabled true])
-      sql-format
-      ))
+      sql-format))
+
+
 
 (defn authenticated-user-entity [session-token {tx :tx-next :as request}]
   (when-let [user (let [query (user-with-valid-session-query session-token)]
                     (jdbc-next/execute-one! tx query))]
-
     (assoc user
-      :authentication-method :session
-      :access-rights (access-rights tx (:id user))
-      :scope_read true
-      :scope_write true
-      :scope_admin_read (:is_admin user)
-      :scope_admin_write (:is_admin user)
-      :scope_system_admin_read (:is_system_admin user)
-      :scope_system_admin_write (:is_system_admin user))))
+           :authentication-method :session
+           :access-rights (access-rights tx (:id user))
+           :scope_read true
+           :scope_write true
+           :scope_admin_read (:is_admin user)
+           :scope_admin_write (:is_admin user)
+           :scope_system_admin_read (:is_system_admin user)
+           :scope_system_admin_write (:is_system_admin user))))
 
 (defn session-token [request]
   (some-> request :cookies
-          (get USER_SESSION_COOKIE_NAME nil) :value))
+      (get USER_SESSION_COOKIE_NAME nil) :value))
 
 (defn- authenticate [request]
-  (catcher/snatch
-    {:level :warn
-     :return-expr request}
-    (if-let [user (some-> request
-                          session-token
-                          (authenticated-user-entity request))]
-      (assoc request :authenticated-entity user)
-      request)))
+    (catcher/snatch
+      {:level :warn
+       :return-expr request}
+      (if-let [user (some-> request
+                            session-token
+                            (authenticated-user-entity request))]
+        (assoc request :authenticated-entity user)
+        request)))
 
 (defn wrap-authenticate [handler]
   (fn [request]
     (-> request authenticate handler)))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defn create-user-session
   [user authentication_system_id {:as request tx :tx-next settings :settings}]
@@ -118,9 +115,9 @@
         user-session (jdbc-next/execute-one! tx (-> (sql/insert-into :user_sessions)
                                                     (sql/values [(my-cast user-session-data)])
                                                     (sql/returning :*)
-                                                    sql-format
-                                                    ))]
+                                                    sql-format))]
     (assoc user-session :token token)))
+
 
 ;#### debug ###################################################################
 ;(debug/debug-ns 'cider-ci.utils.shutdown)

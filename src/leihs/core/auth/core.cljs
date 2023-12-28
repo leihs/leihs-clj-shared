@@ -1,8 +1,9 @@
 (ns leihs.core.auth.core
   (:refer-clojure :exclude [str keyword])
   (:require
-   [leihs.core.routing.front :as routing]
-   [leihs.core.user.front :as current-user]))
+    [leihs.core.core :refer [keyword str presence]]
+    [leihs.core.routing.front :as routing]
+    [leihs.core.user.front :as current-user]))
 
 ; this is a misnomer since "Authorization" on the frontent is per se pointless,
 ; however it "feels and looks" like authorization on the backen
@@ -14,18 +15,21 @@
 ; so an authorizer always takes two arguments: the current-user-state and the routing-state
 ; it responds with true or false
 
+
 ;;; helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn allowed? [authorizers]
   (some
-   (fn [authorizer]
-     (authorizer @current-user/state* @routing/state*))
-   authorizers))
+    (fn [authorizer]
+      (authorizer @current-user/state* @routing/state*))
+    authorizers))
+
 
 ;;; basic authorizers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn all-granted [_ _]
   true)
+
 
 ;;; admin scope authorizers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -40,28 +44,28 @@
 
 (defn admin-scopes? [user-state _routing-state]
   (scope-authorizer
-   {:scope_admin_read true
-    :scope_admin_write true
-    :scope_system_admin_read false
-    :scope_system_admin_write false}
-   user-state _routing-state))
+    {:scope_admin_read true
+     :scope_admin_write true
+     :scope_system_admin_read false
+     :scope_system_admin_write false}
+    user-state _routing-state))
 
 (defn system-admin-scopes? [user-state _routing-state]
   (scope-authorizer
-   {:scope_admin_read false
-    :scope_admin_write false
-    :scope_system_admin_read true
-    :scope_system_admin_write true}
-   user-state _routing-state))
+    {:scope_admin_read false
+     :scope_admin_write false
+     :scope_system_admin_read true
+     :scope_system_admin_write true}
+    user-state _routing-state))
 
 (defn current-user-admin-scopes? []
   (if @current-user/state*
     (admin-scopes? @current-user/state* nil)
-    false))
+    false ))
 
 (defn current-user-system-admin-scopes? []
   (if @current-user/state*
     (system-admin-scopes? @current-user/state* nil)
-    false))
+    false ))
 
 
