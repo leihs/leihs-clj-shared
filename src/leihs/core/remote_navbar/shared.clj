@@ -8,7 +8,7 @@
     [leihs.core [paths :refer [path]]]
     [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
     [leihs.core.constants :as constants]
-    [leihs.core.locale2 :refer [get-selected-language]]
+    [leihs.core.locale :refer [get-selected-language]]
     [leihs.core.user.permissions :refer [borrow-access? managed-inventory-pools]]
     [leihs.core.user.permissions.procure :as procure]
     [logbug.catcher :as catcher]
