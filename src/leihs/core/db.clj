@@ -193,7 +193,7 @@
                                   handler)
                          resp-body (:body resp)
                          resp-status (:status resp)]
-                     (cond (and (graphql/mutation? request) (:graphql-error resp-body))
+                     (cond (and (graphql/mutation? request) (:graphql-error resp))
                            (do (warn "Rolling back transaction because of graphql error " (:errors resp-body))
                                (rollback-both-tx!))
                            (some-> resp-status (>= 400))
