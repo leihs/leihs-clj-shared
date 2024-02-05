@@ -23,17 +23,25 @@
                      {base-url :external_base_url} :settings
                      tx :tx
                      :as request}]
-  (when-let [authentication-system (authentication-system authentication-system-id tx)]
+  (if-let [authentication-system (authentication-system authentication-system-id tx)]
     (let [{external-session-id
            :external_session_id} (unsign-external-token token authentication-system)]
       (jdbc/delete!
        tx :user_sessions
        ["authentication_system_id = ? AND external_session_id = ?"
-        authentication-system-id external-session-id])
-      (redirect (str base-url (path :home))))))
+        authentication-system-id external-session-id]))
+    (warn (format "no matching authentication system '%s' for sso sign-out"
+                  authentication-system-id)))
+  {:status 204
+   :headers {"content-type" "text/plain"}
+   :body nil})
 
 (def routes
   (cpj/routes
    (cpj/ANY (path :external-authentication-sso-sign-out
                   {:authentication-system-id ":authentication-system-id"})
      [] #'sso-sign-out)))
+
+;#### debug ###################################################################
+;(debug/debug-ns 'cider-ci.utils.shutdown)
+;(debug/debug-ns *ns*)

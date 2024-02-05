@@ -42,6 +42,8 @@
                           (leaf "/sso-sign-out" :external-authentication-sso-sign-out)))
           core-user-paths))
 
+(comment (path :external-authentication-sso-sign-out {:authentication-system-id "foo"}))
+
 (def paths* (atom core-paths))
 
 ;(bidi.bidi/route-seq @paths*)
