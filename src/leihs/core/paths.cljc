@@ -4,6 +4,10 @@
    [bidi.bidi :refer [path-for match-route]]
    [bidi.verbose :refer [branch param leaf]]
 
+       [taoensso.timbre :refer [info warn error spy]]
+           [logbug.debug :as debug]
+
+
    [leihs.core.core :refer [keyword str presence]]
    [leihs.core.url.query-params :as query-params]))
 
@@ -64,20 +68,32 @@
 
 (defn path
   ([kw]
+   (println ">o> path-1")
    (path kw {}))
+
   ([kw route-params]
-   (apply (partial path-for @paths* kw)
+   (println ">o> path-2")
+   (println ">o> path-2 kw=" kw)
+   (println ">o> path-2 route-params=" route-params)
+   (spy (apply (spy (partial path-for @paths* kw))
           (->> route-params
                (merge {:user-id "me"})
+            spy
                encode-route-params
-               (into []) flatten)))
+            spy
+               (into []) flatten
+            spy ))))
+
   ([kw route-params query-params]
+   (println ">o> path-3")
    (let [p (path kw route-params)
          q (query-params/encode query-params)]
      (if (presence q)
        (str p "?" q)
        p)))
+
   ([kw route-params query-params fragment]
+   (println ">o> path-4")
    (let [p (path kw route-params query-params)]
      (if (presence fragment)
        (str p "#" fragment)
