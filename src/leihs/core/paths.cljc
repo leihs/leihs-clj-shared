@@ -4,12 +4,11 @@
    [bidi.bidi :refer [path-for match-route]]
    [bidi.verbose :refer [branch param leaf]]
 
-       [taoensso.timbre :refer [info warn error spy]]
-           [logbug.debug :as debug]
-
-
    [leihs.core.core :refer [keyword str presence]]
-   [leihs.core.url.query-params :as query-params]))
+   [leihs.core.url.query-params :as query-params]
+
+   [logbug.debug :as debug]
+   [taoensso.timbre :refer [info warn error spy]]))
 
 (def core-user-paths
   (branch "/my/user/"
@@ -76,13 +75,13 @@
    (println ">o> path-2 kw=" kw)
    (println ">o> path-2 route-params=" route-params)
    (spy (apply (spy (partial path-for @paths* kw))
-          (->> route-params
-               (merge {:user-id "me"})
-            spy
-               encode-route-params
-            spy
-               (into []) flatten
-            spy ))))
+               (->> route-params
+                    (merge {:user-id "me"})
+                    spy
+                    encode-route-params
+                    spy
+                    (into []) flatten
+                    spy))))
 
   ([kw route-params query-params]
    (println ">o> path-3")

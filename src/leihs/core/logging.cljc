@@ -12,7 +12,7 @@
                   ;"leihs.borrow.graphql*"
                   ;"leihs.borrow.resources.orders"
                   ;"leihs.procurement.resources.*"
-                  } :debug]
+                  }:debug]
                [#{#?(:clj "com.zaxxer.hikari.*")
                   "leihs.*"} :warn]
                [#{"*"} :warn]]
