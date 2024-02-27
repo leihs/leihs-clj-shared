@@ -24,3 +24,20 @@ jobs:
                 #!/usr/bin/env bash
                 set -euo pipefail
                 ./bin/cljfmt check
+
+  merged-to-master:
+    name: "Merged to master"
+    depends_on:
+      master branch matches:
+        type: branch
+        include_match: ^master$
+    run_when:
+      master branch matches:
+        type: branch
+        include_match: ^master$
+    context:
+      tasks:
+        merged-to-master:
+          scripts:
+            test:
+              body: "exit 0"
