@@ -12,9 +12,9 @@
 
 ;;; authentication ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn wrap-authenticate [handler]
+(defn wrap-authenticate [handler & [opts]]
   (-> handler
-      token/wrap-authenticate
+      (token/wrap-authenticate opts)
       session/wrap-authenticate))
 
 ;;; authorization helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

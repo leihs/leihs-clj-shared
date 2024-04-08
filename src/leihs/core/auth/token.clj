@@ -62,32 +62,35 @@
   [^String string]
   (apply str (map char (.decode (Base64/getDecoder) (.getBytes string)))))
 
-(defn extract-token-value [request]
+(defn extract-token-value [request opts]
   (when-let [auth-header (get-in request [:headers "authorization"])]
-    (or (some->> auth-header
-                 (re-find #"(?i)^token\s+(.*)$")
-                 last presence)
-        (some->> auth-header
-                 (re-find #"(?i)^basic\s+(.*)$")
-                 last presence decode-base64
-                 (#(clojure.string/split % #":" 2))
-                 (map presence) (filter identity)
-                 last))))
+    (or (when (:enable-auth-header-prefix-token opts)
+          (some->> auth-header
+                   (re-find #"(?i)^token\s+(.*)$")
+                   last presence))
+        (when (:enable-auth-header-prefix-basic opts)
+          (some->> auth-header
+                   (re-find #"(?i)^basic\s+(.*)$")
+                   last presence decode-base64
+                   (#(clojure.string/split % #":" 2))
+                   (map presence) (filter identity)
+                   last)))))
 
-(defn authenticate [{tx :tx :as request}
-                    _handler]
+(defn authenticate [{tx :tx :as request} handler opts]
   (catcher/snatch
    {:level :warn
     :return-fn (fn [e] (token-error-page e request))}
-   (let [handler (ring-exception/wrap _handler)]
-     (if-let [token-secret (extract-token-value request)]
+   (let [handler (ring-exception/wrap handler)]
+     (if-let [token-secret (extract-token-value request opts)]
        (let [user-auth-entity (user-auth-entity! token-secret tx)]
          (handler (assoc request :authenticated-entity user-auth-entity)))
        (handler request)))))
 
-(defn wrap-authenticate [handler]
-  (fn [request]
-    (authenticate request handler)))
+(defn wrap-authenticate [handler & [opts]]
+  (let [opts (merge {:enable-auth-header-prefix-token true
+                     :enable-auth-header-prefix-basic true} opts)]
+    (fn [request]
+      (authenticate request handler opts))))
 
 ;#### debug ###################################################################
 ;(debug/debug-ns 'cider-ci.utils.shutdown)
