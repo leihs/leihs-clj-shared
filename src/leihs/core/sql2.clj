@@ -39,6 +39,7 @@
                       (-> [(str sql-a " " (sql/sql-kw :is-not-null))]
                           (into params-a)))))
 
+(sql/register-op! (keyword "%"))
 (sql/register-op! (keyword "~~*"))
 (sql/register-op! (keyword "<@"))
 (sql/register-op! (keyword "@>"))
