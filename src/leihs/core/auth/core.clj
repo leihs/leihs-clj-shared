@@ -1,14 +1,13 @@
 (ns leihs.core.auth.core
   (:refer-clojure :exclude [str keyword])
   (:require
-   [clojure.java.jdbc :as jdbc]
+   [honey.sql :refer [format] :rename {format sql-format}]
+   [honey.sql.helpers :as sql]
    [leihs.core.auth.session :as session]
    [leihs.core.auth.token :as token]
-   [leihs.core.core :refer [str keyword presence presence!]]
-   [leihs.core.sql :as sql]
-   [logbug.catcher :as catcher]
-   [logbug.debug :as debug]
-   [taoensso.timbre :refer [error warn info debug spy]]))
+   [leihs.core.core :refer [str]]
+   [next.jdbc.sql :refer [query] :rename {query jdbc-query}]
+   [taoensso.timbre :refer [debug]]))
 
 ;;; authentication ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -85,12 +84,12 @@
   or :admin_protected of the user referenced by the :user-id
   param in the request (respectively by the supplied user-id-fn function)."
   [{auth-entity :authenticated-entity
-    tx :tx :as request}
+    tx :tx-next :as request}
    & {:keys [user-id-fn]
       :or {user-id-fn #(-> % :route-params :user-id)}}]
   (when-let [user-id (user-id-fn request)]
     (when-let [user (some-> user-id admin-hierarchy-user-query
-                            spy sql/format spy (->> (jdbc/query tx) first))]
+                            sql-format (->> (jdbc-query tx) first))]
       (cond
         (http-safe?
          request) (if (:system_admin_protected user)

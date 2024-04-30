@@ -1,20 +1,16 @@
 (ns leihs.core.ring-audits
+  (:refer-clojure :exclude [str keyword])
   (:require
    [clojure.java.jdbc :as jdbc]
+   [honey.sql :refer [format] :rename {format sql-format}]
+   [honey.sql.helpers :as sql]
    [leihs.core.constants :as constants]
-   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.core :refer [str]]
    [leihs.core.db :as db]
    [leihs.core.graphql :as graphql]
    [leihs.core.ring-exception :as ring-exception]
-   [leihs.core.sql :as sql]
-   [logbug.catcher :as catcher]
-   [logbug.debug :as debug :refer [I>]]
-   [logbug.ring :refer [wrap-handler-with-logging]]
-   [logbug.thrown :as thrown]
-   [next.jdbc :as jdbc-next]
    [next.jdbc.sql :refer [query] :rename {query jdbc-next-query}]
-   [taoensso.timbre :refer [error warn info debug spy]])
-  (:refer-clojure :exclude [str keyword]))
+   [taoensso.timbre :refer [spy]]))
 
 (defn txid [tx]
   (->> ["SELECT txid() AS txid"]
@@ -44,10 +40,10 @@
            (sql/join :audited_changes
                      [:and
                       [:= :audited_changes.txid txid]
-                      (sql/raw " audited_changes.table_name = 'user_sessions'")
-                      [:= :user_sessions.id (sql/call :cast :audited_changes.pkey :uuid)]])
-           (sql/merge-where [:= :audited_requests.txid txid])
-           sql/format)
+                      [:raw " audited_changes.table_name = 'user_sessions'"]
+                      [:= :user_sessions.id [:cast :audited_changes.pkey :uuid]]])
+           (sql/where [:= :audited_requests.txid txid])
+           sql-format)
        (jdbc/execute! tx)))
 
 (defn persist-response [txid tx2id response]
