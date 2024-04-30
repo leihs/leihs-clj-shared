@@ -2,31 +2,21 @@
   (:refer-clojure :exclude [str keyword])
   (:require
    [clj-yaml.core :as yaml]
-   [clojure.java.jdbc :as jdbc]
-   [cuerdas.core :as string :refer [snake kebab upper human]]
+   [cuerdas.core :as string :refer [kebab snake upper]]
    [environ.core :refer [env]]
-   [hikari-cp.core :as hikari]
    [leihs.core.constants :refer [HTTP_UNSAFE_METHODS]]
-   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.core :refer [str]]
    [leihs.core.db.type-conversion]
    [leihs.core.graphql :as graphql]
-   [leihs.core.ring-exception :refer [get-cause]]
-   [leihs.core.sql :as sql]
-   [leihs.core.sql2]
-   [logbug.catcher :as catcher]
-   [logbug.debug :as debug :refer [I> I>> identity-with-logging]]
-   [logbug.ring :refer [wrap-handler-with-logging]]
-   [logbug.thrown :as thrown]
-   [next.jdbc :as jdbc-next]
+   [leihs.core.sql]
+   [next.jdbc :as jdbc]
    [next.jdbc.connection]
    [next.jdbc.result-set]
-   [pg-types.all]
    [ring.util.codec]
-   [taoensso.timbre :refer [debug info warn error spy]])
+   [taoensso.timbre :refer [error info warn]])
   (:import
    [com.codahale.metrics MetricRegistry]
-   [com.zaxxer.hikari HikariDataSource]
-   java.net.URI))
+   [com.zaxxer.hikari HikariDataSource]))
 
 ;;; CLI ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -76,7 +66,10 @@
                  16)
     :parse-fn #(Integer/parseInt %)]])
 
-;;; ds ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; next-ds ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def builder-fn-options
+  {:builder-fn next.jdbc.result-set/as-unqualified-lower-maps})
 
 (defonce ds* (atom nil))
 
@@ -104,53 +97,12 @@
   (when @ds*
     (do
       (info "Closing db pool ...")
-      (-> @ds* :datasource hikari/close-datasource)
+      (.close ^HikariDataSource (:connectable @ds*))
       (reset! ds* nil)
       (info "Closing db pool done."))))
 
 (defn init-ds [db-options health-check-registry]
   (reset! metric-registry* (MetricRegistry.))
-  (reset!
-   ds*
-   {:datasource
-    (hikari/make-datasource
-     {:auto-commit        true
-      :read-only          false
-      :connection-timeout 30000
-      :validation-timeout 5000
-      :idle-timeout       (* 1 60 1000) ; 1 minute
-      :max-lifetime       (* 1 60 60 1000) ; 1 hour
-      :minimum-idle       (get db-options db-min-pool-size-key)
-      :maximum-pool-size  (get db-options db-max-pool-size-key)
-      :pool-name          "db-pool"
-      :adapter            "postgresql"
-      :username           (get db-options db-user-key)
-      :password           (get db-options db-password-key)
-      :database-name      (get db-options db-name-key)
-      :server-name        (get db-options db-host-key)
-      :port-number        (get db-options db-port-key)
-      :register-mbeans    false
-      :metric-registry @metric-registry*
-      :health-check-registry health-check-registry})}))
-
-;;; next-ds ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def builder-fn-options
-  {:builder-fn next.jdbc.result-set/as-unqualified-lower-maps})
-
-(defonce ds-next* (atom nil))
-
-(defn get-ds-next [] @ds-next*)
-
-(defn close-next []
-  (when @ds-next*
-    (do
-      (info "Closing db pool ...")
-      (.close ^HikariDataSource (:connectable @ds-next*))
-      (reset! ds-next* nil)
-      (info "Closing db pool done."))))
-
-(defn init-ds-next [db-options]
   (try (let [params {:dbtype "postgres"
                      :dbname (get db-options db-name-key)
                      :username (get db-options db-user-key)
@@ -163,13 +115,14 @@
                      :connectionTimeout 30000
                      :validationTimeout 5000
                      :idleTimeout (* 1 60 1000) ; 1 minute
-                     :maxLifetime (* 1 60 60 1000)}
-             ds-next (next.jdbc.connection/->pool
-                      HikariDataSource params)]
+                     :maxLifetime (* 1 60 60 1000)
+                     :metricRegistry @metric-registry*
+                     :healthCheckRegistry health-check-registry}
+             ds (next.jdbc.connection/->pool HikariDataSource params)]
          ;; this code initializes the pool and performs a validation check:
-         (.close (jdbc-next/get-connection ds-next))
-         (reset! ds-next* (jdbc-next/with-options ds-next builder-fn-options))
-         @ds-next*)
+         (.close (jdbc/get-connection ds))
+         (reset! ds* (jdbc/with-options ds builder-fn-options))
+         @ds*)
        (catch Throwable th
          (error th)
          (throw th))))
@@ -182,31 +135,24 @@
       (if (or (and (= handler-key :graphql) (graphql/mutation? request))
               (and (not= handler-key :graphql) (HTTP_UNSAFE_METHODS (:request-method request)))
               (= handler-key :external-authentication-sign-in))
-        (jdbc/with-db-transaction [tx (get-ds)]
-          (jdbc-next/with-transaction+options [tx-next (get-ds-next)]
-            (letfn [(rollback-both-tx! []
-                      (jdbc/db-set-rollback-only! tx)
-                      (.rollback (:connectable tx-next)))]
-              (try (let [resp (-> request
-                                  (assoc :tx tx)
-                                  (assoc :tx-next tx-next)
-                                  handler)
-                         resp-body (:body resp)
-                         resp-status (:status resp)]
-                     (cond (and (graphql/mutation? request) (:graphql-error resp))
-                           (do (warn "Rolling back transaction because of graphql error " (:errors resp-body))
-                               (rollback-both-tx!))
-                           (some-> resp-status (>= 400))
-                           (do (warn "Rolling back transaction because error status " resp-status)
-                               (rollback-both-tx!)))
-                     resp)
-                   (catch Throwable th
-                     (warn "Rolling back transaction because of " (.getMessage th))
-                     (rollback-both-tx!)
-                     (throw th))))))
+        (jdbc/with-transaction+options [tx (get-ds)]
+          (letfn [(rollback-tx! [] (.rollback (:connectable tx)))]
+            (try (let [resp (-> request (assoc :tx tx) handler)
+                       resp-body (:body resp)
+                       resp-status (:status resp)]
+                   (cond (and (graphql/mutation? request) (:graphql-error resp))
+                         (do (warn "Rolling back transaction because of graphql error " (:errors resp-body))
+                             (rollback-tx!))
+                         (some-> resp-status (>= 400))
+                         (do (warn "Rolling back transaction because error status " resp-status)
+                             (rollback-tx!)))
+                   resp)
+                 (catch Throwable th
+                   (warn "Rolling back transaction because of " (.getMessage th))
+                   (rollback-tx!)
+                   (throw th)))))
         (-> request
             (assoc :tx (get-ds))
-            (assoc :tx-next (get-ds-next))
             handler)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -216,9 +162,6 @@
    (init options nil))
   ([options health-check-registry]
    (let [db-options (select-keys options options-keys)]
-     (info "Initializing db " db-options)
+     (info "Initializing ds" db-options)
      (init-ds db-options health-check-registry)
-     (info "Initialized db " @ds*)
-     (info "Initializing ds-next " db-options)
-     (init-ds-next db-options)
-     (info "Initialized ds-next " @ds-next*))))
+     (info "Initialized ds " @ds*))))

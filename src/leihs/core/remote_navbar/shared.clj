@@ -54,7 +54,7 @@
 (defn navbar-props
   ([request] (navbar-props request {}))
   ([request subapps-override]
-   (let [tx (:tx-next request)
+   (let [tx (:tx request)
          auth-entity (:authenticated-entity request)
          user-language (get-selected-language request)
          locales (map #(as-> % <>

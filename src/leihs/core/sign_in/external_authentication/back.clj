@@ -2,25 +2,21 @@
   (:refer-clojure :exclude [str keyword cond])
   (:require
    [better-cond.core :refer [cond]]
-   [clojure.java.jdbc :as jdbc]
    [clojure.string :as str]
-   [compojure.core :as cpj]
+   [honey.sql :refer [format] :rename {format sql-format}]
+   [honey.sql.helpers :as sql]
    [leihs.core.auth.session :as session]
-   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.core :refer [presence str]]
    [leihs.core.paths :refer [path]]
    [leihs.core.redirects :refer [redirect-target]]
    [leihs.core.sign-in-sign-out.external-authentication
-    :refer [create-signed-token
-            unsign-external-token
-            unsign-internal-token]]
+    :refer [create-signed-token unsign-external-token unsign-internal-token]]
    [leihs.core.sign-in-sign-out.shared
-    :refer [auth-system-base-query-for-unique-id
-            auth-system-user-query
+    :refer [auth-system-base-query-for-unique-id auth-system-user-query
             user-query-for-unique-id]]
-   [leihs.core.sql :as sql]
-   [logbug.debug :as debug]
+   [next.jdbc.sql :refer [query] :rename {query jdbc-query}]
    [ring.util.response :refer [redirect]]
-   [taoensso.timbre :refer [debug error info spy warn]]))
+   [taoensso.timbre :refer [debug]]))
 
 (def skip-authorization-handler-keys
   "These keys needs the be added to the list of the skipped handler keys
@@ -33,17 +29,17 @@
   (when-let [authentication-system-and-user
              (->> (auth-system-user-query
                    user-unique-id authentication-system-id)
-                  sql/format
-                  (jdbc/query tx) first)]
+                  sql-format
+                  (jdbc-query tx) first)]
     (merge authentication-system-and-user
            (->> (-> (sql/select :*)
                     (sql/from :authentication_systems_users)
-                    (sql/merge-where [:= :authentication_systems_users.authentication_system_id
-                                      (-> authentication-system-and-user :authentication_system :id)])
-                    (sql/merge-where [:= :authentication_systems_users.user_id
-                                      (-> authentication-system-and-user :user_id:id)])
-                    sql/format)
-                (jdbc/query tx) first))))
+                    (sql/where [:= :authentication_systems_users.authentication_system_id
+                                (-> authentication-system-and-user :authentication_system :id)])
+                    (sql/where [:= :authentication_systems_users.user_id
+                                (-> authentication-system-and-user :user_id:id)])
+                    sql-format)
+                (jdbc-query tx) first))))
 
 (defn authentication-system-user-data!
   [user-unique-id authentication-system-id tx]
@@ -66,15 +62,15 @@
 (defn authentication-system [tx authentication-system-id]
   (->> (-> (sql/select :*)
            (sql/from :authentication_systems)
-           (sql/merge-where [:= :id authentication-system-id])
-           (sql/format))
-       (jdbc/query tx) first))
+           (sql/where [:= :id authentication-system-id])
+           (sql-format))
+       (jdbc-query tx) first))
 
 (defn user [tx user-unique-id]
   (->> (-> user-unique-id
            user-query-for-unique-id
-           sql/format)
-       (jdbc/query tx) first))
+           sql-format)
+       (jdbc-query tx) first))
 
 (defn ext-auth-system-token-url
   ([tx user-unique-id authentication-system-id settings]
@@ -104,9 +100,9 @@
 (defn authentication-system! [id tx]
   (or (->> (-> (sql/select :authentication_systems.*)
                (sql/from :authentication_systems)
-               (sql/merge-where [:= :authentication_systems.id id])
-               sql/format)
-           (jdbc/query tx) first)
+               (sql/where [:= :authentication_systems.id id])
+               sql-format)
+           (jdbc-query tx) first)
       (throw (ex-info "Authentication-System not found!" {:status 400}))))
 
 (defn user-for-sign-in-token-query [sign-in-token authentication-system-id]
@@ -120,20 +116,20 @@
     ; extending the base-query with the actual unique id(s) submitted makes this more stringent
     (as-> base-query query
       (if-let [email (:email sign-in-token)]
-        (sql/merge-where query [:= (sql/raw "lower(users.email)") (str/lower-case email)])
+        (sql/where query [:= [:raw "lower(users.email)"] (str/lower-case email)])
         query)
       (if-let [org-id (:org_id sign-in-token)]
-        (sql/merge-where query [:= :users.org_id org-id])
+        (sql/where query [:= :users.org_id org-id])
         query)
       (if-let [login (:login sign-in-token)]
-        (sql/merge-where query [:= :users.login login])
+        (sql/where query [:= :users.login login])
         query)
-      (sql/merge-select query :users.*)
-      (sql/format query))))
+      (sql/select query :users.*)
+      (sql-format query))))
 
 (defn user-for-sign-in-token [sign-in-token authentication-system-id tx]
   (let [query (user-for-sign-in-token-query sign-in-token authentication-system-id)
-        resultset (jdbc/query tx query)]
+        resultset (jdbc-query tx query)]
     (when (> (count resultset) 1)
       (throw (ex-info
               "More than one user matched the sign-in request."
@@ -179,14 +175,10 @@
                       :secure (:sessions_force_secure (:settings request))}}})
         {:status 404}))))
 
-(def routes
-  (cpj/routes
-   (cpj/POST (path :external-authentication-request
-                   {:authentication-system-id ":authentication-system-id"})
-     [] #'authentication-request)
-   (cpj/ANY (path :external-authentication-sign-in
-                  {:authentication-system-id ":authentication-system-id"})
-     [] #'authentication-sign-in)))
+(defn routes [request]
+  (case (:request-method request)
+    :post (authentication-request request)
+    (authentication-sign-in request)))
 
 ;#### debug ###################################################################
 ;(debug/debug-ns *ns*)

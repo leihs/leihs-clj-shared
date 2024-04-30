@@ -1,9 +1,10 @@
 (ns leihs.core.user.core
   (:require
-   [clojure.java.jdbc :as jdbc]
-   [compojure.core :as cpj]
-   [leihs.core.paths :refer [path]]
-   [leihs.core.sql :as sql]
+   [honey.sql :refer [format] :rename {format sql-format}]
+   [honey.sql.helpers :as sql]
+   [next.jdbc :as jdbc]
+   [next.jdbc.sql :refer [query update!] :rename {query jdbc-query,
+                                                  update! jdbc-update!}]
    [ring.util.response :refer [redirect]]))
 
 (defn wrap-me-id
@@ -24,20 +25,21 @@
     {referer "referer"} :headers
     :as request}]
   (when user-id
-    (assert (= (jdbc/update! tx
-                             :users
-                             {:language_locale locale}
-                             ["id = ?" user-id])
-               '(1))))
+    (assert (= (::jdbc/update-count
+                (jdbc-update! tx
+                              :users
+                              {:language_locale locale}
+                              ["id = ?" user-id]))
+               1)))
   (if (= (-> request :accept :mime) :json)
     {:status 200, :body (-> (sql/select :*)
                             (sql/from :users)
                             (sql/where [:= :id user-id])
-                            sql/format
-                            (->> (jdbc/query tx))
+                            sql-format
+                            (->> (jdbc-query tx))
                             first)}
     (redirect referer)))
 
-(def routes
-  (cpj/routes
-   (cpj/POST (path :my-user) [] (-> update-user wrap-me-id))))
+(defn routes [request]
+  (case (:request-method request)
+    :post ((wrap-me-id update-user) request)))

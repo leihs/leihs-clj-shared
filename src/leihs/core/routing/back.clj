@@ -2,18 +2,12 @@
   (:refer-clojure :exclude [str keyword])
   (:require
    [bidi.bidi :as bidi]
-   [bidi.ring :refer [make-handler]]
-   [leihs.core.core :refer [keyword str presence]]
+   [honey.sql.helpers :as sql]
+   [leihs.core.core :refer [keyword presence]]
    [leihs.core.defaults :as defaults]
    [leihs.core.json :as json]
    [leihs.core.json-protocol]
-   [leihs.core.sql :as sql]
-   [leihs.core.url.core :as url]
-   [logbug.catcher :as catcher]
-   [logbug.debug :as debug :refer [I>]]
-   [logbug.ring :refer [wrap-handler-with-logging]]
-   [logbug.thrown :as thrown]
-   [taoensso.timbre :refer [debug error info spy warn]]))
+   [leihs.core.url.core :as url]))
 
 ;;; resolving by handler ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

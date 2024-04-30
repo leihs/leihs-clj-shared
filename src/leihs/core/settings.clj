@@ -43,7 +43,7 @@
    (fn [request]
      (wrap handler request)))
   ([handler request]
-   (handler (assoc request :settings (settings! (:tx-next request))))))
+   (handler (assoc request :settings (settings! (:tx request))))))
 
 ;#### debug ###################################################################
 ;(debug/debug-ns 'cider-ci.utils.shutdown)

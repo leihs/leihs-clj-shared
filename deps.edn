@@ -8,6 +8,7 @@
   camel-snake-kebab/camel-snake-kebab {:mvn/version "0.4.3"}
   clj-commons/clj-yaml {:mvn/version "1.0.27"}
   clj-pid/clj-pid {:mvn/version "0.1.2"}
+  clj-time/clj-time {:mvn/version "0.15.2"}
   com.cemerick/url {:mvn/version "0.1.1"}
   com.fzakaria/slf4j-timbre {:mvn/version "0.4.0"}
   com.github.mfornos/humanize-slim {:mvn/version "1.2.2"}
@@ -20,20 +21,17 @@
   environ/environ {:mvn/version "1.2.0"}
   funcool/cuerdas {:mvn/version "2022.06.16-403"}
   hikari-cp/hikari-cp {:mvn/version "3.0.1"}
-  honeysql/honeysql {:mvn/version "1.0.461"}
   http-kit/http-kit {:mvn/version "2.7.0"}
   io.dropwizard.metrics/metrics-healthchecks {:mvn/version "4.2.19"}
   logbug/logbug {:mvn/version "5.0.0"}
   me.raynes/conch {:mvn/version "0.8.0"}
-  nilenso/honeysql-postgres {:mvn/version "0.4.112"}
   nrepl/nrepl {:mvn/version "1.0.0"}
   org.clojure/core.match {:mvn/version "1.0.1"}
   org.clojure/core.memoize {:mvn/version "1.0.257"}
   org.clojure/data.json {:mvn/version "2.4.0"}
-  org.clojure/java.jdbc {:mvn/version "0.7.12"}
   org.clojure/tools.cli {:mvn/version "1.0.219"}
+  org.postgresql/postgresql {:mvn/version "42.2.12"}
   pandect/pandect {:mvn/version "1.0.2"}
-  pg-types/pg-types {:mvn/version  "3.0.0"}
   ring-middleware-accept/ring-middleware-accept {:mvn/version "2.0.3"}
   ring/ring {:mvn/version "1.10.0"}
   ring/ring-json {:mvn/version "0.5.1"}

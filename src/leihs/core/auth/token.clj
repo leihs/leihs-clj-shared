@@ -1,16 +1,13 @@
 (ns leihs.core.auth.token
   (:refer-clojure :exclude [str keyword])
   (:require
-   [clj-time.core :as time]
-   [clojure.java.jdbc :as jdbc]
-   [clojure.walk :refer [keywordize-keys]]
+   [honey.sql :refer [format] :rename {format sql-format}]
+   [honey.sql.helpers :as sql]
    [leihs.core.auth.shared :refer [access-rights]]
-   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.core :refer [presence str]]
    [leihs.core.ring-exception :as ring-exception]
-   [leihs.core.sql :as sql]
    [logbug.catcher :as catcher]
-   [logbug.debug :as debug]
-   [logbug.thrown :as thrown])
+   [next.jdbc.sql :refer [query] :rename {query jdbc-query}])
   (:import
    [java.util Base64]))
 
@@ -20,9 +17,8 @@
                   (.getMessage exception))}))
 
 (defn token-matches-clause [token-secret]
-  (sql/call
-   := :api_tokens.token_hash
-   (sql/call :crypt token-secret :api_tokens.token_hash)))
+  [:= :api_tokens.token_hash
+   [:crypt token-secret :api_tokens.token_hash]])
 
 (defn user-with-valid-token-query [token-secret]
   (-> (sql/select
@@ -38,15 +34,15 @@
        [:api_tokens.id :api_token_id]
        [:api_tokens.created_at :api_token_created_at])
       (sql/from :users)
-      (sql/merge-join :api_tokens [:= :users.id :user_id])
-      (sql/merge-where (token-matches-clause token-secret))
-      (sql/merge-where [:= :account_enabled true])
-      (sql/merge-where (sql/raw (str "now() < api_tokens.expires_at")))
-      sql/format))
+      (sql/join :api_tokens [:= :users.id :user_id])
+      (sql/where (token-matches-clause token-secret))
+      (sql/where [:= :account_enabled true])
+      (sql/where [:raw "now() < api_tokens.expires_at"])
+      sql-format))
 
 (defn user-auth-entity! [token-secret tx]
   (if-let [uae (->> (user-with-valid-token-query token-secret)
-                    (jdbc/query tx) first)]
+                    (jdbc-query tx) first)]
     (assoc uae
            :authentication-method :token
            :access-rights (access-rights tx (:user_id uae))

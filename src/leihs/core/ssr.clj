@@ -1,20 +1,14 @@
 (ns leihs.core.ssr
   (:refer-clojure :exclude [str keyword])
   (:require
-   [clojure.core :refer [str]]
-   [clojure.java.jdbc :as jdbc]
-   [hiccup.page :refer [html5 include-js]]
+   [honey.sql :refer [format] :rename {format sql-format}]
+   [honey.sql.helpers :as sql]
    [leihs.core.anti-csrf.back :refer [anti-csrf-props]]
-   [leihs.core.core :refer [presence]]
-   [leihs.core.http-cache-buster2 :as cache-buster]
    [leihs.core.release :as release]
    [leihs.core.remote-navbar.shared :refer [navbar-props]]
-   [leihs.core.settings :refer [settings!]]
-   [leihs.core.shared :refer [head]]
-   [leihs.core.sql :as sql]
    [leihs.core.ssr-engine :as js-engine]
-   [logbug.debug :as debug]
-   [taoensso.timbre :as log :refer [error warn info debug spy]]))
+   [next.jdbc.sql :refer [query] :rename {query jdbc-query}]
+   [taoensso.timbre :as log :refer [info]]))
 
 (def render-page-base*
   (atom (fn [_inner]
@@ -25,18 +19,14 @@
 (defn render-page-base [inner]
   (@render-page-base* inner))
 
-(defn- auth-systems
-  [tx]
-  (->
-   (sql/select
-    :id :name
-    :description :type
-    :priority :shortcut_sign_in_enabled)
-   (sql/from :authentication_systems)
-   (sql/where [:= :enabled true])
-   sql/format
-   (->>
-    (jdbc/query tx))))
+(defn- auth-systems [tx]
+  (-> (sql/select :id :name
+                  :description :type
+                  :priority :shortcut_sign_in_enabled)
+      (sql/from :authentication_systems)
+      (sql/where [:= :enabled true])
+      sql-format
+      (->> (jdbc-query tx))))
 
 (defn render-navbar
   ([request]

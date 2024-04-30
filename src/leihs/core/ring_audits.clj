@@ -1,35 +1,25 @@
 (ns leihs.core.ring-audits
+  (:refer-clojure :exclude [str keyword])
   (:require
-   [clojure.java.jdbc :as jdbc]
+   [honey.sql :refer [format] :rename {format sql-format}]
+   [honey.sql.helpers :as sql]
    [leihs.core.constants :as constants]
-   [leihs.core.core :refer [keyword str presence]]
+   [leihs.core.core :refer [str]]
    [leihs.core.db :as db]
    [leihs.core.graphql :as graphql]
    [leihs.core.ring-exception :as ring-exception]
-   [leihs.core.sql :as sql]
-   [logbug.catcher :as catcher]
-   [logbug.debug :as debug :refer [I>]]
-   [logbug.ring :refer [wrap-handler-with-logging]]
-   [logbug.thrown :as thrown]
-   [next.jdbc :as jdbc-next]
-   [next.jdbc.sql :refer [query] :rename {query jdbc-next-query}]
-   [taoensso.timbre :refer [error warn info debug spy]])
-  (:refer-clojure :exclude [str keyword]))
+   [next.jdbc :as jdbc]
+   [next.jdbc.sql :refer [insert! query] :rename {query jdbc-query,
+                                                  insert! jdbc-insert!}]))
 
 (defn txid [tx]
   (->> ["SELECT txid() AS txid"]
-       (jdbc/query tx)
+       (jdbc-query tx)
        first :txid))
 
-(defn tx2id [tx-next]
-  (->> ["SELECT txid() AS tx2id"]
-       (jdbc-next-query tx-next)
-       first spy :tx2id))
-
-(defn persist-request [txid tx2id request]
-  (jdbc/insert! (db/get-ds) :audited_requests
+(defn persist-request [txid request]
+  (jdbc-insert! (db/get-ds) :audited_requests
                 {:txid txid
-                 :tx2id tx2id
                  :http_uid (-> request :headers (get "http-uid"))
                  :path (-> request :uri)
                  :user_id (-> request :authenticated-entity :user_id)
@@ -44,16 +34,15 @@
            (sql/join :audited_changes
                      [:and
                       [:= :audited_changes.txid txid]
-                      (sql/raw " audited_changes.table_name = 'user_sessions'")
-                      [:= :user_sessions.id (sql/call :cast :audited_changes.pkey :uuid)]])
-           (sql/merge-where [:= :audited_requests.txid txid])
-           sql/format)
+                      [:raw " audited_changes.table_name = 'user_sessions'"]
+                      [:= :user_sessions.id [:cast :audited_changes.pkey :uuid]]])
+           (sql/where [:= :audited_requests.txid txid])
+           sql-format)
        (jdbc/execute! tx)))
 
-(defn persist-response [txid tx2id response]
-  (jdbc/insert! (db/get-ds) :audited_responses
+(defn persist-response [txid response]
+  (jdbc-insert! (db/get-ds) :audited_responses
                 {:txid txid
-                 :tx2id tx2id
                  :status (:status response)}))
 
 (defn wrap
@@ -62,18 +51,16 @@
      (wrap handler request)))
   ([handler {handler-key :handler-key
              method :request-method
-             tx :tx tx-next :tx-next :as request}]
+             tx :tx :as request}]
    (letfn [(audited-handler [request]
-             (let [txid (txid tx)
-                   tx2id (tx2id tx-next)]
-               (persist-request txid tx2id request)
+             (let [txid (txid tx)]
+               (persist-request txid request)
                (let [response (try (handler request)
                                    (catch Exception e
                                      (persist-response
-                                      txid tx2id
-                                      (ring-exception/exception-response e))
+                                      txid (ring-exception/exception-response e))
                                      (throw e)))]
-                 (persist-response txid tx2id response)
+                 (persist-response txid response)
                  (when (#{:external-authentication-sign-in :sign-in} handler-key)
                    (update-request-user-id-from-session txid tx))
                  response)))]

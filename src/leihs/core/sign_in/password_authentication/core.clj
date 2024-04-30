@@ -57,7 +57,7 @@
 
 (defn check-password
   [password password-hash & {:keys [tx]
-                             :or {tx (db/get-ds-next)}}]
+                             :or {tx (db/get-ds)}}]
   (-> (sql/select [[:= password-hash [:crypt password password-hash]]
                    :password_is_ok])
       (sql-format)
@@ -72,7 +72,7 @@
   The tx parameter is optional and in general not to be used
   since this never causes a mutation and the db operation is costly. "
   [user-uid password & {:keys [tx]
-                        :or {tx (db/get-ds-next)}}]
+                        :or {tx (db/get-ds)}}]
   (when-let [user (-> (user-query user-uid)
                       (sql-format)
                       (#(jdbc/execute-one! tx % db/builder-fn-options)))]

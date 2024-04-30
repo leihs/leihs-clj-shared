@@ -1,13 +1,15 @@
 (ns leihs.core.auth.session
   (:refer-clojure :exclude [str keyword])
   (:require
-   [clojure.java.jdbc :as jdbc]
+   [honey.sql :refer [format] :rename {format sql-format}]
+   [honey.sql.helpers :as sql]
    [leihs.core.auth.shared :refer [access-rights]]
    [leihs.core.constants :refer [USER_SESSION_COOKIE_NAME]]
-   [leihs.core.core :refer [str keyword presence presence!]]
-   [leihs.core.sql :as sql]
+   [leihs.core.core :refer [str]]
    [logbug.catcher :as catcher]
-   [logbug.debug :as debug]
+   [next.jdbc.sql :refer [delete! insert! query update!] :rename {query jdbc-query,
+                                                                  insert! jdbc-insert!,
+                                                                  delete! jdbc-delete!}]
    [pandect.core]
    [taoensso.timbre :refer [debug error info spy warn]])
   (:import
@@ -26,42 +28,39 @@
    [:users.id :user_id]
    [(-> (sql/select :%count.*)
         (sql/from :contracts)
-        (sql/merge-where [:= :contracts.user_id :users.id]))
+        (sql/where [:= :contracts.user_id :users.id]))
     :contracts_count]
    [(-> (sql/select :%count.*)
         (sql/from :access_rights)
-        (sql/merge-where [:= :access_rights.user_id :users.id]))
+        (sql/where [:= :access_rights.user_id :users.id]))
     :inventory_pool_roles_count]])
 
 (defn user-with-valid-session-query [session-token]
   (-> (apply sql/select user-select)
-      (sql/merge-select
+      (sql/select
        [:authentication_systems.external_sign_out_url :external_sign_out_url]
        [:user_sessions.created_at :user_session_created_at]
        [:user_sessions.external_session_id :external_session_id]
        [:user_sessions.id :user_session_id])
       (sql/from :users)
-      (sql/merge-join :user_sessions [:= :users.id :user_id])
-      (sql/merge-join :authentication_systems
-                      [:= :authentication_systems.id
+      (sql/join :user_sessions [:= :users.id :user_id])
+      (sql/join :authentication_systems
+                [:= :authentication_systems.id
 
-                       :user_sessions.authentication_system_id])
-      (sql/merge-join :system_and_security_settings [:= :system_and_security_settings.id 0])
-      (sql/merge-where (sql/call
-                        := :user_sessions.token_hash
-                        (sql/call :encode
-                                  (sql/call :digest session-token "sha256")
-                                  "hex")))
-      (sql/merge-where
-       (sql/raw (str "now() < user_sessions.created_at + "
-                     "system_and_security_settings.sessions_max_lifetime_secs * interval '1 second'")))
-      (sql/merge-where [:= :account_enabled true])
-      sql/format))
+                 :user_sessions.authentication_system_id])
+      (sql/join :system_and_security_settings [:= :system_and_security_settings.id 0])
+      (sql/where [:= :user_sessions.token_hash
+                  [:encode [:digest session-token "sha256"] "hex"]])
+      (sql/where
+       [:raw (str "now() < user_sessions.created_at + "
+                  "system_and_security_settings.sessions_max_lifetime_secs * interval '1 second'")])
+      (sql/where [:= :account_enabled true])
+      sql-format))
 
 (defn authenticated-user-entity [session-token {tx :tx :as request}]
   (when-let [user (->>
                    (user-with-valid-session-query session-token)
-                   (jdbc/query tx) first)]
+                   (jdbc-query tx) first)]
     (assoc user
            :authentication-method :session
            :access-rights (access-rights tx (:id user))
@@ -100,7 +99,7 @@
   "Create and returns the user_session. The map includes additionally
   the original token to be used as the value of the session cookie."
   (when (:sessions_force_uniqueness settings)
-    (jdbc/delete! tx :user_sessions ["user_id = ?" (:id user)]))
+    (jdbc-delete! tx :user_sessions ["user_id = ?" (:id user)]))
   (let [token (str (UUID/randomUUID))
         token-hash (pandect.core/sha256 token)
         user-session (->> (merge
@@ -110,8 +109,7 @@
                             :authentication_system_id authentication_system_id
                             :meta_data  {:user_agent (get-in request [:headers "user-agent"])
                                          :remote_addr (get-in request [:remote-addr])}})
-                          (jdbc/insert! tx :user_sessions)
-                          first)]
+                          (jdbc-insert! tx :user_sessions))]
     (assoc user-session :token token)))
 
 ;#### debug ###################################################################

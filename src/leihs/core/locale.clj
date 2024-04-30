@@ -1,9 +1,10 @@
 (ns leihs.core.locale
   (:require
-   [clojure.java.jdbc :as jdbc]
-   [compojure.core :as cpj]
-   [leihs.core.paths :refer [path]]
-   [leihs.core.sql :as sql]
+   [honey.sql :refer [format] :rename {format sql-format}]
+   [honey.sql.helpers :as sql]
+   [next.jdbc.sql :refer [query get-by-id update!] :rename {query jdbc-query,
+                                                            get-by-id jdbc-get-by-id,
+                                                            update! jdbc-update!}]
    [ring.util.response :refer [redirect]]))
 
 (defn set-language-cookie
@@ -22,7 +23,7 @@
     {referer :referer} :headers
     :as request}]
   (-> (redirect referer)
-      (set-language-cookie (jdbc/get-by-id tx :languages locale :locale))))
+      (set-language-cookie (jdbc-get-by-id tx :languages locale :locale))))
 
 (defn delete-language-cookie [response]
   (set-language-cookie response nil 0))
@@ -34,14 +35,14 @@
 
 (defn get-active-languages [tx]
   (-> get-active-languages-sqlmap
-      sql/format
-      (->> (jdbc/query tx))))
+      sql-format
+      (->> (jdbc-query tx))))
 
 (defn get-active-lang [tx locale]
   (-> get-active-languages-sqlmap
-      (sql/merge-where [:= :locale locale])
-      sql/format
-      (->> (jdbc/query tx))
+      (sql/where [:= :locale locale])
+      sql-format
+      (->> (jdbc-query tx))
       first))
 
 (defn get-user-db-language [request]
@@ -73,25 +74,23 @@
     (assoc request :leihs-user-language language)))
 
 (defn setup-language-after-sign-in
-  [{:keys [tx] :as request} response user]
+  [{tx :tx :as request} response user]
   (let [cookie-locale (-> request
                           :cookies
                           (get "leihs-user-locale")
                           :value)
         cookie-language (get-active-lang tx cookie-locale)]
     (cond cookie-language
-          (jdbc/update!
-           tx
-           :users
-           {:language_locale (:locale cookie-language)}
-           ["id = ?" (:id user)])
+          (jdbc-update! tx
+                        :users
+                        {:language_locale (:locale cookie-language)}
+                        ["id = ?" (:id user)])
           (when-let [user-locale (user :language_locale)]
             (not (get-active-lang tx user-locale)))
-          (jdbc/update!
-           tx
-           :users
-           {:language_locale nil}
-           ["id = ?" (:id user)]))
+          (jdbc-update! tx
+                        :users
+                        {:language_locale nil}
+                        ["id = ?" (:id user)]))
     (delete-language-cookie response)))
 
 (defn wrap [handler]
@@ -100,6 +99,6 @@
         set-user-language
         handler)))
 
-(def routes
-  (cpj/routes
-   (cpj/POST (path :language) [] #'redirect-back-with-language-cookie)))
+(defn routes [request]
+  (case (:request-method request)
+    :post (redirect-back-with-language-cookie request)))
