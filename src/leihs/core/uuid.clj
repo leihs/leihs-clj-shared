@@ -11,3 +11,6 @@
   java.util.UUID
   (uuid [uuid] uuid))
 
+(defn castable? [x]
+  (try (uuid x) true
+       (catch Exception e false)))
