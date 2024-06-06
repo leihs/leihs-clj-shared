@@ -69,7 +69,8 @@
                 :me (user-info tx auth-entity locales),
                 :subApps (-> (sub-apps tx auth-entity)
                              (merge subapps-override)),
-                :locales locales}}))))
+                :locales locales
+                :languageSwitchPath (path :language)}}))))
 
 ;#### debug ###################################################################
 ;(debug/debug-ns *ns*)

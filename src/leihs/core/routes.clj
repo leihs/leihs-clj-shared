@@ -1,7 +1,6 @@
 (ns leihs.core.routes
-  (:refer-clojure :exclude [str keyword])
-  (:require [leihs.core.core :refer [keyword str presence]])
   (:require
+   [leihs.core.language.back :as language]
    [leihs.core.sign-in.back :as sign-in]
    [leihs.core.sign-in.external-authentication.back :as external-authentication]
    [leihs.core.sign-out.back :as sign-out]
@@ -12,17 +11,21 @@
     :external-authentication-sign-in
     :external-authentication-sso-sign-out
     :sign-in
-    :sign-out})
+    :sign-out
+    :language})
 
 (def no-spa-handler-keys
   #{:external-authentication-sign-in
     :external-authentication-sso-sign-out
-    :sign-in})
+    :sign-in
+    :language})
 
 (def all-granted (constantly true))
 
 (def resolve-table
-  {:external-authentication-request  {:handler external-authentication/routes
+  {:language {:handler #'language/routes
+              :authorizers [all-granted]}
+   :external-authentication-request  {:handler external-authentication/routes
                                       :authorizers [all-granted]}
 
    :external-authentication-sign-in {:handler external-authentication/routes
