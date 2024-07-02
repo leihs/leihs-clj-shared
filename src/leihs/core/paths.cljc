@@ -13,7 +13,9 @@
           (leaf "/" :home)
 
           ;; subapps
-          (leaf "/admin/" :admin)
+          (branch "/admin"
+                  (leaf "/" :admin)
+                  (leaf "/initial-admin" :initial-admin))
           (leaf "/procure" :procurement)
           (leaf "/borrow" :borrow)
           (branch "/manage"
