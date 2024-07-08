@@ -7,8 +7,8 @@
   (:require
    [clojure.set :refer [rename-keys]]
    [clojure.walk :refer [keywordize-keys]]
-   [cuerdas.core :as string :refer [snake kebab upper human]]
    [environ.core :refer [env]]
+   [leihs.core.cli :refer [long-opt-for-key]]
    [leihs.core.core :refer [keyword str presence]]
    [org.httpkit.server :as http-kit]
    [taoensso.timbre :refer [debug info warn error spy]]))
@@ -16,9 +16,6 @@
 (defonce stop-server* (atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn long-opt-for-key [k]
-  (str "--" (kebab k) " " (-> k snake upper)))
 
 (def NCPUS (.availableProcessors (Runtime/getRuntime)))
 

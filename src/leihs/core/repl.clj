@@ -1,21 +1,17 @@
 (ns leihs.core.repl
   (:refer-clojure :exclude [str keyword])
   (:require
-   [camel-snake-kebab.core :refer [->snake_case]]
    [cider.nrepl :refer [cider-nrepl-handler]]
    [clj-yaml.core :as yaml]
    [clojure.java.io :as io]
-   [clojure.string :refer [upper-case]]
    [environ.core :refer [env]]
+   [leihs.core.cli :refer [long-opt-for-key]]
    [leihs.core.core :refer [presence keyword str]]
    [logbug.catcher :as catcher]
    [nrepl.server :as nrepl-server :refer [start-server stop-server]]
    [taoensso.timbre :refer [debug info warn error spy]]))
 
 ;;; cli-options ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn long-opt-for-key [k]
-  (str "--" k " " (-> k str ->snake_case upper-case)))
 
 (defonce options* (atom nil))
 

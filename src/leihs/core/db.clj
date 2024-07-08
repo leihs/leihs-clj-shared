@@ -2,10 +2,9 @@
   (:refer-clojure :exclude [str keyword])
   (:require
    [clj-yaml.core :as yaml]
-   [cuerdas.core :as string :refer [kebab snake upper]]
    [environ.core :refer [env]]
+   [leihs.core.cli :refer [long-opt-for-key]]
    [leihs.core.constants :refer [HTTP_UNSAFE_METHODS]]
-   [leihs.core.core :refer [str]]
    [leihs.core.db.type-conversion]
    [leihs.core.graphql :as graphql]
    [leihs.core.sql]
@@ -19,9 +18,6 @@
    [com.zaxxer.hikari HikariDataSource]))
 
 ;;; CLI ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn long-opt-for-key [k]
-  (str "--" (kebab k) " " (-> k snake upper)))
 
 (def db-name-key :db-name)
 (def db-port-key :db-port)
