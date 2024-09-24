@@ -1,4 +1,5 @@
 (ns leihs.core.cli
+  (:refer-clojure :exclude [str])
   (:require
    [cuerdas.core :as string :refer [kebab snake upper]]
    [leihs.core.core :refer [str]]))
