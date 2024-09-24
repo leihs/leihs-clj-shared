@@ -85,9 +85,10 @@
   (when @stop-server* (stop))
   (let [pool (connection-pool options)
         server-conf (-> options
-                        (select-keys [:http-port :http-host])
+                        (select-keys [:http-port :http-host :http-max-body])
                         (rename-keys {:http-port :port
-                                      :http-host :ip})
+                                      :http-host :ip
+                                      :http-max-body :max-body})
                         (assoc :pool pool))]
     (info "starting http-server " server-conf)
     (reset! stop-server*
