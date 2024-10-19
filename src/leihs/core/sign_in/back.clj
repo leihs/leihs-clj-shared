@@ -204,6 +204,16 @@
                                      :pwd-auth-system-enabled
                                      (:enabled (pwd-auth-system tx))))))))
 
+(defn create-error-response [user-param request]
+  {:status 401,
+   :headers {"Content-Type" "text/html"},
+   :body (render-sign-in-page
+          user-param
+          nil
+          request
+          {:flashMessages [{:messageID "sign_in_wrong_password_flash_message"
+                            :level "error"}]})})
+
 (defn handle-second-step
   "validate given user and password params.
   on success, set cookie and redirect, otherwise render page again with error.
@@ -234,14 +244,7 @@
       (locale/setup-language-after-sign-in request response user))
     (if (not (nil? invisible-pw))
       (handle-first-step request)
-      {:status 401,
-       :headers {"Content-Type" "text/html"},
-       :body (render-sign-in-page
-              user-param
-              nil
-              request
-              {:flashMessages [{:messageID "sign_in_wrong_password_flash_message"
-                                :level "error"}]})})))
+      (create-error-response user-param request))))
 
 (defn sign-in-get
   [{tx :tx, {return-to :return-to} :params :as request}]
