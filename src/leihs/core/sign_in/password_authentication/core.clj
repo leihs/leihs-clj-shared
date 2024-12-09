@@ -58,7 +58,7 @@
 (defn check-password
   [password password-hash & {:keys [tx]
                              :or {tx (db/get-ds)}}]
-  (-> (sql/select [[:= password-hash [:crypt password password-hash]]
+  (-> (sql/select [[:= password-hash [:crypt (str password) password-hash]]
                    :password_is_ok])
       (sql-format)
       (#(jdbc/execute-one! tx % db/builder-fn-options))

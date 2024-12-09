@@ -18,7 +18,7 @@
 
 (defn token-matches-clause [token-secret]
   [:= :api_tokens.token_hash
-   [:crypt token-secret :api_tokens.token_hash]])
+   [:crypt (str token-secret) :api_tokens.token_hash]])
 
 (defn user-with-valid-token-query [token-secret]
   (-> (sql/select
