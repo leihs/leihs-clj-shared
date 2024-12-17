@@ -97,3 +97,9 @@
 (defn drop-at [i v]
   "Removes an element from a vector at given index."
   (concat (take i v) (drop (inc i) v)))
+
+(defn drop-keys [m keys-to-drop]
+  (reduce dissoc m keys-to-drop))
+
+(defn flatten-once [coll]
+  (mapcat identity coll))
