@@ -1,29 +1,26 @@
 (ns leihs.core.release
   (:require
-   [clj-yaml.core :as yaml]
+   [leihs.core.core :refer [presence]]
    [taoensso.timbre :refer [debug error info spy warn]]))
 
-(def file-content
-  (try
-    (-> (System/getProperty "user.dir")
-        (str "/../config/releases.yml")
-        slurp yaml/parse-string)
-    (catch Exception ex
-      (warn "Failed to read releases.yml, returning bogus value ")
-      {:releases []})))
+(def VERSION-FILE-NAME "LEIHS-VERSION")
+(def DEV-VERSION "dev")
+(def BETA-SUFFIX "-beta")
+(def GH-URL "https://github.com/leihs/leihs")
+(def GH-RELEASES-URL (str GH-URL "/releases"))
 
-(def latest
-  (-> file-content
-      :releases
-      first))
+(def file-content
+  (some-> VERSION-FILE-NAME
+          clojure.java.io/resource
+          slurp
+          clojure.string/split-lines
+          first))
 
 (def version
-  (let [v (->> [:version_major :version_minor :version_patch]
-               (select-keys latest)
-               vals
-               (map str)
-               (clojure.string/join "."))
-        v-pre (:version_pre latest)]
-    (if v-pre
-      (clojure.string/join "-" [v v-pre])
-      v)))
+  (or (presence file-content) DEV-VERSION))
+
+(def gh-link
+  (if (or (= version DEV-VERSION)
+          (clojure.string/ends-with? version BETA-SUFFIX))
+    GH-URL
+    (str GH-RELEASES-URL "/tag/" version)))
