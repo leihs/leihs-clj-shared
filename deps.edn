@@ -1,4 +1,4 @@
-{:paths ["src"]
+{:paths ["src" "resources"]
  :deps
  {
   alumbra/parser {:mvn/version "0.1.7"}
