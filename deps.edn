@@ -24,6 +24,7 @@
   hikari-cp/hikari-cp {:mvn/version "3.0.1"}
   http-kit/http-kit {:mvn/version "2.8.0"}
   io.dropwizard.metrics/metrics-healthchecks {:mvn/version "4.2.19"}
+  io.github.tonsky/clj-reload {:mvn/version "0.9.6"}
   logbug/logbug {:mvn/version "5.0.0"}
   me.raynes/conch {:mvn/version "0.8.0"}
   nrepl/nrepl {:mvn/version "1.0.0"}
