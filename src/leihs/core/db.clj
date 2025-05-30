@@ -10,6 +10,7 @@
    [leihs.core.sql]
    [next.jdbc :as jdbc]
    [next.jdbc.connection]
+   [next.jdbc.date-time]
    [next.jdbc.result-set]
    [ring.util.codec]
    [taoensso.timbre :refer [error info warn]])
