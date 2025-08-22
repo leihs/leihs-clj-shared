@@ -1,8 +1,6 @@
 (ns leihs.core.status
   (:require
-   [compojure.core :as cpj]
    [leihs.core.db :as db]
-   [logbug.debug :as debug]
    [taoensso.timbre :refer [debug info warn error]])
   (:import
    [com.codahale.metrics.health HealthCheckRegistry]
@@ -15,8 +13,6 @@
 (defn HealthCheckResult->m
   [r]
   {:healthy? (.isHealthy r), :message (.getMessage r), :error (.getError r)})
-;(.getNames @health-check-registry*)
-;(.runHealthChecks @health-check-registry*)
 
 (defn health-checks
   []
@@ -49,14 +45,12 @@
 
 ;;; main ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn status-handler
-  [request]
+(defn status-handler [_]
   (let [memory-status (check-memory-usage)
         health-checks (health-checks)
         body {:memory memory-status,
               :db-pool (db/status),
               :health-checks health-checks}]
-    ; (debug body)
     {:status (if (and (->> [memory-status]
                            (map :ok?)
                            (every? true?))
@@ -70,7 +64,6 @@
 
 (defn wrap [default-handler path]
   (fn [request]
-    ; (debug {'request request})
     (if (= (:uri request) path)
       (status-handler request)
       (default-handler request))))

@@ -7,9 +7,9 @@
    [leihs.core.constants :refer [USER_SESSION_COOKIE_NAME]]
    [leihs.core.core :refer [str]]
    [logbug.catcher :as catcher]
-   [next.jdbc.sql :refer [delete! insert! query update!] :rename {query jdbc-query,
-                                                                  insert! jdbc-insert!,
-                                                                  delete! jdbc-delete!}]
+   [next.jdbc.sql :refer [delete! insert! query] :rename {query jdbc-query,
+                                                          insert! jdbc-insert!,
+                                                          delete! jdbc-delete!}]
    [pandect.core]
    [taoensso.timbre :refer [debug error info spy warn]])
   (:import
@@ -32,6 +32,9 @@
     :contracts_count]
    [(-> (sql/select :%count.*)
         (sql/from :access_rights)
+        (sql/join :inventory_pools
+                  [:= :access_rights.inventory_pool_id :inventory_pools.id])
+        (sql/where [:= :inventory_pools.is_active true])
         (sql/where [:= :access_rights.user_id :users.id]))
     :inventory_pool_roles_count]])
 
@@ -57,7 +60,7 @@
       (sql/where [:= :account_enabled true])
       sql-format))
 
-(defn authenticated-user-entity [session-token {tx :tx :as request}]
+(defn authenticated-user-entity [session-token {tx :tx}]
   (when-let [user (->>
                    (user-with-valid-session-query session-token)
                    (jdbc-query tx) first)]
@@ -92,12 +95,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn create-user-session
+  "Create and returns the user_session. The map includes additionally
+  the original token to be used as the value of the session cookie."
   [user authentication_system_id
    {:as request tx :tx settings :settings}
    & {:keys [user-session]
       :or {user-session {}}}]
-  "Create and returns the user_session. The map includes additionally
-  the original token to be used as the value of the session cookie."
   (when (:sessions_force_uniqueness settings)
     (jdbc-delete! tx :user_sessions ["user_id = ?" (:id user)]))
   (let [token (str (UUID/randomUUID))
