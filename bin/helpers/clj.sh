@@ -83,7 +83,7 @@ function cljs-release() {
   set_common_vars
   cljs_setup_env
   cd $PROJECT_DIR
-  npm ci --no-audit
+  npm ci --ignore-scripts --no-audit
   # `--debug` option does tree shaking but keeps the original name
   npx shadow-cljs release $ARTIFACT_NAME "$@"
   rm -rf ${JS_BUILD_DIR}
@@ -95,7 +95,7 @@ function cljs-watch() {
   set_common_vars
   cljs_setup_env
   cd $PROJECT_DIR
-  npm i
+  npm ci  --ignore-scripts
   npx shadow-cljs watch $ARTIFACT_NAME "$@"
   cd -
 }
