@@ -15,7 +15,7 @@
 
 (sql/register-fn! (keyword "@@")
                   (fn [op [field term]]
-                    (let [terms-params (->> (string/split term #"\s+")
+                    (let [terms-params (->> (string/split (str term) #"\s+")
                                             (map presence)
                                             (filter identity))
                           [sql-field & params-field] (sql/format-expr [:to_tsvector field])]
