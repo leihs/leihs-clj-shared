@@ -68,7 +68,7 @@
                         {:value anti-csrf-token-new
                          :http-only false
                          :path "/"
-                         :secure false})))))))
+                         :secure (true? (get-in request [:settings :sessions_force_secure]))})))))))
 
 ;#### debug ###################################################################
 ;(debug/debug-ns 'cider-ci.utils.shutdown)

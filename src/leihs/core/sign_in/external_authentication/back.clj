@@ -172,7 +172,7 @@
                       :http-only true
                       :max-age (* 10 356 24 60 60)
                       :path "/"
-                      :secure (:sessions_force_secure (:settings request))}}})
+                      :secure (true? (get-in request [:settings :sessions_force_secure]))}}})
         {:status 404}))))
 
 (defn routes [request]

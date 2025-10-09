@@ -237,7 +237,7 @@
                               :http-only true,
                               :max-age (* 10 356 24 60 60),
                               :path "/",
-                              :secure (:sessions_force_secure settings)}}}
+                              :secure (true? (get-in request [:settings :sessions_force_secure])) }}}
           response (if (= (-> request :accept :mime) :json)
                      (merge {:status 200, :body {:location location}} cookies)
                      (merge {:status 302, :headers {"Location" location}} cookies))]
