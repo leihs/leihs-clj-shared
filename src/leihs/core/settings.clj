@@ -28,21 +28,21 @@
        (sql/join :smtp_settings
                  [:= :settings.id :smtp_settings.id]))))
 
-(defn settings!
-  ([tx] (settings! tx selected-columns))
+(defn settings
+  ([tx] (settings tx selected-columns))
   ([tx columns]
    (or (-> (settings-base-query columns)
            sql-format
            (->> (jdbc-query tx))
            first)
-       (throw (IllegalStateException. "No settings here!")))))
+       (do (warn "database::settings: Missing entry in settings table") {}))))
 
 (defn wrap
   ([handler]
    (fn [request]
      (wrap handler request)))
   ([handler request]
-   (handler (assoc request :settings (settings! (:tx request))))))
+   (handler (assoc request :settings (settings (:tx request))))))
 
 ;#### debug ###################################################################
 ;(debug/debug-ns 'cider-ci.utils.shutdown)
