@@ -12,6 +12,9 @@
    {:mime
     ["application/json" :qs 1 :as :json
      "image/apng" :qs 0.8 :as :apng
+     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :qs 0.8 :as :excel
+     "image/svg+xml" :qs 0.8 :as :svg
+     "text/csv" :qs 1 :as :csv
      "text/css" :qs 1 :as :css
      "text/html" :qs 1 :as :html]}))
 
