@@ -44,3 +44,5 @@
 (sql/register-op! (keyword "~*"))
 (sql/register-op! (keyword "<@"))
 (sql/register-op! (keyword "@>"))
+(sql/register-op! (keyword "->"))
+(sql/register-op! (keyword "->>"))
