@@ -11,7 +11,7 @@
                   ; "leihs.admin.routes"
                   ; "leihs.borrow.graphql*"
                   ; "leihs.borrow.resources.orders"
-                  "leihs.inventory.server.utils.debug"} :debug]
+                  "leihs.inventory.server.middlewares.debug"} :debug]
                [#{#?(:clj "com.zaxxer.hikari.*")
                   "leihs.*"} :info]
                [#{"*"} :warn]]
