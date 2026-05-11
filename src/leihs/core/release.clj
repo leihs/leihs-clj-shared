@@ -1,7 +1,5 @@
 (ns leihs.core.release
   (:require
-   [clj-yaml.core :as yaml]
-   [clojure.java.io :as io]
    [leihs.core.core :refer [presence]]
    [taoensso.timbre :refer [debug error info spy warn]]))
 
@@ -14,22 +12,11 @@
       DEV-VERSION))
 
 (def gh-link
-  (if (= version DEV-VERSION)
-    GH-URL
-    (str GH-RELEASES-URL "/tag/" version)))
+  (cond
+    (= version DEV-VERSION) GH-URL
+    (re-matches #"[0-9a-f]+" version) (str GH-URL "/tree/" version)
+    :else (str GH-RELEASES-URL "/tag/" version)))
 
-(def built-info
-  (some-> "built-info.yml" io/resource slurp yaml/parse-string))
+(def display-version version)
 
-(def super-commit-id
-  (:super_commit_id built-info))
-
-(def display-version
-  (if (and (= version DEV-VERSION) super-commit-id)
-    (subs super-commit-id 0 7)
-    version))
-
-(def display-gh-link
-  (if (and (= version DEV-VERSION) super-commit-id)
-    (str GH-URL "/tree/" super-commit-id)
-    gh-link))
+(def display-gh-link gh-link)
