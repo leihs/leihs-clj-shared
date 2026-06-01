@@ -18,16 +18,18 @@
                                    (ch/local-date start-date)
                                    (ch/local-date end-date))
          non-negative #(if (neg? %) 0 %)]
-     (->> inner-changes
-          vals
-          (map (fn [allocs]
-                 (-> allocs
-                     (select-keys group-ids)
-                     vals
-                     (->> (map :in-quantity)
-                          (apply +)))))
-          (apply min)
-          non-negative))))
+     (if (empty? inner-changes)
+       0
+       (->> inner-changes
+            vals
+            (map (fn [allocs]
+                   (-> allocs
+                       (select-keys group-ids)
+                       vals
+                       (->> (map :in-quantity)
+                            (apply +)))))
+            (apply min)
+            non-negative)))))
 
 (defn maximum-available-in-period-summed-for-groups
   "Returns the total maximum available quantity for a model across multiple inventory pools."
