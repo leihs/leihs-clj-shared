@@ -64,10 +64,11 @@
        (take-while #(not= % (t/plus end (t/days 1))))))
 
 (defn most-recent-before-or-equal [changes date]
-  (->> changes
-       keys
-       (filter #(or (= % date) (t/before? % date)))
-       (apply t/max)))
+  (let [matching (->> changes
+                      keys
+                      (filter #(or (= % date) (t/before? % date))))]
+    (when (seq matching)
+      (apply t/max matching))))
 
 (defn between [changes date1 date2]
   (let [most-recent-date (or (most-recent-before-or-equal changes date1)
