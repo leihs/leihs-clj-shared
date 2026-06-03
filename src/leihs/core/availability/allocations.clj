@@ -26,7 +26,7 @@
         not-user-group-ids (difference pool-and-model-group-ids user-group-ids)
         group-ids-to-check (concat user-group-ids [:general] not-user-group-ids)
         max-possible-quantities (get-max-possible-quantities-for-group-ids-and-changes
-                                  group-ids-to-check inner-changes)]
+                                 group-ids-to-check inner-changes)]
     (or (detect #(-> max-possible-quantities
                      (get %)
                      (or 0)

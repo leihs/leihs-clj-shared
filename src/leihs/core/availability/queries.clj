@@ -2,8 +2,8 @@
   (:require
    [honey.sql :refer [format] :rename {format sql-format}]
    [honey.sql.helpers :as sql]
-   [next.jdbc.sql :refer [query] :rename {query jdbc-query}]
-   [leihs.core.settings :refer [settings]]))
+   [leihs.core.settings :refer [settings]]
+   [next.jdbc.sql :refer [query] :rename {query jdbc-query}]))
 
 (defn running-reservations [tx model-id pool-id exclude-res-ids]
   (let [timeout-minutes (-> (settings tx [:timeout_minutes])
@@ -81,8 +81,8 @@
                            sql-format
                            (->> (jdbc-query tx)))]
     (concat
-      (-> named-groups sql-format (->> (jdbc-query tx)))
-      general-groups)))
+     (-> named-groups sql-format (->> (jdbc-query tx)))
+     general-groups)))
 
 (defn get-inventory-pool-and-model-group-ids [tx model-id pool-id]
   (-> (sql/select :entitlements.entitlement_group_id)

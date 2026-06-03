@@ -8,7 +8,7 @@
   over the given date range, summed across all entitlement groups the user belongs to."
   ([tx model-id user-id start-date end-date pool-id]
    (maximum-available-in-pool-and-period-summed-for-groups
-     tx model-id user-id start-date end-date pool-id nil))
+    tx model-id user-id start-date end-date pool-id nil))
 
   ([tx model-id user-id start-date end-date pool-id exclude-res-ids]
    (let [changes (ch/main tx model-id pool-id exclude-res-ids)
@@ -35,10 +35,10 @@
   "Returns the total maximum available quantity for a model across multiple inventory pools."
   ([tx model-id user-id start-date end-date pool-ids]
    (maximum-available-in-period-summed-for-groups
-     tx model-id user-id start-date end-date pool-ids nil))
+    tx model-id user-id start-date end-date pool-ids nil))
 
   ([tx model-id user-id start-date end-date pool-ids exclude-res-ids]
    (->> pool-ids
         (map #(maximum-available-in-pool-and-period-summed-for-groups
-                tx model-id user-id start-date end-date % exclude-res-ids))
+               tx model-id user-id start-date end-date % exclude-res-ids))
         (apply +))))

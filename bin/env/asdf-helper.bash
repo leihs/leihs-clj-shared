@@ -13,6 +13,11 @@ function asdf-load() {
 
 function asdf-update-plugin-base(){
   echo "INFO updateting asdf plugin ${ASDF_PLUGIN} for ${PROJECT_NAME}"
+  asdf-load
+  if ! type "asdf" > /dev/null 2>&1; then
+    echo "INFO asdf not available, skipping plugin update"
+    return
+  fi
   if $(asdf plugin list | grep -q $ASDF_PLUGIN); then
     echo "asdf $ASDF_PLUGIN found: updating "
     asdf plugin update $ASDF_PLUGIN
@@ -25,6 +30,11 @@ function asdf-update-plugin-base(){
 }
 
 function asdf-update-plugin () {
+  asdf-load
+  if ! type "asdf" > /dev/null 2>&1; then
+    echo "INFO asdf not available, skipping plugin update"
+    return
+  fi
   TMPDIR=${TMPDIR:-/tmp/}
   PROJECT_DIR="$(cd -- "$(dirname "${BASH_SOURCE}")" ; cd ../.. > /dev/null 2>&1 && pwd -P)"
   # in deployed states we are not in a git repo; however asdf und plugins should be set up already
@@ -36,7 +46,7 @@ function asdf-update-plugin () {
       asdf-update-plugin-base
     else
       DIGEST=$(git log -1 HEAD --pretty=format:%T)
-      CACHE_FILE="${TMPDIR}asdf_cache_${PROJECT_NAME}_${DIGEST}"
+      CACHE_FILE="${TMPDIR}asdf_cache_${PROJECT_NAME}_${ASDF_PLUGIN}_${DIGEST}"
       if [[ -f $CACHE_FILE ]]; then
         echo "INFO $CACHE_FILE exists; skipping ${PROJECT_NAME} asdf update"
       else
