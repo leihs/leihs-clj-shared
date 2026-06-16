@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.4.xsd"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.4.xsd
+                                  https://dependency-check.github.io/DependencyCheck/dependency-suppression.1.4.xsd">
+    <suppress>
+        <notes><![CDATA[
+        spootnik/signal CVE-2018-16132: false positive (affects another "signal" library)
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/spootnik/signal@.*$</packageUrl>
+        <cve>CVE-2018-16132</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        spootnik/signal CVE-2022-28345: false positive (affects another "signal" library)
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/spootnik/signal@.*$</packageUrl>
+        <cve>CVE-2022-28345</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        spootnik/signal CVE-2018-9840: false positive (affects another "signal" library)
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/spootnik/signal@.*$</packageUrl>
+        <cve>CVE-2018-9840</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        spootnik/signal CVE-2020-5753: false positive (affects another "signal" library)
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/spootnik/signal@.*$</packageUrl>
+        <cve>CVE-2020-5753</cve>
+    </suppress>
+
+    <suppress>
+        <notes><![CDATA[
+        com.google.guava/guava CVE-2020-5753: not affected, only local machine
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com.google.guava/guava@.*$</packageUrl>
+        <cve>CVE-2023-2976</cve>
+    </suppress>
+
+    <suppress>
+        <notes><![CDATA[
+        org.clojure/clojurescript CVE-2023-0247: false positive (affects totally different package)
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org.clojure/clojurescript@.*$</packageUrl>
+        <cve>CVE-2023-0247</cve>
+    </suppress>
+
+    <suppress>
+        <notes><![CDATA[
+        org.clojure/google-closure-library(-third-party) CVE-2020-8910: false positive (0.0-20211011 is newer than patched version v20200315)
+        (not recognized by dependency checker due to non-standard versioning scheme)
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org.clojure/google-closure-library(-third-party|)@.*$</packageUrl>
+        <cve>CVE-2020-8910</cve>
+    </suppress>
+
+    <suppress>
+        <notes><![CDATA[
+        threatgrid/ring-graphql-voyager CVE-2014-125074: false positive (affects another "voyager" library)
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/threatgrid/ring-graphql-voyager@.*$</packageUrl>
+        <cve>CVE-2014-125074</cve>
+    </suppress>
+</suppressions>

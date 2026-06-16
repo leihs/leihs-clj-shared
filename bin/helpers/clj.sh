@@ -5,6 +5,7 @@ function set_common_vars() {
   ARTIFACT_NAME=${ARTIFACT_NAME:-"leihs-${PROJECT_NAME}-js"}
   JS_ASSETS_DIR=${JS_ASSETS_DIR:-"resources/public/${PROJECT_NAME}/js"}
   JS_BUILD_DIR=${JS_BUILD_DIR:-"resources/public/${PROJECT_NAME}/js/cljs-runtime"}
+  SHARED_CLJ_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd ../.. && pwd)"
 }
 
 function debug_setup() {
@@ -39,6 +40,18 @@ function clj_run() {
   clj_setup_env
   cd $CLJ_DIR
   clj -M -m ${CLJ_MAIN} "$@"
+  cd -
+}
+
+function clj_watson() {
+  debug_setup
+  set_common_vars
+  clj_setup_env
+  cd $CLJ_DIR
+  CLJ_WATSON_SUPPRESSION_FILE=${SHARED_CLJ_DIR}/clj-watson/suppressions.xml \
+    CLJ_WATSON_ANALYZER_OSSINDEX_ENABLED=false \
+    clojure -M:clj-watson scan -p deps.edn -s -a frontend "$@"
+  # `-a frontend` = include alias `:frontend` (if present)
   cd -
 }
 
