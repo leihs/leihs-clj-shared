@@ -3,6 +3,8 @@
   (:require-macros
    [reagent.ratom :as ratom :refer [reaction]])
   (:require
+   [clojure.pprint :refer [pprint]]
+   [leihs.admin.utils.clipboard :as clipboard]
    [leihs.core.core :refer [str keyword deep-merge presence]]
    [leihs.core.requests.shared :as shared]))
 
@@ -37,7 +39,12 @@
    (when-let [body (-> request :response :body presence)]
      [:div
       [:p "The message sent with the response says:"]
-      [:pre body]])])
+      [:pre body]])
+   (when (= status :error)
+     [:small
+      [:p "Contact your administrator or file a bug report if this problem persists. "
+       "Please provide the details for this request: "
+       [clipboard/button (with-out-str (pprint request))]]])])
 
 (defn modal-component []
   (when-let [request @current-modal-request]
