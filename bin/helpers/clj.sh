@@ -43,18 +43,6 @@ function clj_run() {
   cd -
 }
 
-function clj_watson() {
-  debug_setup
-  set_common_vars
-  clj_setup_env
-  cd $CLJ_DIR
-  CLJ_WATSON_SUPPRESSION_FILE=${SHARED_CLJ_DIR}/clj-watson/suppressions.xml \
-    CLJ_WATSON_ANALYZER_OSSINDEX_ENABLED=false \
-    clojure -M:clj-watson scan -p deps.edn -s -a frontend "$@"
-  # `-a frontend` = include alias `:frontend` (if present)
-  cd -
-}
-
 function clj_outdated() {
   debug_setup
   set_common_vars
