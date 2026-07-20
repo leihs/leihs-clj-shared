@@ -52,9 +52,12 @@
 (defn get-unavailable-from [reservation pool-buffers]
   (if (:item_id reservation)
     (local-date)
-    (t/max (t/minus (local-date (:start_date reservation))
-                    (t/days (transfer-buffer-days reservation pool-buffers :transfer_buffer_before_pick_up)))
-           (local-date))))
+    (let [before-pick-up-days (transfer-buffer-days reservation
+                                                    pool-buffers
+                                                    :transfer_buffer_before_pick_up)]
+      (t/max (t/minus (local-date (:start_date reservation))
+                      (t/days before-pick-up-days))
+             (local-date)))))
 
 (defn get-unavailable-until [reservation model pool-buffers]
   (let [date (t/max (if (late? reservation)
@@ -63,8 +66,11 @@
                     (local-date))
         date (cond->> date
                (> (:maintenance_period model) 0)
-               (being-maintained-until model))]
-    (t/plus date (t/days (transfer-buffer-days reservation pool-buffers :transfer_buffer_after_drop_off)))))
+               (being-maintained-until model))
+        after-drop-off-days (transfer-buffer-days reservation
+                                                  pool-buffers
+                                                  :transfer_buffer_after_drop_off)]
+    (t/plus date (t/days after-drop-off-days))))
 
 (defn explode-date-range [start end]
   (->> (t/iterate t/plus start (t/days 1))
@@ -134,6 +140,10 @@
          (q/get-inventory-pool-and-model-group-ids tx model-id pool-id)
          initial-changes (init tx entitlements pool-id)]
      (reduce (fn [changes reservation]
-               (extend-with changes reservation model pool-buffers inventory-pool-and-model-group-ids))
+               (extend-with changes
+                            reservation
+                            model
+                            pool-buffers
+                            inventory-pool-and-model-group-ids))
              initial-changes
              running-reservations))))

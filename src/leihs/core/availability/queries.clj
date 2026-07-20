@@ -106,7 +106,8 @@
            (map :entitlement_group_id))))
 
 (defn get-pool-buffers [tx pool-id]
-  (-> (sql/select :transfer_buffer_before_pick_up :transfer_buffer_after_drop_off)
+  (-> (sql/select :transfer_buffer_before_pick_up
+                  :transfer_buffer_after_drop_off)
       (sql/from :inventory_pools)
       (sql/where [:= :id pool-id])
       sql-format
