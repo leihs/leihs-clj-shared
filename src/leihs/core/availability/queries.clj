@@ -19,6 +19,7 @@
                     :reservations.end_date
                     :reservations.returned_date
                     :reservations.status
+                    :reservations.pickup_location_id
                     [[:'ARRAY (-> (sql/select :egu.entitlement_group_id)
                                   (sql/from [:entitlement_groups_users :egu])
                                   (sql/join [:entitlement_groups :eg]
@@ -103,6 +104,14 @@
       sql-format
       (->> (jdbc-query tx)
            (map :entitlement_group_id))))
+
+(defn get-pool-buffers [tx pool-id]
+  (-> (sql/select :transfer_buffer_before_pick_up :transfer_buffer_after_drop_off)
+      (sql/from :inventory_pools)
+      (sql/where [:= :id pool-id])
+      sql-format
+      (->> (jdbc-query tx))
+      first))
 
 (defn get-model-by-id [tx id]
   (-> (sql/select :*)

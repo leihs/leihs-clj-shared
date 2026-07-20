@@ -44,20 +44,27 @@
 (defn being-maintained-until [_model date]
   date)
 
-(defn get-unavailable-from [reservation]
+(defn transfer-buffer-days [reservation pool-buffers buffer-key]
+  (if (:pickup_location_id reservation)
+    (or (get pool-buffers buffer-key) 0)
+    0))
+
+(defn get-unavailable-from [reservation pool-buffers]
   (if (:item_id reservation)
     (local-date)
-    (t/max (local-date (:start_date reservation))
+    (t/max (t/minus (local-date (:start_date reservation))
+                    (t/days (transfer-buffer-days reservation pool-buffers :transfer_buffer_before_pick_up)))
            (local-date))))
 
-(defn get-unavailable-until [reservation model]
+(defn get-unavailable-until [reservation model pool-buffers]
   (let [date (t/max (if (late? reservation)
                       (t/plus (local-date) replacement-interval)
                       (local-date (:end_date reservation)))
-                    (local-date))]
-    (cond->> date
-      (> (:maintenance_period model) 0)
-      (being-maintained-until model))))
+                    (local-date))
+        date (cond->> date
+               (> (:maintenance_period model) 0)
+               (being-maintained-until model))]
+    (t/plus date (t/days (transfer-buffer-days reservation pool-buffers :transfer_buffer_after_drop_off)))))
 
 (defn explode-date-range [start end]
   (->> (t/iterate t/plus start (t/days 1))
@@ -106,9 +113,9 @@
            (update-allocations inner-changes allocated-group-id reservation))))
 
 (defn extend-with
-  [changes reservation model inventory-pool-and-model-group-ids]
-  (let [unavailable-from (get-unavailable-from reservation)
-        unavailable-until (get-unavailable-until reservation model)]
+  [changes reservation model pool-buffers inventory-pool-and-model-group-ids]
+  (let [unavailable-from (get-unavailable-from reservation pool-buffers)
+        unavailable-until (get-unavailable-until reservation model pool-buffers)]
     (-> changes
         (insert-for-time-span unavailable-from unavailable-until)
         (update-inner-changes unavailable-from
@@ -120,12 +127,13 @@
   ([tx model-id pool-id] (main tx model-id pool-id nil))
   ([tx model-id pool-id exclude-res-ids]
    (let [model (q/get-model-by-id tx model-id)
+         pool-buffers (q/get-pool-buffers tx pool-id)
          running-reservations (q/running-reservations tx model-id pool-id exclude-res-ids)
          entitlements (q/get-entitlements-for-model-and-pool tx model-id pool-id)
          inventory-pool-and-model-group-ids
          (q/get-inventory-pool-and-model-group-ids tx model-id pool-id)
          initial-changes (init tx entitlements pool-id)]
      (reduce (fn [changes reservation]
-               (extend-with changes reservation model inventory-pool-and-model-group-ids))
+               (extend-with changes reservation model pool-buffers inventory-pool-and-model-group-ids))
              initial-changes
              running-reservations))))
