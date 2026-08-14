@@ -4,6 +4,7 @@
    [com.rpl.specter :as s]
    [java-time :as t]
    [leihs.core.availability.allocations :as a]
+   [leihs.core.availability.pool :as pool]
    [leihs.core.availability.queries :as q]))
 
 (def UTC-ZONE-ID (java.time.ZoneId/of "UTC"))
@@ -44,22 +45,24 @@
 (defn being-maintained-until [_model date]
   date)
 
-(defn transfer-buffer-days [reservation pool-buffers buffer-key]
+(defn transfer-buffer-days [reservation pool-config buffer-key]
   (if (:pickup_location_id reservation)
-    (or (get pool-buffers buffer-key) 0)
+    (or (get pool-config buffer-key) 0)
     0))
 
-(defn get-unavailable-from [reservation pool-buffers]
+(defn get-unavailable-from [reservation pool-config]
   (if (:item_id reservation)
     (local-date)
     (let [before-pick-up-days (transfer-buffer-days reservation
-                                                    pool-buffers
+                                                    pool-config
                                                     :transfer_buffer_before_pick_up)]
-      (t/max (t/minus (local-date (:start_date reservation))
-                      (t/days before-pick-up-days))
+      (t/max (pool/step-orders-processing-days (local-date (:start_date reservation))
+                                               before-pick-up-days
+                                               pool-config
+                                               t/minus)
              (local-date)))))
 
-(defn get-unavailable-until [reservation model pool-buffers]
+(defn get-unavailable-until [reservation model pool-config]
   (let [date (t/max (if (late? reservation)
                       (t/plus (local-date) replacement-interval)
                       (local-date (:end_date reservation)))
@@ -68,9 +71,9 @@
                (> (:maintenance_period model) 0)
                (being-maintained-until model))
         after-drop-off-days (transfer-buffer-days reservation
-                                                  pool-buffers
+                                                  pool-config
                                                   :transfer_buffer_after_drop_off)]
-    (t/plus date (t/days after-drop-off-days))))
+    (pool/step-orders-processing-days date after-drop-off-days pool-config t/plus)))
 
 (defn explode-date-range [start end]
   (->> (t/iterate t/plus start (t/days 1))
@@ -119,9 +122,9 @@
            (update-allocations inner-changes allocated-group-id reservation))))
 
 (defn extend-with
-  [changes reservation model pool-buffers inventory-pool-and-model-group-ids]
-  (let [unavailable-from (get-unavailable-from reservation pool-buffers)
-        unavailable-until (get-unavailable-until reservation model pool-buffers)]
+  [changes reservation model pool-config inventory-pool-and-model-group-ids]
+  (let [unavailable-from (get-unavailable-from reservation pool-config)
+        unavailable-until (get-unavailable-until reservation model pool-config)]
     (-> changes
         (insert-for-time-span unavailable-from unavailable-until)
         (update-inner-changes unavailable-from
@@ -133,7 +136,7 @@
   ([tx model-id pool-id] (main tx model-id pool-id nil))
   ([tx model-id pool-id exclude-res-ids]
    (let [model (q/get-model-by-id tx model-id)
-         pool-buffers (q/get-pool-buffers tx pool-id)
+         pool-config (q/get-pool-config tx pool-id)
          running-reservations (q/running-reservations tx model-id pool-id exclude-res-ids)
          entitlements (q/get-entitlements-for-model-and-pool tx model-id pool-id)
          inventory-pool-and-model-group-ids
@@ -143,7 +146,7 @@
                (extend-with changes
                             reservation
                             model
-                            pool-buffers
+                            pool-config
                             inventory-pool-and-model-group-ids))
              initial-changes
              running-reservations))))

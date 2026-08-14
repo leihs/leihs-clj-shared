@@ -2,6 +2,7 @@
   (:require
    [java-time :as t]
    [leihs.core.availability.changes :as ch]
+   [leihs.core.availability.pool :as pool]
    [leihs.core.availability.queries :as q]))
 
 (defn maximum-available-in-pool-and-period-summed-for-groups
@@ -22,12 +23,18 @@
    (let [changes (ch/main tx model-id pool-id exclude-res-ids)
          user-group-ids (q/get-user-group-ids tx user-id)
          group-ids (concat [:general] user-group-ids)
-         pool-buffers (when pickup-location-id (q/get-pool-buffers tx pool-id))
-         before-days (or (:transfer_buffer_before_pick_up pool-buffers) 0)
-         after-days (or (:transfer_buffer_after_drop_off pool-buffers) 0)
+         pool-config (when pickup-location-id (q/get-pool-config tx pool-id))
+         before-days (or (:transfer_buffer_before_pick_up pool-config) 0)
+         after-days (or (:transfer_buffer_after_drop_off pool-config) 0)
          inner-changes (ch/between changes
-                                   (t/minus (ch/local-date start-date) (t/days before-days))
-                                   (t/plus (ch/local-date end-date) (t/days after-days)))
+                                   (pool/step-orders-processing-days (ch/local-date start-date)
+                                                                     before-days
+                                                                     pool-config
+                                                                     t/minus)
+                                   (pool/step-orders-processing-days (ch/local-date end-date)
+                                                                     after-days
+                                                                     pool-config
+                                                                     t/plus))
          non-negative #(if (neg? %) 0 %)]
      (if (empty? inner-changes)
        0

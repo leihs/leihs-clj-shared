@@ -2,6 +2,7 @@
   (:require
    [honey.sql :refer [format] :rename {format sql-format}]
    [honey.sql.helpers :as sql]
+   [leihs.core.availability.pool :as pool]
    [leihs.core.settings :refer [settings]]
    [next.jdbc.sql :refer [query] :rename {query jdbc-query}]))
 
@@ -113,6 +114,14 @@
       sql-format
       (->> (jdbc-query tx))
       first))
+
+(defn get-pool-config
+  "Buffer settings merged with the pool's workday/holiday config, for use
+  with leihs.core.availability.pool/step-orders-processing-days."
+  [tx pool-id]
+  (merge (get-pool-buffers tx pool-id)
+         (pool/get-workdays tx pool-id)
+         {:holidays (pool/get-holidays tx pool-id)}))
 
 (defn get-model-by-id [tx id]
   (-> (sql/select :*)
