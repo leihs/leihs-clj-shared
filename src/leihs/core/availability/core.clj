@@ -5,7 +5,17 @@
    [leihs.core.availability.pool :as pool]
    [leihs.core.availability.queries :as q]))
 
-(defn- min-quantity-summed-for-groups [changes group-ids from-date to-date]
+(defn- min-quantity-summed-for-groups
+  "changes is a sparse timeline: {date {group-id {:in-quantity n, ...}}},
+  quantity holding constant between consecutive dated entries. Returns the
+  worst (lowest) quantity across [from-date, to-date], since a booking
+  spanning the whole range is only as available as its tightest day.
+  E.g. changes = {day1 {:general {:in-quantity 5}}
+                  day5 {:general {:in-quantity 2}}
+                  day10 {:general {:in-quantity 4}}}
+  for from-date=day3, to-date=day8: day1 is the anchor still in effect at
+  day3, day5 falls inside the range -> considers [5 2] -> returns 2."
+  [changes group-ids from-date to-date]
   (let [inner-changes (ch/between changes from-date to-date)
         non-negative #(if (neg? %) 0 %)]
     (if (empty? inner-changes)
