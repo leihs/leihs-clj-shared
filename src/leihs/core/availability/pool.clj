@@ -83,20 +83,17 @@
 (defn step-orders-processing-days
   "Steps from start-date via step (jt/plus or jt/minus) until n
   orders-processing days have been passed, returning the resulting date.
-  Closed (non-workday or holiday) days are skipped over without counting,
-  unless they are themselves orders-processing days, in which case they do
-  count. n<=0 is a no-op, returning start-date unchanged regardless of pool
-  (so pool may be nil then). pool must otherwise have weekday,
-  `<day>_orders_processing` and :holidays keys."
+  Any day (open or closed) that isn't itself an orders-processing day is
+  skipped over without counting; only orders-processing days count,
+  regardless of whether the pool is open or closed on them. n<=0 is a
+  no-op, returning start-date unchanged regardless of pool (so pool may be
+  nil then). pool must otherwise have weekday, `<day>_orders_processing`
+  and :holidays keys."
   [start-date n pool step]
   (if (<= n 0)
     start-date
     (loop [date start-date, remaining n]
-      (cond (close-time? date pool)
-            (recur (step date (jt/days 1))
-                   (if (orders-processing? date pool) (dec remaining) remaining))
-
-            (pos? remaining)
-            (recur (step date (jt/days 1)) (dec remaining))
-
-            :else date))))
+      (if (or (pos? remaining) (close-time? date pool))
+        (recur (step date (jt/days 1))
+               (if (orders-processing? date pool) (dec remaining) remaining))
+        date))))
