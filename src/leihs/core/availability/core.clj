@@ -31,6 +31,42 @@
            (apply min)
            non-negative))))
 
+(defn fetch-context
+  "changes/group-ids/pool-config for one model+pool+user, to fetch once and
+  reuse across many quantity checks (e.g. a calendar's per-day loop) instead
+  of every check re-querying them itself."
+  [tx model-id user-id pool-id exclude-res-ids pickup-location-id]
+  {:changes (ch/main tx model-id pool-id exclude-res-ids)
+   :group-ids (concat [:general] (q/get-user-group-ids tx user-id))
+   :pool-config (when pickup-location-id (q/get-pool-config tx pool-id))})
+
+(defn available-quantity-in-range
+  "Same as maximum-available-in-pool-and-period-summed-for-groups, given a
+  context from fetch-context instead of tx/ids. For a single candidate date
+  use available-quantity-for-prospective-start instead -- widening both
+  directions from the same point double-counts."
+  [{:keys [changes group-ids pool-config]} start-date end-date]
+  (let [before-days (or (:transfer_buffer_before_pick_up pool-config) 0)
+        after-days (or (:transfer_buffer_after_drop_off pool-config) 0)
+        start-date* (ch/local-date start-date)
+        end-date* (ch/local-date end-date)
+        widened-start (pool/step-orders-processing-days start-date* before-days
+                                                        pool-config t/minus)
+        widened-end (pool/step-orders-processing-days end-date* after-days
+                                                      pool-config t/plus)]
+    (min-quantity-summed-for-groups changes group-ids widened-start
+                                    widened-end)))
+
+(defn available-quantity-for-prospective-start
+  "Same as maximum-available-for-prospective-start-summed-for-groups, given a
+  context from fetch-context instead of tx/ids."
+  [{:keys [changes group-ids pool-config]} date]
+  (let [before-days (or (:transfer_buffer_before_pick_up pool-config) 0)
+        date* (ch/local-date date)
+        widened-start (pool/step-orders-processing-days date* before-days
+                                                        pool-config t/minus)]
+    (min-quantity-summed-for-groups changes group-ids widened-start date*)))
+
 (defn maximum-available-in-pool-and-period-summed-for-groups
   "Returns the maximum available quantity for a model in a single inventory pool
   over the given date range, summed across all entitlement groups the user belongs to.
@@ -40,7 +76,8 @@
   end-date by the after-drop-off buffer. Only sound for a genuine candidate
   reservation span (start-date and end-date are its real start and end) -- for a
   single candidate date, use maximum-available-for-prospective-start-summed-for-groups
-  instead, since widening both directions from the same point double-counts."
+  instead, since widening both directions from the same point double-counts.
+  For repeated checks, prefer fetch-context + available-quantity-in-range."
   ([tx model-id user-id start-date end-date pool-id]
    (maximum-available-in-pool-and-period-summed-for-groups
     tx model-id user-id start-date end-date pool-id nil nil))
@@ -50,21 +87,9 @@
     tx model-id user-id start-date end-date pool-id exclude-res-ids nil))
 
   ([tx model-id user-id start-date end-date pool-id exclude-res-ids pickup-location-id]
-   (let [changes (ch/main tx model-id pool-id exclude-res-ids)
-         user-group-ids (q/get-user-group-ids tx user-id)
-         group-ids (concat [:general] user-group-ids)
-         pool-config (when pickup-location-id (q/get-pool-config tx pool-id))
-         before-days (or (:transfer_buffer_before_pick_up pool-config) 0)
-         after-days (or (:transfer_buffer_after_drop_off pool-config) 0)
-         widened-start (pool/step-orders-processing-days (ch/local-date start-date)
-                                                         before-days
-                                                         pool-config
-                                                         t/minus)
-         widened-end (pool/step-orders-processing-days (ch/local-date end-date)
-                                                       after-days
-                                                       pool-config
-                                                       t/plus)]
-     (min-quantity-summed-for-groups changes group-ids widened-start widened-end))))
+   (-> (fetch-context tx model-id user-id pool-id exclude-res-ids
+                      pickup-location-id)
+       (available-quantity-in-range start-date end-date))))
 
 (defn maximum-available-in-period-summed-for-groups
   "Returns the total maximum available quantity for a model across multiple inventory pools."
@@ -89,7 +114,9 @@
   the lead time needed to move an item from the main warehouse out to the
   alternative pickup location -- never forward, since a single candidate date
   is not also an end date. Intended for per-day calendar display, where each
-  day is checked independently as a potential start."
+  day is checked independently as a potential start.
+  For repeated checks, prefer fetch-context +
+  available-quantity-for-prospective-start."
   ([tx model-id user-id date pool-id]
    (maximum-available-for-prospective-start-summed-for-groups
     tx model-id user-id date pool-id nil nil))
@@ -99,11 +126,6 @@
     tx model-id user-id date pool-id exclude-res-ids nil))
 
   ([tx model-id user-id date pool-id exclude-res-ids pickup-location-id]
-   (let [changes (ch/main tx model-id pool-id exclude-res-ids)
-         user-group-ids (q/get-user-group-ids tx user-id)
-         group-ids (concat [:general] user-group-ids)
-         pool-config (when pickup-location-id (q/get-pool-config tx pool-id))
-         before-days (or (:transfer_buffer_before_pick_up pool-config) 0)
-         date* (ch/local-date date)
-         widened-start (pool/step-orders-processing-days date* before-days pool-config t/minus)]
-     (min-quantity-summed-for-groups changes group-ids widened-start date*))))
+   (-> (fetch-context tx model-id user-id pool-id exclude-res-ids
+                      pickup-location-id)
+       (available-quantity-for-prospective-start date))))
