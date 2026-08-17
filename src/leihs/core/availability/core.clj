@@ -67,6 +67,32 @@
                                                         pool-config t/minus)]
     (min-quantity-summed-for-groups changes group-ids widened-start date*)))
 
+(defn available-quantity-for-prospective-end
+  "Returns the maximum available quantity for a model in a single inventory pool
+  if date were used as the end of a new reservation via a pickup-location-id, given a
+  context from fetch-context. Widens only forward from date by the pool's
+  after-drop-off transfer buffer -- the lead time needed to move the item back from the
+  alternative pickup location once dropped off -- symmetric to
+  available-quantity-for-prospective-start's backward widening. We don't know yet whether
+  a given day will end up being someone's start or end -- a 1-day booking is both at
+  once, needing both buffers from that same day -- so this must always be combined with
+  available-quantity-for-prospective-start via min, never used alone."
+  [{:keys [changes group-ids pool-config]} date]
+  (let [after-days (or (:transfer_buffer_after_drop_off pool-config) 0)
+        date* (ch/local-date date)
+        widened-end (pool/step-orders-processing-days date* after-days
+                                                      pool-config t/plus)]
+    (min-quantity-summed-for-groups changes group-ids date* widened-end)))
+
+(defn available-quantity-for-prospective-day
+  "min of available-quantity-for-prospective-start and
+  available-quantity-for-prospective-end -- whether date is usable at all for a new
+  booking via a pickup-location-id, regardless of whether it ends up being used as that
+  booking's start or end."
+  [context date]
+  (min (available-quantity-for-prospective-start context date)
+       (available-quantity-for-prospective-end context date)))
+
 (defn maximum-available-in-pool-and-period-summed-for-groups
   "Returns the maximum available quantity for a model in a single inventory pool
   over the given date range, summed across all entitlement groups the user belongs to.
