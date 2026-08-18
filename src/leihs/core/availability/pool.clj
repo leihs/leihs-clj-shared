@@ -35,8 +35,7 @@
        (take-while #(or (jt/before? % end) (= % end)))))
 
 (defn get-holiday
-  "Returns the holiday map if date falls within any holiday, nil otherwise.
-  pool must have :holidays key with a seq of {:start_date, :end_date} maps."
+  "Holiday map covering date, or nil."
   [date pool]
   (detect #(->> (dates-range (jt/local-date (:start_date %))
                              (jt/local-date (:end_date %)))
@@ -44,22 +43,19 @@
           (:holidays pool)))
 
 (defn working-day?
-  "Returns true if date is a working day for the pool.
-  pool must have weekday boolean keys (:monday, :tuesday, ...)."
+  "True if date is a working day for the pool."
   [date pool]
   (-> date .getDayOfWeek .toString .toLowerCase keyword pool))
 
 (defn close-time?
-  "Returns true if the pool is closed on date (non-workday or holiday).
-  pool must have weekday boolean keys and :holidays."
+  "True if the pool is closed on date (non-workday or holiday)."
   [date pool]
   (let [date* (jt/local-date date)]
     (or (not (working-day? date* pool))
         (some? (get-holiday date* pool)))))
 
 (defn orders-processing-day?
-  "Returns true if the pool processes orders on date's day of week.
-  pool must have the `<day>_orders_processing` boolean keys."
+  "True if the pool processes orders on date's day of week."
   [date pool]
   (-> date
       .getDayOfWeek
@@ -70,9 +66,7 @@
       pool))
 
 (defn orders-processing?
-  "Returns true if the pool processes orders on date, considering both the
-  weekday flag and, if date falls on a holiday, that holiday's flag.
-  pool must have the `<day>_orders_processing` boolean keys and :holidays."
+  "True if the pool processes orders on date, factoring in any holiday."
   [date pool]
   (let [date* (jt/local-date date)]
     (and (orders-processing-day? date* pool)
@@ -81,19 +75,25 @@
            true))))
 
 (defn step-orders-processing-days
-  "Steps from start-date via step (jt/plus or jt/minus) until n
-  orders-processing days have been passed, returning the resulting date.
-  Any day (open or closed) that isn't itself an orders-processing day is
-  skipped over without counting; only orders-processing days count,
-  regardless of whether the pool is open or closed on them. n<=0 is a
-  no-op, returning start-date unchanged regardless of pool (so pool may be
-  nil then). pool must otherwise have weekday, `<day>_orders_processing`
-  and :holidays keys."
+  "Steps from start-date via step until n orders-processing days have passed,
+  returning the resulting date. Non-processing days don't count but can still
+  end up as the result. n<=0 is a no-op."
   [start-date n pool step]
-  (if (<= n 0)
-    start-date
-    (loop [date start-date, remaining n]
-      (if (or (pos? remaining) (close-time? date pool))
-        (recur (step date (jt/days 1))
-               (if (orders-processing? date pool) (dec remaining) remaining))
-        date))))
+  (loop [date start-date, remaining n]
+    (if (pos? remaining)
+      (recur (step date (jt/days 1))
+             (if (orders-processing? date pool) (dec remaining) remaining))
+      date)))
+
+(defn extend-through-idle-run
+  "If boundary itself is a non-processing day, keeps stepping until it
+  reaches the next processing day, bridging idle runs (e.g. weekends) that
+  would otherwise sit as a free pocket between two buffer zones."
+  [boundary pool step]
+  (if (orders-processing? boundary pool)
+    boundary
+    (loop [date boundary]
+      (let [next-date (step date (jt/days 1))]
+        (if (orders-processing? next-date pool)
+          next-date
+          (recur next-date))))))
