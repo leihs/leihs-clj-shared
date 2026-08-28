@@ -68,6 +68,15 @@
       (->> (jdbc-query tx))
       seq boolean))
 
+(defn manager-in-pool?
+  "Checks the caller's already-loaded :access-rights (no DB query) for a
+  manager-or-above role in the given pool."
+  [pool-id {:keys [access-rights]}]
+  (let [roles (set MANAGER-ROLES)]
+    (->> access-rights
+         (some #(and (= (:inventory_pool_id %) pool-id) (roles (:role %))))
+         boolean)))
+
 (defn sysadmin? [tx auth-entity]
   (-> (sql/select true)
       (sql/from :users)
