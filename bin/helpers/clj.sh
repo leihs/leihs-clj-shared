@@ -30,7 +30,11 @@ function clj_uberjar() {
   set_common_vars
   clj_setup_env
   cd $CLJ_DIR
-  clojure -T:build uber
+  if [ "${TOOL_VERSIONS_MANAGER:-}" = "mise" ]; then
+    mise exec -- clojure -T:build uber
+  else
+    clojure -T:build uber
+  fi
   cd -
 }
 
