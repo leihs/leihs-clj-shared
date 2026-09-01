@@ -15,7 +15,7 @@ function build {
     CACHED_JAR="${BUILDCACHE_TMPDIR}/${PROJECT_NAME}_${DIGEST}.jar"
     if [[ -e $CACHED_JAR ]]; then
       echo "using cached jar"
-      mkdir -p $PROJECT_DIR/target
+      mkdir -p "$(dirname "$JAR_PATH")"
       touch $CACHED_JAR
     else
       echo "no cached jar found, building"
