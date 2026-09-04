@@ -33,6 +33,10 @@
   nrepl/nrepl {:mvn/version "1.7.0"}
   org.bouncycastle/bcpkix-jdk18on {:mvn/version "1.85"} ; transitive dependency of from buddy-sign; several CVEs
   org.clojure/clojure {:mvn/version "1.12.6"}
+  org.eclipse.jetty.ee9/jetty-ee9-security {:mvn/version "12.1.10"} ; transitive via ring/ring-jetty-adapter; fixes GHSA-2fvj-hgj9-j2gr
+  org.eclipse.jetty/jetty-security {:mvn/version "12.1.10"} ; transitive via ring/ring-jetty-adapter; fixes GHSA-2fvj-hgj9-j2gr
+  org.eclipse.jetty/jetty-server {:mvn/version "12.1.10"} ; transitive via ring/ring-jetty-adapter; fixes GHSA-7p3p-8qv8-m2vh, GHSA-f4v5-65jj-pcr2
+  org.eclipse.jetty/jetty-util {:mvn/version "12.1.10"} ; transitive via ring/ring-jetty-adapter; fixes GHSA-w7x5-g22v-xqhr
   org.clojure/core.match {:mvn/version "1.1.1"}
   org.clojure/core.memoize {:mvn/version "1.2.281"}
   org.clojure/data.json {:mvn/version "2.5.2"}
