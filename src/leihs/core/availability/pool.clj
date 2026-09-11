@@ -76,24 +76,12 @@
 
 (defn step-orders-processing-days
   "Steps from start-date via step until n orders-processing days have passed,
-  returning the resulting date. Non-processing days don't count but can still
-  end up as the result. n<=0 is a no-op."
+  returning the resulting date. Only days stepped onto count, so start-date
+  itself is never counted; non-processing days are skipped over without
+  counting. n<=0 is a no-op."
   [start-date n pool step]
   (loop [date start-date, remaining n]
     (if (pos? remaining)
-      (recur (step date (jt/days 1))
-             (if (orders-processing? date pool) (dec remaining) remaining))
-      date)))
-
-(defn extend-through-idle-run
-  "If boundary itself is a non-processing day, keeps stepping until it
-  reaches the next processing day, bridging idle runs (e.g. weekends) that
-  would otherwise sit as a free pocket between two buffer zones."
-  [boundary pool step]
-  (if (orders-processing? boundary pool)
-    boundary
-    (loop [date boundary]
       (let [next-date (step date (jt/days 1))]
-        (if (orders-processing? next-date pool)
-          next-date
-          (recur next-date))))))
+        (recur next-date (if (orders-processing? next-date pool) (dec remaining) remaining)))
+      date)))

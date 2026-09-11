@@ -33,13 +33,9 @@
    :pool-config (when pickup-location-id (q/get-pool-config tx pool-id))})
 
 (defn- widen-and-bridge
-  "Widens date by days and bridges any idle run at the edge; a zero-length
-  buffer does neither."
+  "Widens date by days of orders-processing time."
   [date days pool step]
-  (let [raw (pool/step-orders-processing-days date days pool step)]
-    (if (pos? days)
-      (pool/extend-through-idle-run raw pool step)
-      raw)))
+  (pool/step-orders-processing-days date days pool step))
 
 (defn available-quantity-in-range
   "Like maximum-available-in-pool-and-period-summed-for-groups, given a
