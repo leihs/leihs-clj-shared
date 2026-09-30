@@ -99,6 +99,7 @@
       (info "Closing db pool done."))))
 
 (defn init-ds [db-options health-check-registry]
+  (close)
   (reset! metric-registry* (MetricRegistry.))
   (try (let [params {:dbtype "postgres"
                      :dbname (get db-options db-name-key)
