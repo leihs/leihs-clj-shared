@@ -10,7 +10,7 @@
   [:monday :tuesday :wednesday :thursday :friday :saturday :sunday])
 
 (defn get-workdays [tx pool-id]
-  (-> (apply sql/select workday-columns)
+  (-> (apply sql/select :max_visits workday-columns)
       (sql/from :workdays)
       (sql/where [:= :inventory_pool_id pool-id])
       sql-format
@@ -52,3 +52,12 @@
   (let [date* (jt/local-date date)]
     (or (not (working-day? date* pool))
         (some? (get-holiday date* pool)))))
+
+(defn visits-capacity-reached?
+  "Returns true if visits-count reached the pool's max visits for the date's
+  weekday. pool must have :max_visits (keys :0 = sunday .. :6)."
+  [date visits-count pool]
+  (let [index (-> date jt/local-date .getDayOfWeek .getValue (mod 7) str keyword)]
+    (boolean
+     (when-let [max-visits (some-> pool :max_visits index str parse-long)]
+       (>= visits-count max-visits)))))
