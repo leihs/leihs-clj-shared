@@ -93,12 +93,12 @@
       (cond
         (http-safe?
          request) (if (:system_admin_protected user)
-                    (:scope_system_admin_write auth-entity)
-                    (:scope_admin_write auth-entity))
+                    (:scope_system_admin_read auth-entity)
+                    (:scope_admin_read auth-entity))
         (http-unsafe?
          request) (if (:system_admin_protected user)
-                    (:scope_system_admin_read auth-entity)
-                    (:scope_admin_read auth-entity))))))
+                    (:scope_system_admin_write auth-entity)
+                    (:scope_admin_write auth-entity))))))
 
 ;;; authorization ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
