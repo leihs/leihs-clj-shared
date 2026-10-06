@@ -41,5 +41,9 @@ function build {
   fi
 }
 
-# Clean cached jars older than a week
-find $BUILDCACHE_TMPDIR -maxdepth 1 -name "${PROJECT_NAME}_*.jar" -type f -mtime +7 -delete
+# Clean cached jars older than a week. BUILDCACHE_TMPDIR defaults to /tmp,
+# which other processes (parallel CI trials: Xvfb, webdriver profiles, ...)
+# change concurrently; an entry vanishing while find scans the directory
+# makes find exit non-zero ("No such file or directory") and must not fail
+# the build.
+find "$BUILDCACHE_TMPDIR" -maxdepth 1 -name "${PROJECT_NAME}_*.jar" -type f -mtime +7 -delete 2>/dev/null || true
