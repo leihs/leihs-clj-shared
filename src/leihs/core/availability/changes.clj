@@ -38,7 +38,8 @@
 (def replacement-interval (t/months 1))
 
 (defn late? [reservation]
-  (and (-> reservation :returned_date nil?)
+  (and (= (:status reservation) "signed")
+       (-> reservation :returned_date nil?)
        (t/before? (-> reservation :end_date local-date)
                   (local-date))))
 

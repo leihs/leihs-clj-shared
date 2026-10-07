@@ -33,6 +33,16 @@
                                               :end_date "2026-10-13"}])
                            2))))
 
+(deftest late?-test
+  (let [overdue {:end_date (t/minus (ch/local-date) (t/days 1))
+                 :returned_date nil}]
+    (is (true? (ch/late? (assoc overdue :status "signed"))))
+    (is (false? (ch/late? (assoc overdue :status "approved"))))
+    (is (false? (ch/late? (assoc overdue
+                                 :status "signed"
+                                 :end_date (t/plus (ch/local-date)
+                                                   (t/days 1))))))))
+
 (deftest get-unavailable-until-test
   (let [reservation {:end_date (t/plus (ch/local-date) (t/days 10))
                      :returned_date nil}
