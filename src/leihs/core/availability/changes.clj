@@ -5,7 +5,8 @@
    [java-time :as t]
    [leihs.core.availability.allocations :as a]
    [leihs.core.availability.pool :as pool]
-   [leihs.core.availability.queries :as q]))
+   [leihs.core.availability.queries :as q]
+   [leihs.core.time-zone :as tz]))
 
 (def UTC-ZONE-ID (java.time.ZoneId/of "UTC"))
 
@@ -21,7 +22,7 @@
   (let [max-possible-quantity (count (q/get-borrowable-items tx (:model_id entitlement) pool-id))]
     (min max-possible-quantity (:quantity entitlement))))
 
-(defn init [tx entitlements pool-id]
+(defn init [tx entitlements pool-id today]
   (let [entitlements-map
         (as-> entitlements <>
           (reduce #(assoc %1 (:entitlement_group_id %2) (initial-group-quantity tx %2 pool-id)) {} <>)
@@ -33,15 +34,14 @@
                     [(first e-map) {:in-quantity (second e-map)
                                     :running-reservations []}]))
              (into {}))]
-    {(local-date) initial-group-allocations}))
+    {today initial-group-allocations}))
 
 (def replacement-interval (t/months 1))
 
-(defn late? [reservation]
+(defn late? [today reservation]
   (and (= (:status reservation) "signed")
        (-> reservation :returned_date nil?)
-       (t/before? (-> reservation :end_date local-date)
-                  (local-date))))
+       (t/before? (-> reservation :end_date local-date) today)))
 
 (defn next-open-date [pool date]
   (if (not-any? pool pool/workday-columns)
@@ -56,17 +56,16 @@
   (-> (iterate #(next-open-date pool (t/plus % (t/days 1))) date)
       (nth (:maintenance_period model))))
 
-(defn get-unavailable-from [reservation]
+(defn get-unavailable-from [today reservation]
   (if (:item_id reservation)
-    (local-date)
-    (t/max (local-date (:start_date reservation))
-           (local-date))))
+    today
+    (t/max (local-date (:start_date reservation)) today)))
 
-(defn get-unavailable-until [reservation model pool]
-  (let [date (t/max (if (late? reservation)
-                      (t/plus (local-date) replacement-interval)
+(defn get-unavailable-until [today reservation model pool]
+  (let [date (t/max (if (late? today reservation)
+                      (t/plus today replacement-interval)
                       (local-date (:end_date reservation)))
-                    (local-date))]
+                    today)]
     (cond->> date
       (pos? (or (:maintenance_period model) 0))
       (being-maintained-until @pool model))))
@@ -118,9 +117,9 @@
            (update-allocations inner-changes allocated-group-id reservation))))
 
 (defn extend-with
-  [changes reservation model pool inventory-pool-and-model-group-ids]
-  (let [unavailable-from (get-unavailable-from reservation)
-        unavailable-until (get-unavailable-until reservation model pool)]
+  [changes today reservation model pool inventory-pool-and-model-group-ids]
+  (let [unavailable-from (get-unavailable-from today reservation)
+        unavailable-until (get-unavailable-until today reservation model pool)]
     (-> changes
         (insert-for-time-span unavailable-from unavailable-until)
         (update-inner-changes unavailable-from
@@ -131,16 +130,22 @@
 (defn main
   ([tx model-id pool-id] (main tx model-id pool-id nil))
   ([tx model-id pool-id exclude-res-ids]
-   (let [model (q/get-model-by-id tx model-id)
-         running-reservations (q/running-reservations tx model-id pool-id exclude-res-ids)
+   (let [today (tz/today tx)
+         model (q/get-model-by-id tx model-id)
+         running-reservations (q/running-reservations tx
+                                                      model-id
+                                                      pool-id
+                                                      exclude-res-ids
+                                                      today)
          entitlements (q/get-entitlements-for-model-and-pool tx model-id pool-id)
          inventory-pool-and-model-group-ids
          (q/get-inventory-pool-and-model-group-ids tx model-id pool-id)
-         initial-changes (init tx entitlements pool-id)
+         initial-changes (init tx entitlements pool-id today)
          pool (delay (assoc (pool/get-workdays tx pool-id)
                             :holidays (pool/get-holidays tx pool-id)))]
      (reduce (fn [changes reservation]
                (extend-with changes
+                            today
                             reservation
                             model
                             pool

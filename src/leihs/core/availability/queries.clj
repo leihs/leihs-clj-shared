@@ -3,9 +3,10 @@
    [honey.sql :refer [format] :rename {format sql-format}]
    [honey.sql.helpers :as sql]
    [leihs.core.settings :refer [settings]]
+   [leihs.core.sql]
    [next.jdbc.sql :refer [query] :rename {query jdbc-query}]))
 
-(defn running-reservations [tx model-id pool-id exclude-res-ids]
+(defn running-reservations [tx model-id pool-id exclude-res-ids today]
   (let [timeout-minutes (-> (settings tx [:timeout_minutes])
                             :timeout_minutes
                             (or 0)
@@ -38,7 +39,7 @@
                            [:raw (format "now() at time zone 'UTC' - interval '%d minutes'"
                                          timeout-minutes)]]]])
         (sql/where [:not [:and
-                          [:< :reservations.end_date [:raw "(now() at time zone 'UTC')::date"]]
+                          [:< :reservations.end_date today]
                           [:is-null :reservations.item_id]]])
         (sql/where [:= :reservations.model_id model-id])
         (cond-> (not (empty? exclude-res-ids))

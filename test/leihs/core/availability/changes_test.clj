@@ -34,24 +34,25 @@
                            2))))
 
 (deftest late?-test
-  (let [overdue {:end_date (t/minus (ch/local-date) (t/days 1))
+  (let [overdue {:end_date (t/minus thursday (t/days 1))
                  :returned_date nil}]
-    (is (true? (ch/late? (assoc overdue :status "signed"))))
-    (is (false? (ch/late? (assoc overdue :status "approved"))))
-    (is (false? (ch/late? (assoc overdue
-                                 :status "signed"
-                                 :end_date (t/plus (ch/local-date)
-                                                   (t/days 1))))))))
+    (is (true? (ch/late? thursday (assoc overdue :status "signed"))))
+    (is (false? (ch/late? thursday (assoc overdue :status "approved"))))
+    (is (false? (ch/late? thursday (assoc overdue
+                                          :status "signed"
+                                          :end_date thursday))))))
 
 (deftest get-unavailable-until-test
-  (let [reservation {:end_date (t/plus (ch/local-date) (t/days 10))
+  (let [reservation {:end_date (t/plus thursday (t/days 10))
                      :returned_date nil}
         unloaded-pool (delay (throw (ex-info "pool loaded" {})))]
     (is (= (:end_date reservation)
-           (ch/get-unavailable-until reservation
+           (ch/get-unavailable-until thursday
+                                     reservation
                                      {:maintenance_period nil}
                                      unloaded-pool)))
     (is (= (:end_date reservation)
-           (ch/get-unavailable-until reservation
+           (ch/get-unavailable-until thursday
+                                     reservation
                                      {:maintenance_period 0}
                                      unloaded-pool)))))

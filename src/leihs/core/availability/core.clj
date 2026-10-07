@@ -30,9 +30,9 @@
 
 (defn booking-calendar
   "Per-date quantity for the groups and total quantity over all groups, from
-  start to end. Not floored. Dates before today get 0."
+  start to end. Not floored. Dates before today (the first change) get 0."
   [changes group-ids start end]
-  (let [today (ch/local-date)
+  (let [today (apply t/min (keys changes))
         start* (if (t/before? start today) today start)
         past (when (t/before? start today)
                (->> (ch/explode-date-range start (t/min end (t/minus today (t/days 1))))
