@@ -4,6 +4,7 @@
    [com.rpl.specter :as s]
    [java-time :as t]
    [leihs.core.availability.allocations :as a]
+   [leihs.core.availability.pool :as pool]
    [leihs.core.availability.queries :as q]))
 
 (def UTC-ZONE-ID (java.time.ZoneId/of "UTC"))
@@ -41,8 +42,18 @@
        (t/before? (-> reservation :end_date local-date)
                   (local-date))))
 
-(defn being-maintained-until [_model date]
-  date)
+(defn next-open-date [pool date]
+  (if (not-any? pool pool/workday-columns)
+    date
+    (->> (t/iterate t/plus date (t/days 1))
+         (remove #(pool/close-time? % pool))
+         first)))
+
+(defn being-maintained-until
+  "Extends date by the model's maintenance period counted in open days."
+  [pool model date]
+  (-> (iterate #(next-open-date pool (t/plus % (t/days 1))) date)
+      (nth (:maintenance_period model))))
 
 (defn get-unavailable-from [reservation]
   (if (:item_id reservation)
@@ -50,14 +61,14 @@
     (t/max (local-date (:start_date reservation))
            (local-date))))
 
-(defn get-unavailable-until [reservation model]
+(defn get-unavailable-until [reservation model pool]
   (let [date (t/max (if (late? reservation)
                       (t/plus (local-date) replacement-interval)
                       (local-date (:end_date reservation)))
                     (local-date))]
     (cond->> date
-      (> (:maintenance_period model) 0)
-      (being-maintained-until model))))
+      (pos? (or (:maintenance_period model) 0))
+      (being-maintained-until @pool model))))
 
 (defn explode-date-range [start end]
   (->> (t/iterate t/plus start (t/days 1))
@@ -106,9 +117,9 @@
            (update-allocations inner-changes allocated-group-id reservation))))
 
 (defn extend-with
-  [changes reservation model inventory-pool-and-model-group-ids]
+  [changes reservation model pool inventory-pool-and-model-group-ids]
   (let [unavailable-from (get-unavailable-from reservation)
-        unavailable-until (get-unavailable-until reservation model)]
+        unavailable-until (get-unavailable-until reservation model pool)]
     (-> changes
         (insert-for-time-span unavailable-from unavailable-until)
         (update-inner-changes unavailable-from
@@ -124,8 +135,14 @@
          entitlements (q/get-entitlements-for-model-and-pool tx model-id pool-id)
          inventory-pool-and-model-group-ids
          (q/get-inventory-pool-and-model-group-ids tx model-id pool-id)
-         initial-changes (init tx entitlements pool-id)]
+         initial-changes (init tx entitlements pool-id)
+         pool (delay (assoc (pool/get-workdays tx pool-id)
+                            :holidays (pool/get-holidays tx pool-id)))]
      (reduce (fn [changes reservation]
-               (extend-with changes reservation model inventory-pool-and-model-group-ids))
+               (extend-with changes
+                            reservation
+                            model
+                            pool
+                            inventory-pool-and-model-group-ids))
              initial-changes
              running-reservations))))
