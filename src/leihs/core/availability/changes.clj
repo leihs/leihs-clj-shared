@@ -18,14 +18,10 @@
        (.atStartOfDay UTC-ZONE-ID)
        .toLocalDate)))
 
-(defn initial-group-quantity [tx entitlement pool-id]
-  (let [max-possible-quantity (count (q/get-borrowable-items tx (:model_id entitlement) pool-id))]
-    (min max-possible-quantity (:quantity entitlement))))
-
-(defn init [tx entitlements pool-id today]
+(defn init [entitlements today]
   (let [entitlements-map
         (as-> entitlements <>
-          (reduce #(assoc %1 (:entitlement_group_id %2) (initial-group-quantity tx %2 pool-id)) {} <>)
+          (reduce #(assoc %1 (:entitlement_group_id %2) (:quantity %2)) {} <>)
           (set/rename-keys <> {nil :general})
           (cond-> <> (nil? (:general <>)) (assoc :general 0)))
         initial-group-allocations
@@ -140,7 +136,7 @@
          entitlements (q/get-entitlements-for-model-and-pool tx model-id pool-id)
          inventory-pool-and-model-group-ids
          (q/get-inventory-pool-and-model-group-ids tx model-id pool-id)
-         initial-changes (init tx entitlements pool-id today)
+         initial-changes (init entitlements today)
          pool (delay (assoc (pool/get-workdays tx pool-id)
                             :holidays (pool/get-holidays tx pool-id)))]
      (reduce (fn [changes reservation]

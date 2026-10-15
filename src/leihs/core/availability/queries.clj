@@ -112,14 +112,3 @@
       sql-format
       (->> (jdbc-query tx))
       first))
-
-(defn get-borrowable-items [tx model-id pool-id]
-  (-> (sql/select :*)
-      (sql/from :items)
-      (sql/where [:= :model_id model-id])
-      (sql/where [:= :inventory_pool_id pool-id])
-      (sql/where [:= :retired nil])
-      (sql/where [:= :is_borrowable true])
-      (sql/where [:= :parent_id nil])
-      sql-format
-      (->> (jdbc-query tx))))
