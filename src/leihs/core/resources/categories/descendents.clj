@@ -32,3 +32,18 @@
                                    :exclude exclude))]
                 (assoc category :children children-with-descendents))))]
     (descendents-h initial-category #{})))
+
+(defn descendent-ids-sqlmap
+  "Subquery of ids of all descendents of the category (cycle-safe via UNION)."
+  [category-id]
+  (-> (sql/with-recursive
+        [[:category_tree {:columns [:id]}]
+         {:union [(-> (sql/select :model_group_links.child_id)
+                      (sql/from :model_group_links)
+                      (sql/where [:= :model_group_links.parent_id category-id]))
+                  (-> (sql/select :model_group_links.child_id)
+                      (sql/from :model_group_links)
+                      (sql/join :category_tree
+                                [:= :model_group_links.parent_id :category_tree.id]))]}])
+      (sql/select :category_tree.id)
+      (sql/from :category_tree)))
