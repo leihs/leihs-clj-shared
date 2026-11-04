@@ -9,7 +9,7 @@ jobs:
     context:
       task_defaults:
         traits:
-          asdf: true
+          mise: true
       tasks:
         test:
           scripts:
